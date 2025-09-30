@@ -14,7 +14,13 @@ Welcome! This document helps autonomous agents, copilots, or other AI-powered to
 | --- | --- |
 | `frontend/` | React + Vite SPA written in TypeScript. Uses ESLint, Vitest, and Testing Library. |
 | `backend/` | Go HTTP API exposing REST endpoints for accounts, contacts, and tickets. Repository pattern allows swapping storage backends. |
-| `docs/` | Architectural notes, onboarding guides, and agent-focused instructions (this file). |
+| `docs/` | Architectural notes, onboarding guides, and technical documentation. |
+
+## Technical Documentation
+
+For detailed technical specifications and guidelines, please refer to:
+- **Frontend**: See `docs/technical/frontend/README.md` for comprehensive frontend architecture, theme system, component patterns, and development guidelines
+- **General**: See `docs/README.md` for documentation structure overview
 
 ## Developer workflows
 
