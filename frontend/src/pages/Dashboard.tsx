@@ -8,7 +8,7 @@ export type Account = {
 };
 
 export type Contact = {
-  id: string;
+  id: number;
   accountId: string;
   fullName: string;
   email: string;
@@ -27,9 +27,9 @@ const sampleAccounts: Account[] = [
 ];
 
 const sampleContacts: Contact[] = [
-  { id: 'con-1', accountId: '1', fullName: 'Jane Doe', email: 'jane@acme.test' },
-  { id: 'con-2', accountId: '1', fullName: 'John Smith', email: 'john@acme.test' },
-  { id: 'con-3', accountId: '2', fullName: 'Mary Major', email: 'mary@globex.test' }
+  { id: 1, accountId: '1', fullName: 'Jane Doe', email: 'jane@acme.test' },
+  { id: 2, accountId: '1', fullName: 'John Smith', email: 'john@acme.test' },
+  { id: 3, accountId: '2', fullName: 'Mary Major', email: 'mary@globex.test' }
 ];
 
 const sampleTickets: Ticket[] = [

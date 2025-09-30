@@ -22,7 +22,17 @@ const defaultWorkCenters: WorkCenter[] = [
       { id: 'accounts-create', name: 'Create Account', path: '/accounts/create' },
     ]
   },
-  { id: 'contacts', name: 'Contacts', icon: '📇', path: '/contacts' },
+  { 
+    id: 'contacts', 
+    name: 'Contacts', 
+    icon: '📇', 
+    path: '/contacts',
+    defaultPath: '/contacts/search',
+    subItems: [
+      { id: 'contacts-search', name: 'Search Contacts', path: '/contacts/search' },
+      { id: 'contacts-create', name: 'Create Contact', path: '/contacts/create' },
+    ]
+  },
 ];
 
 export const Layout: FC<LayoutProps> = ({ 

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import './DisplayAccount.css';
 
 export interface Contact {
-  id: string;
+  id: number;
   accountId: string;
   fullName: string;
   email: string;

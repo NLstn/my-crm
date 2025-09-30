@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { SearchAccounts, DisplayAccount, CreateAccount } from './workcenters/accounts';
+import { SearchContacts, DisplayContact, CreateContact } from './workcenters/contacts';
 import { sampleAccounts, sampleContacts, sampleTickets } from './pages/Dashboard';
-import type { Account } from './pages/Dashboard';
+import type { Account, Contact } from './pages/Dashboard';
 import './App.css';
 
 // Re-export types for use in other parts of the app
@@ -13,6 +14,7 @@ export type { Account, Contact, Ticket } from './pages/Dashboard';
 function AppContent() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
+  const [contacts, setContacts] = useState<Contact[]>(sampleContacts);
 
   const handleBackToDashboard = () => {
     navigate('/');
@@ -37,6 +39,22 @@ function AppContent() {
     return newId;
   };
 
+  const handleCreateContact = (fullName: string, email: string, accountId: string): number => {
+    // Generate a new ID (max existing ID + 1)
+    const maxId = contacts.reduce((max, contact) => Math.max(max, contact.id), 0);
+    const newId = maxId + 1;
+
+    const newContact: Contact = {
+      id: newId,
+      accountId,
+      fullName,
+      email,
+    };
+
+    setContacts([...contacts, newContact]);
+    return newId;
+  };
+
   return (
     <Layout 
       onBackToDashboard={handleBackToDashboard}
@@ -49,7 +67,16 @@ function AppContent() {
         <Route path="/account/:id" element={
           <DisplayAccount 
             accounts={accounts} 
-            contacts={sampleContacts} 
+            contacts={contacts} 
+            tickets={sampleTickets} 
+          />
+        } />
+        <Route path="/contacts/search" element={<SearchContacts contacts={contacts} accounts={accounts} />} />
+        <Route path="/contacts/create" element={<CreateContact accounts={accounts} onCreateContact={handleCreateContact} />} />
+        <Route path="/contact/:id" element={
+          <DisplayContact 
+            contacts={contacts} 
+            accounts={accounts} 
             tickets={sampleTickets} 
           />
         } />
