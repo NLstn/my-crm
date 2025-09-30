@@ -9,8 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"golang.org/x/time/rate"
 
 	api "github.com/my-crm/backend/internal/http"
+	custommiddleware "github.com/my-crm/backend/internal/middleware"
 	"github.com/my-crm/backend/internal/repository"
 )
 
@@ -31,9 +33,18 @@ func New(opts Options) *Server {
 	repo := opts.Repo
 
 	r := chi.NewRouter()
+
+	// Custom middleware
+	r.Use(custommiddleware.CorsMiddleware)
+	r.Use(custommiddleware.LoggingMiddleware)
+
+	// Create rate limiter: 10 requests per second with burst of 20
+	rateLimiter := custommiddleware.NewIPRateLimiter(rate.Limit(10), 20)
+	r.Use(custommiddleware.RateLimitMiddleware(rateLimiter))
+
+	// Chi built-in middleware
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
 	apiHandlers := api.NewAPI(repo)

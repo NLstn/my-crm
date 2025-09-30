@@ -17,6 +17,7 @@ bin/
 *.test
 *.out
 coverage/
+backend/server
 
 # Air (live reload)
 backend/tmp/
