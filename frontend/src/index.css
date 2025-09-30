@@ -1,10 +1,14 @@
+@import './theme.css';
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #e2e8f0;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
 }
 
 button {
@@ -12,8 +16,4 @@ button {
   font: inherit;
   background: none;
   border: none;
-}
-
-:root {
-  color-scheme: light;
 }
