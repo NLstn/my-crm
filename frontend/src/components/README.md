@@ -4,6 +4,59 @@ This directory contains reusable UI components for the My CRM application. All c
 
 ## Component Index
 
+### Form Components
+
+#### Button
+A reusable button component with multiple variants and sizes.
+
+**Location**: `components/Button/Button.tsx`
+
+**Features**:
+- Multiple variants: primary, secondary, ghost, danger
+- Three sizes: small, medium, large
+- Full-width option
+- Disabled state support
+- Smooth transitions and hover effects
+- Fully accessible with keyboard navigation
+- Integrates with theme system
+
+**Usage**:
+```tsx
+import { Button } from './components/Button';
+
+// Primary button (default)
+<Button onClick={handleClick}>Save</Button>
+
+// Other variants
+<Button variant="secondary" onClick={handleCancel}>Cancel</Button>
+<Button variant="ghost" onClick={handleSkip}>Skip</Button>
+<Button variant="danger" onClick={handleDelete}>Delete</Button>
+
+// Different sizes
+<Button size="sm">Small</Button>
+<Button size="lg">Large</Button>
+
+// Full width
+<Button fullWidth>Full Width Button</Button>
+
+// In forms
+<Button type="submit">Submit Form</Button>
+```
+
+**Props**:
+- `variant?: 'primary' | 'secondary' | 'ghost' | 'danger'` - Visual style (default: 'primary')
+- `size?: 'sm' | 'md' | 'lg'` - Button size (default: 'md')
+- `fullWidth?: boolean` - Take full width of container (default: false)
+- `disabled?: boolean` - Disable the button (default: false)
+- `type?: 'button' | 'submit' | 'reset'` - HTML button type (default: 'button')
+- `onClick?: () => void` - Click handler
+- `children: ReactNode` - Button content (required)
+- All other HTML button attributes are supported
+
+**Documentation**: See `components/Button/README.md` for detailed documentation
+
+---
+
 ### Layout Components
 
 #### Layout
@@ -375,7 +428,7 @@ When adding a new component:
 
 Planned components to be added:
 
-- [ ] **Button** - Reusable button component with variants
+- [x] **Button** - Reusable button component with variants ✅ **Added**
 - [ ] **Input** - Text input with validation
 - [ ] **Form** - Form wrapper with validation
 - [ ] **Modal** - Dialog/modal overlay

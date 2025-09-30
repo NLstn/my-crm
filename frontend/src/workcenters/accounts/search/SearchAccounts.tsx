@@ -1,5 +1,6 @@
 import { FC, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../../../components';
 import './SearchAccounts.css';
 
 export interface Account {
@@ -37,13 +38,11 @@ export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
               Find accounts by name
             </p>
           </div>
-          <button
-            type="button"
-            className="search-accounts__create-button"
+          <Button
             onClick={() => navigate('/accounts/create')}
           >
             Create New Account
-          </button>
+          </Button>
         </div>
       </div>
 

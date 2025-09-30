@@ -1,5 +1,6 @@
 import { FC, FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../../../components';
 import './CreateAccount.css';
 
 export interface CreateAccountProps {
@@ -67,19 +68,19 @@ export const CreateAccount: FC<CreateAccountProps> = ({ onCreateAccount }) => {
         </div>
 
         <div className="create-account__actions">
-          <button
+          <Button
             type="button"
-            className="create-account__button create-account__button--secondary"
+            variant="secondary"
             onClick={handleCancel}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="create-account__button create-account__button--primary"
+            variant="primary"
           >
             Create Account
-          </button>
+          </Button>
         </div>
       </form>
     </div>

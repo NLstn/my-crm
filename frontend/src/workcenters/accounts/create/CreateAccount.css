@@ -86,43 +86,6 @@
   border-top: 1px solid var(--color-border);
 }
 
-.create-account__button {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  border: none;
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.create-account__button--primary {
-  background: var(--color-primary);
-  color: white;
-}
-
-.create-account__button--primary:hover {
-  background: var(--color-primary-hover);
-}
-
-.create-account__button--primary:active {
-  transform: translateY(1px);
-}
-
-.create-account__button--secondary {
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.create-account__button--secondary:hover {
-  background: var(--color-background);
-}
-
-.create-account__button--secondary:active {
-  transform: translateY(1px);
-}
-
 @media (max-width: 768px) {
   .create-account {
     padding: var(--spacing-md);
@@ -136,7 +99,7 @@
     flex-direction: column-reverse;
   }
 
-  .create-account__button {
+  .create-account__actions .button {
     width: 100%;
   }
 }
