@@ -1,6 +1,6 @@
 import { FC, FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../../components';
+import { Button, Input } from '../../../components';
 import './CreateAccount.css';
 
 export interface CreateAccountProps {
@@ -45,27 +45,19 @@ export const CreateAccount: FC<CreateAccountProps> = ({ onCreateAccount }) => {
       </div>
 
       <form className="create-account__form" onSubmit={handleSubmit}>
-        <div className="create-account__form-group">
-          <label htmlFor="account-name" className="create-account__label">
-            Account Name <span className="create-account__required">*</span>
-          </label>
-          <input
-            id="account-name"
-            type="text"
-            className={`create-account__input ${error ? 'create-account__input--error' : ''}`}
-            placeholder="Enter account name..."
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (error) setError('');
-            }}
-          />
-          {error && (
-            <span className="create-account__error-message" role="alert">
-              {error}
-            </span>
-          )}
-        </div>
+        <Input
+          id="account-name"
+          label="Account Name"
+          required
+          fullWidth
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (error) setError('');
+          }}
+          error={error}
+          placeholder="Enter account name..."
+        />
 
         <div className="create-account__actions">
           <Button

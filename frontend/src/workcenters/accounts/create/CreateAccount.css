@@ -26,55 +26,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-xl);
-}
-
-.create-account__form-group {
-  margin-bottom: var(--spacing-xl);
-}
-
-.create-account__label {
-  display: block;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xs);
-}
-
-.create-account__required {
-  color: var(--color-error);
-}
-
-.create-account__input {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-md);
-  color: var(--color-text-primary);
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  transition: all 0.2s ease;
-}
-
-.create-account__input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-alpha);
-}
-
-.create-account__input--error {
-  border-color: var(--color-error);
-}
-
-.create-account__input--error:focus {
-  border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-.create-account__error-message {
-  display: block;
-  margin-top: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
 }
 
 .create-account__actions {

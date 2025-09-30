@@ -10,6 +10,8 @@ The CRM frontend is built using React with TypeScript and Vite. This document pr
 - **Header**: Application header with My CRM logo button and profile dropdown
 - **Dropdown**: Dropdown menu with click-outside and keyboard navigation
 - **ProfileDropdown**: User profile menu with initials badge and theme switch
+- **Button**: Reusable button component with multiple variants and sizes
+- **Input**: Reusable text input component with label, error states, and validation support
 
 ## Technology Stack
 
@@ -582,7 +584,8 @@ Output: `dist/` directory with optimized static files
 
 1. **Theme Switcher**: Toggle between dark/light themes (UI ready, needs implementation)
 2. ~~**Component Library**: Extract reusable components~~ ✅ **COMPLETED**
-3. **Form Management**: Add/edit accounts, contacts, tickets
+3. ~~**Form Input Components**: Reusable input components~~ ✅ **COMPLETED**
+4. **Form Management**: Add/edit accounts, contacts, tickets
 4. **Real API Integration**: Connect to backend API
 5. **State Management**: Add global state solution
 6. **Routing**: Multi-page navigation (React Router)

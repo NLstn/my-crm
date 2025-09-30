@@ -1,6 +1,6 @@
 import { FC, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../../components';
+import { Button, Input } from '../../../components';
 import './SearchAccounts.css';
 
 export interface Account {
@@ -47,19 +47,13 @@ export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
       </div>
 
       <div className="search-accounts__filters">
-        <div className="search-accounts__filter-group">
-          <label htmlFor="account-name" className="search-accounts__label">
-            Account Name
-          </label>
-          <input
-            id="account-name"
-            type="text"
-            className="search-accounts__input"
-            placeholder="Search by account name..."
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-          />
-        </div>
+        <Input
+          id="account-name"
+          label="Account Name"
+          placeholder="Search by account name..."
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+        />
       </div>
 
       <div className="search-accounts__results">

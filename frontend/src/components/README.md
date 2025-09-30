@@ -20,6 +20,23 @@ A reusable button component with multiple variants and sizes.
 - Fully accessible with keyboard navigation
 - Integrates with theme system
 
+#### Input
+A reusable text input component with label, error state, helper text, and icon support.
+
+**Location**: `components/Input/Input.tsx`
+
+**Features**:
+- Built-in label support with required indicator
+- Error state with error messages
+- Helper text for guidance
+- Left and right icon slots
+- Three sizes: small, medium, large
+- Full-width option
+- Disabled state support
+- Smooth transitions and focus states
+- Fully accessible with ARIA support
+- Integrates with theme system
+
 **Usage**:
 ```tsx
 import { Button } from './components/Button';
@@ -54,6 +71,66 @@ import { Button } from './components/Button';
 - All other HTML button attributes are supported
 
 **Documentation**: See `components/Button/README.md` for detailed documentation
+
+**Usage**:
+```tsx
+import { Input } from './components/Input';
+
+// Basic input with label
+<Input 
+  label="Account Name"
+  placeholder="Enter account name..."
+/>
+
+// Required field with error
+<Input 
+  label="Email"
+  required
+  error="Please enter a valid email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+/>
+
+// With helper text
+<Input 
+  label="Password"
+  type="password"
+  helperText="Must be at least 8 characters"
+/>
+
+// With left icon
+<Input 
+  leftIcon={<span>🔍</span>}
+  placeholder="Search..."
+/>
+
+// Different sizes
+<Input size="sm" placeholder="Small" />
+<Input size="lg" placeholder="Large" />
+
+// Full width
+<Input fullWidth label="Full Width Input" />
+```
+
+**Props**:
+- `variant?: 'default' | 'error'` - Visual style (automatically set to 'error' when error prop is provided)
+- `size?: 'sm' | 'md' | 'lg'` - Input size (default: 'md')
+- `fullWidth?: boolean` - Take full width of container (default: false)
+- `label?: string` - Label text for the input
+- `required?: boolean` - Whether the field is required (default: false)
+- `error?: string` - Error message to display
+- `helperText?: string` - Helper text to display (hidden when error is present)
+- `leftIcon?: ReactNode` - Icon to display on the left
+- `rightIcon?: ReactNode` - Icon to display on the right
+- `disabled?: boolean` - Disable the input (default: false)
+- `placeholder?: string` - Placeholder text
+- `type?: string` - HTML input type (default: 'text')
+- `value?: string` - Controlled input value
+- `onChange?: (e) => void` - Change event handler
+- `id?: string` - Input element ID (auto-generated from label if not provided)
+- All other HTML input attributes are supported
+
+**Documentation**: See `components/Input/README.md` for detailed documentation
 
 ---
 
@@ -429,7 +506,7 @@ When adding a new component:
 Planned components to be added:
 
 - [x] **Button** - Reusable button component with variants ✅ **Added**
-- [ ] **Input** - Text input with validation
+- [x] **Input** - Text input with validation ✅ **Added**
 - [ ] **Form** - Form wrapper with validation
 - [ ] **Modal** - Dialog/modal overlay
 - [ ] **Card** - Content card container

@@ -8,6 +8,9 @@ export type { DropdownProps } from './Dropdown';
 export { Header, ProfileDropdown } from './Header';
 export type { HeaderProps, ProfileDropdownProps } from './Header';
 
+export { Input } from './Input';
+export type { InputProps } from './Input';
+
 export { Layout } from './Layout';
 export type { LayoutProps } from './Layout';
 
