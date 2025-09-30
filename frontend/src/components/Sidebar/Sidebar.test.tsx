@@ -8,6 +8,21 @@ const mockWorkCenters: WorkCenter[] = [
   { id: '2', name: 'Contacts', icon: '📇', path: '/contacts' },
 ];
 
+const mockWorkCentersWithSubItems: WorkCenter[] = [
+  { 
+    id: '1', 
+    name: 'Accounts', 
+    icon: '👥', 
+    path: '/accounts',
+    defaultPath: '/accounts/search',
+    subItems: [
+      { id: '1-1', name: 'Search Accounts', path: '/accounts/search' },
+      { id: '1-2', name: 'Create Account', path: '/accounts/create' },
+    ]
+  },
+  { id: '2', name: 'Contacts', icon: '📇', path: '/contacts' },
+];
+
 describe('Sidebar', () => {
   it('renders sidebar when open', () => {
     render(
@@ -145,5 +160,138 @@ describe('Sidebar', () => {
 
     const sidebar = container.querySelector('.sidebar');
     expect(sidebar).not.toHaveClass('sidebar--open');
+  });
+
+  describe('nested workcenters', () => {
+    it('renders parent workcenter with expand button when it has subitems', () => {
+      render(
+        <Sidebar
+          isOpen={true}
+          onClose={vi.fn()}
+          workCenters={mockWorkCentersWithSubItems}
+        />
+      );
+
+      expect(screen.getByText('Accounts')).toBeInTheDocument();
+      expect(screen.getByLabelText('Expand Accounts')).toBeInTheDocument();
+    });
+
+    it('does not show subitems initially', () => {
+      render(
+        <Sidebar
+          isOpen={true}
+          onClose={vi.fn()}
+          workCenters={mockWorkCentersWithSubItems}
+        />
+      );
+
+      expect(screen.queryByText('Search Accounts')).not.toBeInTheDocument();
+      expect(screen.queryByText('Create Account')).not.toBeInTheDocument();
+    });
+
+    it('shows subitems when expand button is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <Sidebar
+          isOpen={true}
+          onClose={vi.fn()}
+          workCenters={mockWorkCentersWithSubItems}
+        />
+      );
+
+      const expandButton = screen.getByLabelText('Expand Accounts');
+      await user.click(expandButton);
+
+      expect(screen.getByText('Search Accounts')).toBeInTheDocument();
+      expect(screen.getByText('Create Account')).toBeInTheDocument();
+    });
+
+    it('hides subitems when collapse button is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <Sidebar
+          isOpen={true}
+          onClose={vi.fn()}
+          workCenters={mockWorkCentersWithSubItems}
+        />
+      );
+
+      const expandButton = screen.getByLabelText('Expand Accounts');
+      await user.click(expandButton);
+      
+      expect(screen.getByText('Search Accounts')).toBeInTheDocument();
+
+      const collapseButton = screen.getByLabelText('Collapse Accounts');
+      await user.click(collapseButton);
+
+      expect(screen.queryByText('Search Accounts')).not.toBeInTheDocument();
+    });
+
+    it('navigates to defaultPath when parent with subitems is clicked', async () => {
+      const user = userEvent.setup();
+      const onNavigate = vi.fn();
+      const onClose = vi.fn();
+
+      render(
+        <Sidebar
+          isOpen={true}
+          onClose={onClose}
+          workCenters={mockWorkCentersWithSubItems}
+          onNavigate={onNavigate}
+        />
+      );
+
+      const accountsLink = screen.getByText('Accounts');
+      await user.click(accountsLink);
+
+      expect(onNavigate).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/accounts/search' })
+      );
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('navigates to subitem path when subitem is clicked', async () => {
+      const user = userEvent.setup();
+      const onNavigate = vi.fn();
+      const onClose = vi.fn();
+
+      render(
+        <Sidebar
+          isOpen={true}
+          onClose={onClose}
+          workCenters={mockWorkCentersWithSubItems}
+          onNavigate={onNavigate}
+        />
+      );
+
+      // First expand the parent
+      const expandButton = screen.getByLabelText('Expand Accounts');
+      await user.click(expandButton);
+
+      // Then click the subitem
+      const searchAccountsLink = screen.getByText('Search Accounts');
+      await user.click(searchAccountsLink);
+
+      expect(onNavigate).toHaveBeenCalledWith(
+        expect.objectContaining({ 
+          id: '1-1',
+          name: 'Search Accounts',
+          path: '/accounts/search' 
+        })
+      );
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not show expand button for workcenters without subitems', () => {
+      render(
+        <Sidebar
+          isOpen={true}
+          onClose={vi.fn()}
+          workCenters={mockWorkCentersWithSubItems}
+        />
+      );
+
+      expect(screen.queryByLabelText('Expand Contacts')).not.toBeInTheDocument();
+    });
   });
 });

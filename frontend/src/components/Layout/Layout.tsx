@@ -11,7 +11,16 @@ export interface LayoutProps {
 }
 
 const defaultWorkCenters: WorkCenter[] = [
-  { id: 'accounts', name: 'Accounts', icon: '👥', path: '/accounts' },
+  { 
+    id: 'accounts', 
+    name: 'Accounts', 
+    icon: '👥', 
+    path: '/accounts',
+    defaultPath: '/accounts/search',
+    subItems: [
+      { id: 'accounts-search', name: 'Search Accounts', path: '/accounts/search' },
+    ]
+  },
   { id: 'contacts', name: 'Contacts', icon: '📇', path: '/contacts' },
 ];
 

@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import './Sidebar.css';
 
 export interface WorkCenter {
@@ -6,6 +6,8 @@ export interface WorkCenter {
   name: string;
   icon?: string;
   path: string;
+  subItems?: WorkCenter[];
+  defaultPath?: string; // For parent items with subitems
 }
 
 export interface SidebarProps {
@@ -16,17 +18,95 @@ export interface SidebarProps {
 }
 
 export const Sidebar: FC<SidebarProps> = ({ isOpen, onClose, workCenters, onNavigate }) => {
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
   const handleNavigate = (workCenter: WorkCenter) => {
     if (onNavigate) {
-      onNavigate(workCenter);
+      // If the workcenter has subitems, use the defaultPath, otherwise use path
+      const navigationTarget = workCenter.subItems && workCenter.defaultPath
+        ? { ...workCenter, path: workCenter.defaultPath }
+        : workCenter;
+      onNavigate(navigationTarget);
     }
     onClose();
+  };
+
+  const toggleExpanded = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const renderWorkCenter = (workCenter: WorkCenter, isSubItem = false) => {
+    const hasSubItems = workCenter.subItems && workCenter.subItems.length > 0;
+    const isExpanded = expandedItems.has(workCenter.id);
+
+    return (
+      <li key={workCenter.id} className="sidebar__list-item">
+        <div className={`sidebar__link-wrapper ${isSubItem ? 'sidebar__link-wrapper--subitem' : ''}`}>
+          {!isSubItem && (
+            <div className="sidebar__expand-button-container">
+              {hasSubItems ? (
+                <button
+                  type="button"
+                  className="sidebar__expand-button"
+                  onClick={(e) => toggleExpanded(workCenter.id, e)}
+                  aria-label={isExpanded ? `Collapse ${workCenter.name}` : `Expand ${workCenter.name}`}
+                  aria-expanded={isExpanded}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`sidebar__expand-icon ${isExpanded ? 'sidebar__expand-icon--expanded' : ''}`}
+                  >
+                    <path
+                      d="M6 4L10 8L6 12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              ) : (
+                <span className="sidebar__expand-placeholder" aria-hidden="true" />
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            className={`sidebar__link ${isSubItem ? 'sidebar__link--subitem' : ''}`}
+            onClick={() => handleNavigate(workCenter)}
+          >
+            {workCenter.icon && !isSubItem && (
+              <span className="sidebar__icon">{workCenter.icon}</span>
+            )}
+            <span className="sidebar__link-text">{workCenter.name}</span>
+          </button>
+        </div>
+        {hasSubItems && isExpanded && (
+          <ul className="sidebar__sublist">
+            {workCenter.subItems!.map(subItem => renderWorkCenter(subItem, true))}
+          </ul>
+        )}
+      </li>
+    );
   };
 
   return (
@@ -73,20 +153,7 @@ export const Sidebar: FC<SidebarProps> = ({ isOpen, onClose, workCenters, onNavi
         
         <nav className="sidebar__nav">
           <ul className="sidebar__list">
-            {workCenters.map((workCenter) => (
-              <li key={workCenter.id} className="sidebar__list-item">
-                <button
-                  type="button"
-                  className="sidebar__link"
-                  onClick={() => handleNavigate(workCenter)}
-                >
-                  {workCenter.icon && (
-                    <span className="sidebar__icon">{workCenter.icon}</span>
-                  )}
-                  <span className="sidebar__link-text">{workCenter.name}</span>
-                </button>
-              </li>
-            ))}
+            {workCenters.map(workCenter => renderWorkCenter(workCenter))}
           </ul>
         </nav>
       </aside>

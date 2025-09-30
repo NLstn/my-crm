@@ -13,6 +13,8 @@ A navigation sidebar component that slides in from the left side of the screen w
 
 ## Usage
 
+### Basic Usage
+
 ```tsx
 import { Sidebar, WorkCenter } from './components/Sidebar';
 
@@ -43,6 +45,34 @@ function MyApp() {
 }
 ```
 
+### Nested Workcenters
+
+Workcenters can have nested subitems that are revealed when the user clicks an expand/collapse arrow:
+
+```tsx
+const workCentersWithNesting: WorkCenter[] = [
+  { 
+    id: 'accounts', 
+    name: 'Accounts', 
+    icon: '👥', 
+    path: '/accounts',
+    defaultPath: '/accounts/search', // Path used when clicking the parent
+    subItems: [
+      { id: 'accounts-search', name: 'Search Accounts', path: '/accounts/search' },
+      { id: 'accounts-create', name: 'Create Account', path: '/accounts/create' },
+    ]
+  },
+  { id: 'contacts', name: 'Contacts', icon: '📇', path: '/contacts' },
+];
+```
+
+When a workcenter has `subItems`:
+- An expand/collapse arrow appears next to the workcenter name
+- Clicking the arrow toggles the visibility of subitems
+- Clicking the workcenter name navigates to the `defaultPath` (or `path` if no `defaultPath` is specified)
+- Subitems are visually indented and styled differently
+- Subitems can be clicked to navigate to their specific paths
+
 ## Props
 
 | Prop | Type | Required | Description |
@@ -56,10 +86,12 @@ function MyApp() {
 
 ```typescript
 interface WorkCenter {
-  id: string;        // Unique identifier
-  name: string;      // Display name
-  icon?: string;     // Optional icon (emoji or text)
-  path: string;      // Navigation path
+  id: string;           // Unique identifier
+  name: string;         // Display name
+  icon?: string;        // Optional icon (emoji or text) - only shown for root items
+  path: string;         // Navigation path
+  subItems?: WorkCenter[]; // Optional nested workcenters
+  defaultPath?: string; // Path used when clicking a parent with subitems
 }
 ```
 
