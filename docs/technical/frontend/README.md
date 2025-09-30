@@ -2,7 +2,14 @@
 
 ## Overview
 
-The CRM frontend is built using React with TypeScript and Vite. This document provides technical guidelines, architecture decisions, and best practices for frontend development.
+The CRM frontend is built using React with TypeScript and Vite. This document provides technical guidelines, architecture decisions, and best practices
+
+### Current Components
+
+- **Layout**: Main application layout wrapper with header and content area
+- **Header**: Application header with My CRM logo button and profile dropdown
+- **Dropdown**: Dropdown menu with click-outside and keyboard navigation
+- **ProfileDropdown**: User profile menu with initials badge and theme switch
 
 ## Technology Stack
 
@@ -17,7 +24,11 @@ The CRM frontend is built using React with TypeScript and Vite. This document pr
 ```
 frontend/
 ├── src/
-│   ├── components/        # Reusable UI components (future)
+│   ├── components/        # Reusable UI components
+│   │   ├── Button/       # Button component
+│   │   ├── Dropdown/     # Dropdown menu component
+│   │   ├── Header/       # Header layout component
+│   │   └── README.md     # Component library documentation
 │   ├── hooks/            # Custom React hooks (future)
 │   ├── services/         # API services and data fetching (future)
 │   ├── types/            # TypeScript type definitions (future)
@@ -186,20 +197,107 @@ Always use CSS variables instead of hardcoded colors:
 }
 ```
 
-## Component Patterns
+## Component Library
 
-### Current Architecture
+The application now includes a reusable component library in `src/components/`. See the [Component Library README](../../../frontend/src/components/README.md) for comprehensive documentation on all available components.
 
-The application currently uses a single-component architecture with `App.tsx` containing all logic. As the application grows, follow these patterns:
+### Current Components
 
-### Component Organization (Future)
+- **Button**: Flexible button component with multiple variants (primary, secondary, ghost)
+- **Dropdown**: Dropdown menu with click-outside and keyboard navigation
+- **Header**: Application header with back button and profile dropdown
+- **ProfileDropdown**: User profile menu with initials avatar and theme switcher
+
+### Component Organization
 
 ```typescript
 // Component structure
 components/
-├── common/           # Shared components (Button, Input, etc.)
-├── layout/          # Layout components (Header, Sidebar, etc.)
-├── features/        # Feature-specific components
+├── Layout/           # Main layout wrapper
+│   ├── Layout.tsx
+│   ├── Layout.css
+│   ├── Layout.test.tsx
+│   └── index.ts
+├── Header/           # Header component
+│   ├── Header.tsx
+│   ├── Header.css
+│   ├── Header.test.tsx
+│   ├── ProfileDropdown.tsx
+│   ├── ProfileDropdown.css
+│   └── index.ts
+├── Dropdown/         # Dropdown menu component
+│   ├── Dropdown.tsx
+│   ├── Dropdown.css
+│   ├── Dropdown.test.tsx
+│   └── index.ts
+└── README.md        # Component library documentation
+```
+
+### Using Components
+
+Import components from their barrel exports:
+
+```typescript
+import { Layout } from './components/Layout';
+import { Dropdown } from './components/Dropdown';
+
+function App() {
+  return (
+    <Layout>
+      <div className="page-content">
+        {/* Your page content with its own padding */}
+      </div>
+    </Layout>
+  );
+}
+```
+
+### Layout Architecture
+
+The application now uses a proper layout architecture:
+
+1. **Layout Component** (`components/Layout/`): 
+   - Wraps the entire application
+   - Provides consistent structure across all pages
+   - Contains the Header component
+   - Content area for page-specific content
+   - Prepared for future Footer component
+
+2. **Header Component** (`components/Header/`):
+   - Full-width navigation bar
+   - Sticky positioning at top of viewport
+   - Contains My CRM logo/back button and profile menu
+   - No padding constraints from parent
+
+3. **Page Content**:
+   - Wrapped by Layout component
+   - Applies its own padding/spacing
+   - Independent from header/footer layout
+
+This separation ensures:
+- Header spans full viewport width
+- Content can have proper padding without affecting header
+- Easy to add footer in the future
+- Consistent layout across all pages
+- Clean component boundaries
+
+## Component Patterns
+
+### Current Architecture
+
+The application now uses a component-based architecture with reusable components in `src/components/`. The `App.tsx` contains the main application logic and uses the Header component for consistent navigation.
+
+### Future Component Organization
+
+```typescript
+// Future component structure
+components/
+├── common/           # Shared components (Button, Input, etc.) - Future
+├── layout/          # Layout components - DONE: Layout, Header, Dropdown
+│   ├── Layout/      # ✅ Main layout wrapper
+│   ├── Header/      # ✅ Header with navigation
+│   └── Footer/      # Future: Footer component
+├── features/        # Feature-specific components (future)
 │   ├── accounts/
 │   ├── contacts/
 │   └── tickets/
@@ -482,8 +580,8 @@ Output: `dist/` directory with optimized static files
 
 ### Planned Features
 
-1. **Theme Switcher**: Toggle between dark/light themes
-2. **Component Library**: Extract reusable components
+1. **Theme Switcher**: Toggle between dark/light themes (UI ready, needs implementation)
+2. ~~**Component Library**: Extract reusable components~~ ✅ **COMPLETED**
 3. **Form Management**: Add/edit accounts, contacts, tickets
 4. **Real API Integration**: Connect to backend API
 5. **State Management**: Add global state solution
@@ -495,13 +593,14 @@ Output: `dist/` directory with optimized static files
 
 ### Technical Debt
 
-- Extract components from App.tsx
-- Add comprehensive test coverage
+- ~~Extract components from App.tsx~~ ✅ **DONE** - Header component created
+- Add comprehensive test coverage (basic tests added for components)
 - Set up Prettier for code formatting
 - Add Storybook for component development
 - Implement proper error boundaries
 - Add loading states
 - Improve type safety (remove sample data types from App.tsx)
+- Complete theme switcher functionality in ProfileDropdown
 
 ## Resources
 

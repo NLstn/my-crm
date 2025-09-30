@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Layout } from './components/Layout/Layout';
 import './App.css';
 
 export type Account = {
@@ -56,85 +57,87 @@ function App() {
   );
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <h1>My CRM</h1>
-        <p>Track accounts, their contacts, and support tickets.</p>
-      </header>
+    <Layout>
+      <div className="app">
+        <header className="app__header">
+          <h1>My CRM</h1>
+          <p>Track accounts, their contacts, and support tickets.</p>
+        </header>
 
-      <main className="app__content">
-        <section className="panel">
-          <h2>Accounts</h2>
-          <ul className="list">
-            {sampleAccounts.map((account) => (
-              <li key={account.id}>
-                <button
-                  type="button"
-                  className={account.id === selectedAccountId ? 'list__item list__item--active' : 'list__item'}
-                  onClick={() => setSelectedAccountId(account.id)}
-                >
-                  <span className="list__item-title">{account.name}</span>
-                  <span className="list__item-subtitle">{account.industry}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <main className="app__content">
+          <section className="panel">
+            <h2>Accounts</h2>
+            <ul className="list">
+              {sampleAccounts.map((account) => (
+                <li key={account.id}>
+                  <button
+                    type="button"
+                    className={account.id === selectedAccountId ? 'list__item list__item--active' : 'list__item'}
+                    onClick={() => setSelectedAccountId(account.id)}
+                  >
+                    <span className="list__item-title">{account.name}</span>
+                    <span className="list__item-subtitle">{account.industry}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-        <section className="panel">
-          <h2>Contacts</h2>
-          {selectedAccountId ? (
-            accountContacts.length ? (
-              <ul className="list">
-                {accountContacts.map((contact) => (
-                  <li key={contact.id} className="list__item">
-                    <span className="list__item-title">{contact.fullName}</span>
-                    <span className="list__item-subtitle">{contact.email}</span>
-                  </li>
-                ))}
-              </ul>
+          <section className="panel">
+            <h2>Contacts</h2>
+            {selectedAccountId ? (
+              accountContacts.length ? (
+                <ul className="list">
+                  {accountContacts.map((contact) => (
+                    <li key={contact.id} className="list__item">
+                      <span className="list__item-title">{contact.fullName}</span>
+                      <span className="list__item-subtitle">{contact.email}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="placeholder">No contacts yet for this account.</p>
+              )
             ) : (
-              <p className="placeholder">No contacts yet for this account.</p>
-            )
-          ) : (
-            <p className="placeholder">Select an account to see contacts.</p>
-          )}
-        </section>
+              <p className="placeholder">Select an account to see contacts.</p>
+            )}
+          </section>
 
-        <section className="panel">
-          <h2>Tickets</h2>
-          {selectedAccountId ? (
-            accountTickets.length ? (
-              <ul className="list">
-                {accountTickets.map((ticket) => (
-                  <li key={ticket.id} className={`list__item ticket ticket--${ticket.status}`}>
-                    <span className="list__item-title">{ticket.title}</span>
-                    <span className="ticket__status">{ticket.status.replace('_', ' ')}</span>
-                  </li>
-                ))}
-              </ul>
+          <section className="panel">
+            <h2>Tickets</h2>
+            {selectedAccountId ? (
+              accountTickets.length ? (
+                <ul className="list">
+                  {accountTickets.map((ticket) => (
+                    <li key={ticket.id} className={`list__item ticket ticket--${ticket.status}`}>
+                      <span className="list__item-title">{ticket.title}</span>
+                      <span className="ticket__status">{ticket.status.replace('_', ' ')}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="placeholder">No tickets yet for this account.</p>
+              )
             ) : (
-              <p className="placeholder">No tickets yet for this account.</p>
-            )
-          ) : (
-            <p className="placeholder">Select an account to see tickets.</p>
-          )}
-        </section>
-      </main>
+              <p className="placeholder">Select an account to see tickets.</p>
+            )}
+          </section>
+        </main>
 
-      <aside className="app__sidebar">
-        {activeAccount ? (
-          <div className="sidebar__card">
-            <h3>{activeAccount.name}</h3>
-            <p>Industry: {activeAccount.industry}</p>
-            <p>Contacts: {accountContacts.length}</p>
-            <p>Open tickets: {accountTickets.filter((ticket) => ticket.status !== 'closed').length}</p>
-          </div>
-        ) : (
-          <p className="placeholder">Choose an account to see a quick summary.</p>
-        )}
-      </aside>
-    </div>
+        <aside className="app__sidebar">
+          {activeAccount ? (
+            <div className="sidebar__card">
+              <h3>{activeAccount.name}</h3>
+              <p>Industry: {activeAccount.industry}</p>
+              <p>Contacts: {accountContacts.length}</p>
+              <p>Open tickets: {accountTickets.filter((ticket) => ticket.status !== 'closed').length}</p>
+            </div>
+          ) : (
+            <p className="placeholder">Choose an account to see a quick summary.</p>
+          )}
+        </aside>
+      </div>
+    </Layout>
   );
 }
 

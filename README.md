@@ -29,6 +29,19 @@ npm run dev
 
 The Vite dev server runs on http://localhost:5173 by default and proxies API calls to the Go backend (configure as needed in future iterations).
 
+#### Component Library
+
+The frontend includes a reusable component library in `frontend/src/components/`:
+
+- **Layout**: Main layout wrapper with header and content structure
+- **Header**: Application header with My CRM logo and profile menu
+- **Dropdown**: Dropdown menu with keyboard navigation
+- **ProfileDropdown**: User profile menu with theme switcher (placeholder)
+
+The Layout component provides consistent page structure with a full-width header and is prepared for future footer integration.
+
+See `frontend/src/components/README.md` for detailed documentation on all components.
+
 ### Backend API server
 
 ```bash
