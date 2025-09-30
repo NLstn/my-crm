@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { act } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { DisplayAccount } from './DisplayAccount';
@@ -256,7 +257,9 @@ describe('DisplayAccount', () => {
     const backButton = screen.getByRole('button', { name: /back to search/i });
     expect(backButton).toBeDefined();
     
-    await user.click(backButton);
+    await act(async () => {
+      await user.click(backButton);
+    });
     
     // After clicking, we should navigate to search page
     expect(screen.getByText('Search Page')).toBeDefined();

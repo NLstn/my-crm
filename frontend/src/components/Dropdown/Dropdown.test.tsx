@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { act } from 'react';
 import userEvent from '@testing-library/user-event';
 import { Dropdown } from './Dropdown';
 
@@ -23,7 +24,9 @@ describe('Dropdown', () => {
 
     expect(screen.queryByText('Dropdown Content')).not.toBeInTheDocument();
     
-    await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
   });
 
@@ -35,10 +38,14 @@ describe('Dropdown', () => {
       </Dropdown>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
     
-    await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    });
     expect(screen.queryByText('Dropdown Content')).not.toBeInTheDocument();
   });
 
@@ -53,10 +60,14 @@ describe('Dropdown', () => {
       </div>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+    });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
     
-    await user.click(screen.getByRole('button', { name: 'Outside Button' }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Outside Button' }));
+    });
     expect(screen.queryByText('Dropdown Content')).not.toBeInTheDocument();
   });
 
@@ -69,10 +80,14 @@ describe('Dropdown', () => {
     );
 
     const trigger = screen.getByRole('button', { name: 'Open Menu' });
-    await user.click(trigger);
+    await act(async () => {
+      await user.click(trigger);
+    });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
     
-    await user.keyboard('{Escape}');
+    await act(async () => {
+      await user.keyboard('{Escape}');
+    });
     expect(screen.queryByText('Dropdown Content')).not.toBeInTheDocument();
   });
 });

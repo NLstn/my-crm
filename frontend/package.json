@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=false eslint --config .eslintrc.cjs \"src/**/*.{ts,tsx}\"",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "react": "^18.3.1",

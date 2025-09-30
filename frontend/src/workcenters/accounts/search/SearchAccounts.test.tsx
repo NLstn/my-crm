@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { act } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { SearchAccounts, Account } from './SearchAccounts';
@@ -38,7 +39,9 @@ describe('SearchAccounts', () => {
     renderWithRouter(<SearchAccounts accounts={mockAccounts} />);
     
     const searchInput = screen.getByPlaceholderText('Search by account name...');
-    await user.type(searchInput, 'Acme');
+    await act(async () => {
+      await user.type(searchInput, 'Acme');
+    });
     
     expect(screen.getByText('Results (1)')).toBeDefined();
     expect(screen.getByText('Acme Corp')).toBeDefined();
@@ -52,7 +55,9 @@ describe('SearchAccounts', () => {
     renderWithRouter(<SearchAccounts accounts={mockAccounts} />);
     
     const searchInput = screen.getByPlaceholderText('Search by account name...');
-    await user.type(searchInput, 'GLOBEX');
+    await act(async () => {
+      await user.type(searchInput, 'GLOBEX');
+    });
     
     expect(screen.getByText('Results (1)')).toBeDefined();
     expect(screen.getByText('Globex Corporation')).toBeDefined();
@@ -63,7 +68,9 @@ describe('SearchAccounts', () => {
     renderWithRouter(<SearchAccounts accounts={mockAccounts} />);
     
     const searchInput = screen.getByPlaceholderText('Search by account name...');
-    await user.type(searchInput, 'NonExistentCompany');
+    await act(async () => {
+      await user.type(searchInput, 'NonExistentCompany');
+    });
     
     expect(screen.getByText('Results (0)')).toBeDefined();
     expect(screen.getByText('No accounts found')).toBeDefined();
@@ -83,10 +90,14 @@ describe('SearchAccounts', () => {
     renderWithRouter(<SearchAccounts accounts={mockAccounts} />);
     
     const searchInput = screen.getByPlaceholderText('Search by account name...');
-    await user.type(searchInput, 'Acme');
+    await act(async () => {
+      await user.type(searchInput, 'Acme');
+    });
     expect(screen.getByText('Results (1)')).toBeDefined();
     
-    await user.clear(searchInput);
+    await act(async () => {
+      await user.clear(searchInput);
+    });
     expect(screen.getByText('Results (4)')).toBeDefined();
   });
 

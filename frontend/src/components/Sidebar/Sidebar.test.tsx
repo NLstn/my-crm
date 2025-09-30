@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { act } from 'react';
 import userEvent from '@testing-library/user-event';
 import { Sidebar, WorkCenter } from './Sidebar';
 
@@ -200,7 +201,9 @@ describe('Sidebar', () => {
       );
 
       const expandButton = screen.getByLabelText('Expand Accounts');
-      await user.click(expandButton);
+      await act(async () => {
+        await user.click(expandButton);
+      });
 
       expect(screen.getByText('Search Accounts')).toBeInTheDocument();
       expect(screen.getByText('Create Account')).toBeInTheDocument();
@@ -217,12 +220,16 @@ describe('Sidebar', () => {
       );
 
       const expandButton = screen.getByLabelText('Expand Accounts');
-      await user.click(expandButton);
+      await act(async () => {
+        await user.click(expandButton);
+      });
       
       expect(screen.getByText('Search Accounts')).toBeInTheDocument();
 
       const collapseButton = screen.getByLabelText('Collapse Accounts');
-      await user.click(collapseButton);
+      await act(async () => {
+        await user.click(collapseButton);
+      });
 
       expect(screen.queryByText('Search Accounts')).not.toBeInTheDocument();
     });
@@ -266,11 +273,15 @@ describe('Sidebar', () => {
 
       // First expand the parent
       const expandButton = screen.getByLabelText('Expand Accounts');
-      await user.click(expandButton);
+      await act(async () => {
+        await user.click(expandButton);
+      });
 
       // Then click the subitem
       const searchAccountsLink = screen.getByText('Search Accounts');
-      await user.click(searchAccountsLink);
+      await act(async () => {
+        await user.click(searchAccountsLink);
+      });
 
       expect(onNavigate).toHaveBeenCalledWith(
         expect.objectContaining({ 

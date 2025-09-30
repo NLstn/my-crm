@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { act } from 'react';
 import userEvent from '@testing-library/user-event';
 import { Header } from './Header';
 
@@ -45,7 +46,9 @@ describe('Header', () => {
     
     expect(screen.queryByText('Theme')).not.toBeInTheDocument();
     
-    await user.click(screen.getByLabelText('User menu'));
+    await act(async () => {
+      await user.click(screen.getByLabelText('User menu'));
+    });
     expect(screen.getByText('Theme')).toBeInTheDocument();
   });
 });

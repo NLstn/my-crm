@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { act } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { CreateAccount } from './CreateAccount';
@@ -39,7 +40,9 @@ describe('CreateAccount', () => {
     renderWithRouter(<CreateAccount onCreateAccount={mockOnCreateAccount} />);
 
     const submitButton = screen.getByRole('button', { name: /Create Account/i });
-    await user.click(submitButton);
+    await act(async () => {
+      await user.click(submitButton);
+    });
 
     expect(screen.getByText('Account name is required')).toBeDefined();
     expect(mockOnCreateAccount).not.toHaveBeenCalled();
@@ -54,8 +57,10 @@ describe('CreateAccount', () => {
     const nameInput = screen.getByLabelText(/Account Name/i);
     const submitButton = screen.getByRole('button', { name: /Create Account/i });
 
-    await user.type(nameInput, 'New Company');
-    await user.click(submitButton);
+    await act(async () => {
+      await user.type(nameInput, 'New Company');
+      await user.click(submitButton);
+    });
 
     expect(mockOnCreateAccount).toHaveBeenCalledWith('New Company');
     expect(mockNavigate).toHaveBeenCalledWith('/account/123');
@@ -70,8 +75,10 @@ describe('CreateAccount', () => {
     const nameInput = screen.getByLabelText(/Account Name/i);
     const submitButton = screen.getByRole('button', { name: /Create Account/i });
 
-    await user.type(nameInput, '  Test Account  ');
-    await user.click(submitButton);
+    await act(async () => {
+      await user.type(nameInput, '  Test Account  ');
+      await user.click(submitButton);
+    });
 
     expect(mockOnCreateAccount).toHaveBeenCalledWith('Test Account');
   });
@@ -81,12 +88,16 @@ describe('CreateAccount', () => {
     renderWithRouter(<CreateAccount onCreateAccount={mockOnCreateAccount} />);
 
     const submitButton = screen.getByRole('button', { name: /Create Account/i });
-    await user.click(submitButton);
+    await act(async () => {
+      await user.click(submitButton);
+    });
 
     expect(screen.getByText('Account name is required')).toBeDefined();
 
     const nameInput = screen.getByLabelText(/Account Name/i);
-    await user.type(nameInput, 'A');
+    await act(async () => {
+      await user.type(nameInput, 'A');
+    });
 
     expect(screen.queryByText('Account name is required')).toBeNull();
   });
