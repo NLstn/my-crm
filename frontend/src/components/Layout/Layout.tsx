@@ -19,6 +19,7 @@ const defaultWorkCenters: WorkCenter[] = [
     defaultPath: '/accounts/search',
     subItems: [
       { id: 'accounts-search', name: 'Search Accounts', path: '/accounts/search' },
+      { id: 'accounts-create', name: 'Create Account', path: '/accounts/create' },
     ]
   },
   { id: 'contacts', name: 'Contacts', icon: '📇', path: '/contacts' },

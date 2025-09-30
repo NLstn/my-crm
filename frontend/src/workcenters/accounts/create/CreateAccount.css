@@ -1,0 +1,142 @@
+.create-account {
+  padding: var(--spacing-lg);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.create-account__header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.create-account__title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.create-account__subtitle {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.create-account__form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+}
+
+.create-account__form-group {
+  margin-bottom: var(--spacing-xl);
+}
+
+.create-account__label {
+  display: block;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.create-account__required {
+  color: var(--color-error);
+}
+
+.create-account__input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+}
+
+.create-account__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.create-account__input--error {
+  border-color: var(--color-error);
+}
+
+.create-account__input--error:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.create-account__error-message {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+}
+
+.create-account__actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.create-account__button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.create-account__button--primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.create-account__button--primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.create-account__button--primary:active {
+  transform: translateY(1px);
+}
+
+.create-account__button--secondary {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.create-account__button--secondary:hover {
+  background: var(--color-background);
+}
+
+.create-account__button--secondary:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 768px) {
+  .create-account {
+    padding: var(--spacing-md);
+  }
+
+  .create-account__form {
+    padding: var(--spacing-lg);
+  }
+
+  .create-account__actions {
+    flex-direction: column-reverse;
+  }
+
+  .create-account__button {
+    width: 100%;
+  }
+}

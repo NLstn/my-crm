@@ -30,10 +30,21 @@ export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
   return (
     <div className="search-accounts">
       <div className="search-accounts__header">
-        <h1 className="search-accounts__title">Search Accounts</h1>
-        <p className="search-accounts__subtitle">
-          Find accounts by name
-        </p>
+        <div className="search-accounts__header-content">
+          <div>
+            <h1 className="search-accounts__title">Search Accounts</h1>
+            <p className="search-accounts__subtitle">
+              Find accounts by name
+            </p>
+          </div>
+          <button
+            type="button"
+            className="search-accounts__create-button"
+            onClick={() => navigate('/accounts/create')}
+          >
+            Create New Account
+          </button>
+        </div>
       </div>
 
       <div className="search-accounts__filters">

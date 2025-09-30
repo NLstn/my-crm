@@ -16,6 +16,13 @@
   gap: var(--spacing-sm);
 }
 
+.search-accounts__header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+}
+
 .search-accounts__title {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
@@ -27,6 +34,28 @@
   font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   margin: 0;
+}
+
+.search-accounts__create-button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.search-accounts__create-button:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-accounts__create-button:active {
+  transform: translateY(1px);
 }
 
 /* Filters */
@@ -215,6 +244,15 @@
   .search-accounts {
     padding: var(--spacing-lg);
     gap: var(--spacing-xl);
+  }
+
+  .search-accounts__header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-accounts__create-button {
+    width: 100%;
   }
 
   .search-accounts__title {
