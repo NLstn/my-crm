@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { Header } from './Header';
 
 describe('Header', () => {
+  it('renders menu button', () => {
+    render(<Header />);
+    expect(screen.getByLabelText('Open menu')).toBeInTheDocument();
+  });
+
   it('renders My CRM button', () => {
     render(<Header />);
     expect(screen.getByRole('button', { name: /my crm/i })).toBeInTheDocument();
@@ -14,6 +19,15 @@ describe('Header', () => {
     render(<Header />);
     expect(screen.getByLabelText('User menu')).toBeInTheDocument();
     expect(screen.getByText('NL')).toBeInTheDocument();
+  });
+
+  it('calls onMenuClick when menu button is clicked', async () => {
+    const user = userEvent.setup();
+    const onMenuClick = vi.fn();
+    render(<Header onMenuClick={onMenuClick} />);
+    
+    await user.click(screen.getByLabelText('Open menu'));
+    expect(onMenuClick).toHaveBeenCalledTimes(1);
   });
 
   it('calls onBackToDashboard when My CRM button is clicked', async () => {
