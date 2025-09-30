@@ -18,6 +18,10 @@ bin/
 *.out
 coverage/
 
+# Air (live reload)
+backend/tmp/
+backend/build-errors.log
+
 # IDEs and tooling
 .idea/
 .DS_Store
