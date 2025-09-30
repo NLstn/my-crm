@@ -4,8 +4,9 @@ import { Layout } from './components/Layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { SearchAccounts, DisplayAccount, CreateAccount } from './workcenters/accounts';
 import { SearchContacts, DisplayContact, CreateContact } from './workcenters/contacts';
+import { SearchTickets, DisplayTicket, CreateTicket } from './workcenters/tickets';
 import { sampleAccounts, sampleContacts, sampleTickets } from './pages/Dashboard';
-import type { Account, Contact } from './pages/Dashboard';
+import type { Account, Contact, Ticket } from './pages/Dashboard';
 import './App.css';
 
 // Re-export types for use in other parts of the app
@@ -15,6 +16,7 @@ function AppContent() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
   const [contacts, setContacts] = useState<Contact[]>(sampleContacts);
+  const [tickets, setTickets] = useState<Ticket[]>(sampleTickets);
 
   const handleBackToDashboard = () => {
     navigate('/');
@@ -55,6 +57,25 @@ function AppContent() {
     return newId;
   };
 
+  const handleCreateTicket = (title: string, accountId: string, status: 'open' | 'in_progress' | 'closed'): string => {
+    // Generate a new ID (max existing numeric ID + 1)
+    const maxId = tickets.reduce((max, ticket) => {
+      const numericId = parseInt(ticket.id.replace('tic-', ''), 10);
+      return Math.max(max, isNaN(numericId) ? 0 : numericId);
+    }, 0);
+    const newId = `tic-${maxId + 1}`;
+
+    const newTicket: Ticket = {
+      id: newId,
+      accountId,
+      title,
+      status,
+    };
+
+    setTickets([...tickets, newTicket]);
+    return newId;
+  };
+
   return (
     <Layout 
       onBackToDashboard={handleBackToDashboard}
@@ -68,7 +89,7 @@ function AppContent() {
           <DisplayAccount 
             accounts={accounts} 
             contacts={contacts} 
-            tickets={sampleTickets} 
+            tickets={tickets} 
           />
         } />
         <Route path="/contacts/search" element={<SearchContacts contacts={contacts} accounts={accounts} />} />
@@ -77,7 +98,16 @@ function AppContent() {
           <DisplayContact 
             contacts={contacts} 
             accounts={accounts} 
-            tickets={sampleTickets} 
+            tickets={tickets} 
+          />
+        } />
+        <Route path="/tickets/search" element={<SearchTickets tickets={tickets} accounts={accounts} />} />
+        <Route path="/tickets/create" element={<CreateTicket accounts={accounts} onCreateTicket={handleCreateTicket} />} />
+        <Route path="/ticket/:id" element={
+          <DisplayTicket 
+            tickets={tickets} 
+            accounts={accounts} 
+            contacts={contacts}
           />
         } />
       </Routes>
