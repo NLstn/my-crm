@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import '../App.css';
 
 export type Account = {
-  id: string;
+  id: number;
   name: string;
   industry: string;
 };
@@ -22,31 +22,31 @@ export type Ticket = {
 };
 
 const sampleAccounts: Account[] = [
-  { id: 'acc-1', name: 'Acme Corp', industry: 'Manufacturing' },
-  { id: 'acc-2', name: 'Globex', industry: 'Technology' }
+  { id: 1, name: 'Acme Corp', industry: 'Manufacturing' },
+  { id: 2, name: 'Globex', industry: 'Technology' }
 ];
 
 const sampleContacts: Contact[] = [
-  { id: 'con-1', accountId: 'acc-1', fullName: 'Jane Doe', email: 'jane@acme.test' },
-  { id: 'con-2', accountId: 'acc-1', fullName: 'John Smith', email: 'john@acme.test' },
-  { id: 'con-3', accountId: 'acc-2', fullName: 'Mary Major', email: 'mary@globex.test' }
+  { id: 'con-1', accountId: '1', fullName: 'Jane Doe', email: 'jane@acme.test' },
+  { id: 'con-2', accountId: '1', fullName: 'John Smith', email: 'john@acme.test' },
+  { id: 'con-3', accountId: '2', fullName: 'Mary Major', email: 'mary@globex.test' }
 ];
 
 const sampleTickets: Ticket[] = [
-  { id: 'tic-1', accountId: 'acc-1', title: 'Onboarding call', status: 'open' },
-  { id: 'tic-2', accountId: 'acc-2', title: 'Renewal contract review', status: 'in_progress' }
+  { id: 'tic-1', accountId: '1', title: 'Onboarding call', status: 'open' },
+  { id: 'tic-2', accountId: '2', title: 'Renewal contract review', status: 'in_progress' }
 ];
 
 export function Dashboard() {
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
   const accountContacts = useMemo(
-    () => sampleContacts.filter((contact) => contact.accountId === selectedAccountId),
+    () => sampleContacts.filter((contact) => contact.accountId === String(selectedAccountId)),
     [selectedAccountId]
   );
 
   const accountTickets = useMemo(
-    () => sampleTickets.filter((ticket) => ticket.accountId === selectedAccountId),
+    () => sampleTickets.filter((ticket) => ticket.accountId === String(selectedAccountId)),
     [selectedAccountId]
   );
 

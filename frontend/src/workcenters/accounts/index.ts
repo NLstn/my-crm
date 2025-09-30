@@ -1,2 +1,4 @@
-export { SearchAccounts } from './SearchAccounts';
-export type { SearchAccountsProps, Account } from './SearchAccounts';
+export { SearchAccounts } from './search';
+export type { SearchAccountsProps, Account } from './search';
+export { DisplayAccount } from './display';
+export type { DisplayAccountProps, Contact, Ticket } from './display';

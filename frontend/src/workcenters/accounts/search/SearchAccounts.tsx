@@ -1,8 +1,9 @@
 import { FC, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './SearchAccounts.css';
 
 export interface Account {
-  id: string;
+  id: number;
   name: string;
   industry: string;
 }
@@ -13,6 +14,7 @@ export interface SearchAccountsProps {
 
 export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
   const [searchName, setSearchName] = useState('');
+  const navigate = useNavigate();
 
   const filteredAccounts = useMemo(() => {
     if (!searchName.trim()) {
@@ -61,18 +63,23 @@ export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
           <ul className="search-accounts__list">
             {filteredAccounts.map((account) => (
               <li key={account.id} className="search-accounts__list-item">
-                <div className="search-accounts__account-card">
+                <button 
+                  className="search-accounts__account-card"
+                  onClick={() => navigate(`/account/${account.id}`)}
+                  type="button"
+                >
                   <div className="search-accounts__account-header">
                     <h3 className="search-accounts__account-name">
                       {account.name}
                     </h3>
+                    <span className="search-accounts__account-id">ID: {account.id}</span>
                   </div>
                   <div className="search-accounts__account-details">
                     <span className="search-accounts__account-industry">
                       {account.industry || 'No industry specified'}
                     </span>
                   </div>
-                </div>
+                </button>
               </li>
             ))}
           </ul>
