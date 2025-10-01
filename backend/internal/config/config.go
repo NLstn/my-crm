@@ -16,7 +16,6 @@ const (
 type Config struct {
 	Port        int
 	DatabaseURL string
-	DataBackend string
 }
 
 // Load reads configuration from environment variables.
@@ -33,14 +32,9 @@ func Load() Config {
 	}
 
 	dbURL := os.Getenv("DATABASE_URL")
-	repo := os.Getenv("DATA_BACKEND")
-	if repo == "" {
-		repo = "memory"
-	}
 
 	return Config{
 		Port:        port,
 		DatabaseURL: dbURL,
-		DataBackend: repo,
 	}
 }

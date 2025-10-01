@@ -46,11 +46,11 @@ See `frontend/src/components/README.md` for detailed documentation on all compon
 
 ```bash
 cd backend
-cp .env.sample .env # configure DATABASE_URL and DATA_BACKEND
+cp .env.sample .env # optionally configure DATABASE_URL
 go run ./cmd/server
 ```
 
-Set `DATA_BACKEND=postgres` and `DATABASE_URL=postgres://user:pass@localhost:5432/mycrm?sslmode=disable` to enable PostgreSQL persistence. When the variable is omitted, the server defaults to an in-memory store that is ideal for rapid prototyping and automated tests.
+The server uses an in-memory store by default, which is ideal for rapid prototyping and development. To enable PostgreSQL persistence, set `DATABASE_URL=postgres://user:pass@localhost:5432/mycrm?sslmode=disable` in your `.env` file.
 
 ### Database migrations
 
@@ -59,7 +59,7 @@ The `backend/migrations` directory contains SQL scripts for bootstrapping a Post
 ## Quality checks
 
 - `frontend`: ESLint (`npm run lint`) and Vitest (`npm run test`).
-- `backend`: `go vet ./...` and `go test ./...`.
+- `backend`: `go vet ./...` and `go test ./...`. Tests use an in-memory SQLite database for isolation.
 
 GitHub Actions runs these checks on every push and pull request targeting `main`.
 

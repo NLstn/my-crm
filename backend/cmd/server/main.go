@@ -20,12 +20,7 @@ func main() {
 	var repo repository.Repository
 	var cleanup func()
 
-	switch cfg.DataBackend {
-	case "postgres":
-		if cfg.DatabaseURL == "" {
-			log.Fatal("DATABASE_URL must be set when DATA_BACKEND=postgres")
-		}
-
+	if cfg.DatabaseURL != "" {
 		db, err := server.NewPostgresConnection(cfg.DatabaseURL)
 		if err != nil {
 			log.Fatalf("failed to connect to postgres: %v", err)
@@ -40,7 +35,7 @@ func main() {
 			}
 			_ = sqlDB.Close()
 		}
-	default:
+	} else {
 		repo = repository.NewMemoryRepository()
 		cleanup = func() {}
 	}

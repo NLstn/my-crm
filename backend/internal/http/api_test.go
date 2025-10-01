@@ -11,8 +11,8 @@ import (
 	"github.com/my-crm/backend/internal/repository"
 )
 
-func setupTestRouter() (*API, *repository.MemoryRepository, *http.ServeMux) {
-	repo := repository.NewMemoryRepository()
+func setupTestRouter(t *testing.T) (*API, repository.Repository, *http.ServeMux) {
+	repo := setupTestDB(t)
 	api := NewAPI(repo)
 	mux := http.NewServeMux()
 	api.RegisterRoutes(mux)
@@ -20,7 +20,7 @@ func setupTestRouter() (*API, *repository.MemoryRepository, *http.ServeMux) {
 }
 
 func TestHandleCreateAndSearchAccounts(t *testing.T) {
-	_, repo, router := setupTestRouter()
+	_, repo, router := setupTestRouter(t)
 
 	// Create first account
 	payload := map[string]string{
@@ -111,7 +111,7 @@ func TestHandleCreateAndSearchAccounts(t *testing.T) {
 }
 
 func TestHandleGetAccount(t *testing.T) {
-	_, repo, router := setupTestRouter()
+	_, repo, router := setupTestRouter(t)
 
 	// Create an account
 	account, err := repo.CreateAccount(context.Background(), repository.CreateAccountInput{
@@ -147,7 +147,7 @@ func TestHandleGetAccount(t *testing.T) {
 }
 
 func TestHandleGetAccountNotFound(t *testing.T) {
-	_, _, router := setupTestRouter()
+	_, _, router := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/accounts/non-existent-id", nil)
 	resp := httptest.NewRecorder()
@@ -160,7 +160,7 @@ func TestHandleGetAccountNotFound(t *testing.T) {
 }
 
 func TestHandleCreateAccountValidation(t *testing.T) {
-	_, _, router := setupTestRouter()
+	_, _, router := setupTestRouter(t)
 
 	// Test missing name
 	payload := map[string]string{

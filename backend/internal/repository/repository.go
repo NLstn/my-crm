@@ -293,9 +293,9 @@ func (r *PostgresRepository) SearchAccounts(ctx context.Context, query string) (
 			return nil, err
 		}
 	} else {
-		// Search in name, industry, and displayId fields using ILIKE for case-insensitive matching
+		// Search in name and industry fields using LOWER for database-agnostic case-insensitive matching
 		searchPattern := "%" + query + "%"
-		if err := db.Where("name ILIKE ? OR industry ILIKE ? OR display_id ILIKE ?", searchPattern, searchPattern, searchPattern).
+		if err := db.Where("LOWER(name) LIKE LOWER(?) OR LOWER(industry) LIKE LOWER(?)", searchPattern, searchPattern).
 			Order("created_at DESC").
 			Find(&accounts).Error; err != nil {
 			return nil, err
