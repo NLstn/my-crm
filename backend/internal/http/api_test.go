@@ -180,7 +180,7 @@ func TestHandleCreateAccountValidation(t *testing.T) {
 }
 
 func TestHandleSearchContacts(t *testing.T) {
-	_, repo, router := setupTestRouter()
+	_, repo, router := setupTestRouter(t)
 
 	// Create test accounts
 	account1, err := repo.CreateAccount(context.Background(), repository.CreateAccountInput{
@@ -288,4 +288,3 @@ func TestHandleSearchContacts(t *testing.T) {
 		t.Fatalf("expected contact name 'Jane Smith', got %v", emailContacts[0]["fullName"])
 	}
 }
-
