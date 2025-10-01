@@ -1,29 +1,45 @@
-import { FC, useState, useMemo } from 'react';
+import { FC, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
+import { accountsApi, ticketsApi } from '../../../api';
+import { Account, Ticket } from '../../../types';
 import './SearchTickets.css';
 
-export interface Account {
-  id: number;
-  name: string;
-}
-
-export interface Ticket {
-  id: string;
-  accountId: string;
-  title: string;
-  status: 'open' | 'in_progress' | 'closed';
-}
-
-export interface SearchTicketsProps {
-  tickets: Ticket[];
-  accounts: Account[];
-}
-
-export const SearchTickets: FC<SearchTicketsProps> = ({ tickets, accounts }) => {
+export const SearchTickets: FC = () => {
   const [searchTitle, setSearchTitle] = useState('');
   const [searchStatus, setSearchStatus] = useState<string>('');
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const accountsData = await accountsApi.search();
+        setAccounts(accountsData);
+        
+        // Fetch tickets for all accounts
+        const ticketsPromises = accountsData.map((account: Account) => 
+          ticketsApi.getByAccount(account.id)
+        );
+        const ticketsArrays = await Promise.all(ticketsPromises);
+        const allTickets = ticketsArrays.flat();
+        setTickets(allTickets);
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load tickets. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredTickets = useMemo(() => {
     let result = tickets;
@@ -43,9 +59,25 @@ export const SearchTickets: FC<SearchTicketsProps> = ({ tickets, accounts }) => 
   }, [tickets, searchTitle, searchStatus]);
 
   const getAccountName = (accountId: string): string => {
-    const account = accounts.find(acc => acc.id === parseInt(accountId, 10));
+    const account = accounts.find(acc => acc.id === accountId);
     return account ? account.name : 'Unknown Account';
   };
+
+  if (loading) {
+    return (
+      <div className="search-tickets">
+        <div className="search-tickets__loading">Loading tickets...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="search-tickets">
+        <div className="search-tickets__error">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="search-tickets">

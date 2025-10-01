@@ -1,18 +1,15 @@
-import { useState } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { SearchAccounts, DisplayAccount, CreateAccount } from './workcenters/accounts';
-import { SearchContacts, DisplayContact, CreateContact } from './workcenters/contacts';
-import { SearchTickets, DisplayTicket, CreateTicket } from './workcenters/tickets';
-import { sampleAccounts, sampleContacts, sampleTickets } from './pages/Dashboard';
-import type { Contact, Ticket } from './pages/Dashboard';
+import { DisplayContact, CreateContact } from './workcenters/contacts';
+import { SearchContacts } from './workcenters/contacts/search/SearchContacts';
+import { DisplayTicket, CreateTicket } from './workcenters/tickets';
+import { SearchTickets } from './workcenters/tickets/search/SearchTickets';
 import './App.css';
 
 function AppContent() {
   const navigate = useNavigate();
-  const [contacts, setContacts] = useState<Contact[]>(sampleContacts);
-  const [tickets, setTickets] = useState<Ticket[]>(sampleTickets);
 
   const handleBackToDashboard = () => {
     navigate('/');
@@ -20,41 +17,6 @@ function AppContent() {
 
   const handleNavigate = (workCenter: { path: string }) => {
     navigate(workCenter.path);
-  };
-
-  const handleCreateContact = (fullName: string, email: string, accountId: string): number => {
-    // Generate a new ID (max existing ID + 1)
-    const maxId = contacts.reduce((max, contact) => Math.max(max, contact.id), 0);
-    const newId = maxId + 1;
-
-    const newContact: Contact = {
-      id: newId,
-      accountId,
-      fullName,
-      email,
-    };
-
-    setContacts([...contacts, newContact]);
-    return newId;
-  };
-
-  const handleCreateTicket = (title: string, accountId: string, status: 'open' | 'in_progress' | 'closed'): string => {
-    // Generate a new ID (max existing numeric ID + 1)
-    const maxId = tickets.reduce((max, ticket) => {
-      const numericId = parseInt(ticket.id.replace('tic-', ''), 10);
-      return Math.max(max, isNaN(numericId) ? 0 : numericId);
-    }, 0);
-    const newId = `tic-${maxId + 1}`;
-
-    const newTicket: Ticket = {
-      id: newId,
-      accountId,
-      title,
-      status,
-    };
-
-    setTickets([...tickets, newTicket]);
-    return newId;
   };
 
   return (
@@ -67,24 +29,12 @@ function AppContent() {
         <Route path="/accounts/search" element={<SearchAccounts />} />
         <Route path="/accounts/create" element={<CreateAccount />} />
         <Route path="/account/:id" element={<DisplayAccount />} />
-        <Route path="/contacts/search" element={<SearchContacts contacts={contacts} accounts={sampleAccounts} />} />
-        <Route path="/contacts/create" element={<CreateContact accounts={sampleAccounts} onCreateContact={handleCreateContact} />} />
-        <Route path="/contact/:id" element={
-          <DisplayContact 
-            contacts={contacts} 
-            accounts={sampleAccounts} 
-            tickets={tickets} 
-          />
-        } />
-        <Route path="/tickets/search" element={<SearchTickets tickets={tickets} accounts={sampleAccounts} />} />
-        <Route path="/tickets/create" element={<CreateTicket accounts={sampleAccounts} onCreateTicket={handleCreateTicket} />} />
-        <Route path="/ticket/:id" element={
-          <DisplayTicket 
-            tickets={tickets} 
-            accounts={sampleAccounts} 
-            contacts={contacts}
-          />
-        } />
+        <Route path="/contacts/search" element={<SearchContacts />} />
+        <Route path="/contacts/create" element={<CreateContact />} />
+        <Route path="/contact/:id" element={<DisplayContact />} />
+        <Route path="/tickets/search" element={<SearchTickets />} />
+        <Route path="/tickets/create" element={<CreateTicket />} />
+        <Route path="/ticket/:id" element={<DisplayTicket />} />
       </Routes>
     </Layout>
   );

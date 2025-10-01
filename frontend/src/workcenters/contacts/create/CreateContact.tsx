@@ -1,26 +1,38 @@
-import { FC, FormEvent, useState } from 'react';
+import { FC, FormEvent, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
+import { accountsApi, contactsApi } from '../../../api';
+import type { Account } from '../../../types';
 import './CreateContact.css';
 
-export interface Account {
-  id: number;
-  name: string;
-}
+export interface CreateContactProps {}
 
-export interface CreateContactProps {
-  accounts: Account[];
-  onCreateContact: (fullName: string, email: string, accountId: string) => number;
-}
-
-export const CreateContact: FC<CreateContactProps> = ({ accounts, onCreateContact }) => {
+export const CreateContact: FC<CreateContactProps> = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [accountId, setAccountId] = useState('');
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ fullName?: string; email?: string; accountId?: string }>({});
   const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent) => {
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const data = await accountsApi.search();
+        setAccounts(data);
+      } catch (err) {
+        console.error('Failed to load accounts:', err);
+      } finally {
+        setIsLoadingAccounts(false);
+      }
+    };
+
+    loadAccounts();
+  }, []);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     // Validate fields
@@ -48,11 +60,23 @@ export const CreateContact: FC<CreateContactProps> = ({ accounts, onCreateContac
     // Clear any previous errors
     setErrors({});
 
-    // Create the contact and get the new ID
-    const newContactId = onCreateContact(fullName.trim(), email.trim(), accountId);
+    try {
+      setIsSubmitting(true);
+      
+      // Create the contact via API
+      const newContact = await contactsApi.create(accountId, {
+        fullName: fullName.trim(),
+        email: email.trim()
+      });
 
-    // Navigate to the display contact workcenter
-    navigate(`/contact/${newContactId}`);
+      // Navigate to the display contact workcenter
+      navigate(`/contact/${newContact.id}`);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create contact';
+      setErrors({ accountId: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -60,9 +84,19 @@ export const CreateContact: FC<CreateContactProps> = ({ accounts, onCreateContac
   };
 
   const accountOptions = accounts.map(account => ({
-    value: String(account.id),
+    value: account.id,
     label: account.name,
   }));
+
+  if (isLoadingAccounts) {
+    return (
+      <div className="create-contact">
+        <div className="create-contact__loading">
+          <p>Loading accounts...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="create-contact">
@@ -134,14 +168,16 @@ export const CreateContact: FC<CreateContactProps> = ({ accounts, onCreateContac
             type="button"
             variant="secondary"
             onClick={handleCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="primary"
+            disabled={isSubmitting}
           >
-            Create Contact
+            {isSubmitting ? 'Creating...' : 'Create Contact'}
           </Button>
         </div>
       </form>

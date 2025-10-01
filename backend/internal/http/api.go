@@ -25,6 +25,10 @@ func (a *API) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /accounts", a.handleSearchAccounts)
 	mux.HandleFunc("POST /accounts", a.handleCreateAccount)
 	mux.HandleFunc("GET /accounts/{accountID}", a.handleGetAccount)
+	mux.HandleFunc("GET /accounts/{accountID}/contacts", a.handleGetContactsByAccount)
+	mux.HandleFunc("POST /accounts/{accountID}/contacts", a.handleCreateContact)
+	mux.HandleFunc("GET /accounts/{accountID}/tickets", a.handleGetTicketsByAccount)
+	mux.HandleFunc("POST /accounts/{accountID}/tickets", a.handleCreateTicket)
 }
 
 type healthResponse struct {
@@ -128,5 +132,220 @@ func toAccountResponse(account domain.Account) accountResponse {
 		Industry:  account.Industry,
 		CreatedAt: account.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: account.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+}
+
+type contactResponse struct {
+	ID        string `json:"id"`
+	AccountID string `json:"accountId"`
+	FullName  string `json:"fullName"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+type ticketResponse struct {
+	ID        string `json:"id"`
+	AccountID string `json:"accountId"`
+	Title     string `json:"title"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+func (a *API) handleGetContactsByAccount(w http.ResponseWriter, r *http.Request) {
+	accountID := r.PathValue("accountID")
+	if accountID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "accountID is required"})
+		return
+	}
+
+	// Verify account exists
+	_, err := a.repo.GetAccount(r.Context(), accountID)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "account not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	contacts, err := a.repo.GetContactsByAccount(r.Context(), accountID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toContactResponses(contacts))
+}
+
+type createContactRequest struct {
+	FullName string `json:"fullName"`
+	Email    string `json:"email"`
+}
+
+func (a *API) handleCreateContact(w http.ResponseWriter, r *http.Request) {
+	accountID := r.PathValue("accountID")
+	if accountID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "accountID is required"})
+		return
+	}
+
+	// Verify account exists
+	_, err := a.repo.GetAccount(r.Context(), accountID)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "account not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	var req createContactRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid payload"})
+		return
+	}
+
+	if req.FullName == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "fullName is required"})
+		return
+	}
+
+	if req.Email == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "email is required"})
+		return
+	}
+
+	contact, err := a.repo.CreateContact(r.Context(), repository.CreateContactInput{
+		AccountID: accountID,
+		FullName:  req.FullName,
+		Email:     req.Email,
+	})
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, toContactResponse(contact))
+}
+
+func (a *API) handleGetTicketsByAccount(w http.ResponseWriter, r *http.Request) {
+	accountID := r.PathValue("accountID")
+	if accountID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "accountID is required"})
+		return
+	}
+
+	// Verify account exists
+	_, err := a.repo.GetAccount(r.Context(), accountID)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "account not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	tickets, err := a.repo.GetTicketsByAccount(r.Context(), accountID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toTicketResponses(tickets))
+}
+
+type createTicketRequest struct {
+	Title  string `json:"title"`
+	Status string `json:"status"`
+}
+
+func (a *API) handleCreateTicket(w http.ResponseWriter, r *http.Request) {
+	accountID := r.PathValue("accountID")
+	if accountID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "accountID is required"})
+		return
+	}
+
+	// Verify account exists
+	_, err := a.repo.GetAccount(r.Context(), accountID)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "account not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	var req createTicketRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid payload"})
+		return
+	}
+
+	if req.Title == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "title is required"})
+		return
+	}
+
+	// Default to "open" if no status provided
+	status := req.Status
+	if status == "" {
+		status = "open"
+	}
+
+	ticket, err := a.repo.CreateTicket(r.Context(), repository.CreateTicketInput{
+		AccountID: accountID,
+		Title:     req.Title,
+		Status:    status,
+	})
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, toTicketResponse(ticket))
+}
+
+func toContactResponses(contacts []domain.Contact) []contactResponse {
+	res := make([]contactResponse, 0, len(contacts))
+	for _, contact := range contacts {
+		res = append(res, toContactResponse(contact))
+	}
+	return res
+}
+
+func toContactResponse(contact domain.Contact) contactResponse {
+	return contactResponse{
+		ID:        contact.ID,
+		AccountID: contact.AccountID,
+		FullName:  contact.FullName,
+		Email:     contact.Email,
+		CreatedAt: contact.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: contact.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+}
+
+func toTicketResponses(tickets []domain.Ticket) []ticketResponse {
+	res := make([]ticketResponse, 0, len(tickets))
+	for _, ticket := range tickets {
+		res = append(res, toTicketResponse(ticket))
+	}
+	return res
+}
+
+func toTicketResponse(ticket domain.Ticket) ticketResponse {
+	return ticketResponse{
+		ID:        ticket.ID,
+		AccountID: ticket.AccountID,
+		Title:     ticket.Title,
+		Status:    ticket.Status,
+		CreatedAt: ticket.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: ticket.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }

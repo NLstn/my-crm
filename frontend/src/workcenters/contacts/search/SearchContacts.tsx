@@ -1,29 +1,45 @@
-import { FC, useState, useMemo } from 'react';
+import { FC, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
+import { accountsApi, contactsApi } from '../../../api';
+import { Account, Contact } from '../../../types';
 import './SearchContacts.css';
 
-export interface Account {
-  id: number;
-  name: string;
-}
-
-export interface Contact {
-  id: number;
-  accountId: string;
-  fullName: string;
-  email: string;
-}
-
-export interface SearchContactsProps {
-  contacts: Contact[];
-  accounts: Account[];
-}
-
-export const SearchContacts: FC<SearchContactsProps> = ({ contacts, accounts }) => {
+export const SearchContacts: FC = () => {
   const [searchName, setSearchName] = useState('');
   const [searchEmail, setSearchEmail] = useState('');
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const accountsData = await accountsApi.search();
+        setAccounts(accountsData);
+        
+        // Fetch contacts for all accounts
+        const contactsPromises = accountsData.map((account: Account) => 
+          contactsApi.getByAccount(account.id)
+        );
+        const contactsArrays = await Promise.all(contactsPromises);
+        const allContacts = contactsArrays.flat();
+        setContacts(allContacts);
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load contacts. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredContacts = useMemo(() => {
     let result = contacts;
@@ -46,9 +62,25 @@ export const SearchContacts: FC<SearchContactsProps> = ({ contacts, accounts }) 
   }, [contacts, searchName, searchEmail]);
 
   const getAccountName = (accountId: string): string => {
-    const account = accounts.find(acc => acc.id === parseInt(accountId, 10));
+    const account = accounts.find(acc => acc.id === accountId);
     return account ? account.name : 'Unknown Account';
   };
+
+  if (loading) {
+    return (
+      <div className="search-contacts">
+        <div className="search-contacts__loading">Loading contacts...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="search-contacts">
+        <div className="search-contacts__error">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="search-contacts">

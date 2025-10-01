@@ -1,26 +1,38 @@
-import { FC, FormEvent, useState } from 'react';
+import { FC, FormEvent, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
+import { accountsApi, ticketsApi } from '../../../api';
+import type { Account } from '../../../types';
 import './CreateTicket.css';
 
-export interface Account {
-  id: number;
-  name: string;
-}
+export interface CreateTicketProps {}
 
-export interface CreateTicketProps {
-  accounts: Account[];
-  onCreateTicket: (title: string, accountId: string, status: 'open' | 'in_progress' | 'closed') => string;
-}
-
-export const CreateTicket: FC<CreateTicketProps> = ({ accounts, onCreateTicket }) => {
+export const CreateTicket: FC<CreateTicketProps> = () => {
   const [title, setTitle] = useState('');
   const [accountId, setAccountId] = useState('');
-  const [status, setStatus] = useState<'open' | 'in_progress' | 'closed'>('open');
+  const [status, setStatus] = useState<string>('open');
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; accountId?: string }>({});
   const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent) => {
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const data = await accountsApi.search();
+        setAccounts(data);
+      } catch (err) {
+        console.error('Failed to load accounts:', err);
+      } finally {
+        setIsLoadingAccounts(false);
+      }
+    };
+
+    loadAccounts();
+  }, []);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     // Validate fields
@@ -42,11 +54,23 @@ export const CreateTicket: FC<CreateTicketProps> = ({ accounts, onCreateTicket }
     // Clear any previous errors
     setErrors({});
 
-    // Create the ticket and get the new ID
-    const newTicketId = onCreateTicket(title.trim(), accountId, status);
+    try {
+      setIsSubmitting(true);
+      
+      // Create the ticket via API
+      const newTicket = await ticketsApi.create(accountId, {
+        title: title.trim(),
+        status: status
+      });
 
-    // Navigate to the display ticket workcenter
-    navigate(`/ticket/${newTicketId}`);
+      // Navigate to the display ticket workcenter
+      navigate(`/ticket/${newTicket.id}`);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create ticket';
+      setErrors({ accountId: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -54,9 +78,19 @@ export const CreateTicket: FC<CreateTicketProps> = ({ accounts, onCreateTicket }
   };
 
   const accountOptions = accounts.map(account => ({
-    value: String(account.id),
+    value: account.id,
     label: account.name,
   }));
+
+  if (isLoadingAccounts) {
+    return (
+      <div className="create-ticket">
+        <div className="create-ticket__loading">
+          <p>Loading accounts...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="create-ticket">
@@ -116,7 +150,7 @@ export const CreateTicket: FC<CreateTicketProps> = ({ accounts, onCreateTicket }
             id="ticket-status"
             className="create-ticket__select"
             value={status}
-            onChange={(e) => setStatus(e.target.value as 'open' | 'in_progress' | 'closed')}
+            onChange={(e) => setStatus(e.target.value)}
             required
           >
             <option value="open">Open</option>
@@ -130,14 +164,16 @@ export const CreateTicket: FC<CreateTicketProps> = ({ accounts, onCreateTicket }
             type="button"
             variant="secondary"
             onClick={handleCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="primary"
+            disabled={isSubmitting}
           >
-            Create Ticket
+            {isSubmitting ? 'Creating...' : 'Create Ticket'}
           </Button>
         </div>
       </form>

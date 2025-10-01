@@ -1,47 +1,90 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { accountsApi, contactsApi, ticketsApi } from '../../../api';
+import type { Account, Ticket } from '../../../types';
 import './DisplayContact.css';
 
-export interface Account {
-  id: number;
-  name: string;
-  industry: string;
-}
+export interface DisplayContactProps {}
 
-export interface Contact {
-  id: number;
-  accountId: string;
-  fullName: string;
-  email: string;
-}
-
-export interface Ticket {
-  id: string;
-  accountId: string;
-  title: string;
-  status: 'open' | 'in_progress' | 'closed';
-}
-
-export interface DisplayContactProps {
-  contacts: Contact[];
-  accounts: Account[];
-  tickets: Ticket[];
-}
-
-export const DisplayContact: FC<DisplayContactProps> = ({ contacts, accounts, tickets }) => {
+export const DisplayContact: FC<DisplayContactProps> = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  const contactId = id ? parseInt(id, 10) : null;
-  const contact = contacts.find(cont => cont.id === contactId);
+  const [contact, setContact] = useState<{ id: string; accountId: string; fullName: string; email: string } | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!contact) {
+  useEffect(() => {
+    const loadData = async () => {
+      if (!id) {
+        setError('No contact ID provided');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // For now, we need to fetch all accounts and their contacts to find this contact
+        // In a real app, you'd have a GET /contacts/{id} endpoint
+        const accounts = await accountsApi.search();
+        
+        let foundContact = null;
+        let foundAccount = null;
+        
+        for (const acc of accounts) {
+          try {
+            const contacts = await contactsApi.getByAccount(acc.id);
+            const match = contacts.find(c => c.id === id);
+            if (match) {
+              foundContact = match;
+              foundAccount = acc;
+              break;
+            }
+          } catch (err) {
+            // Continue searching other accounts
+            console.error(`Error fetching contacts for account ${acc.id}:`, err);
+          }
+        }
+
+        if (!foundContact || !foundAccount) {
+          setError('Contact not found');
+          setIsLoading(false);
+          return;
+        }
+
+        setContact(foundContact);
+        setAccount(foundAccount);
+
+        // Fetch tickets for the account
+        const ticketsData = await ticketsApi.getByAccount(foundAccount.id);
+        setTickets(ticketsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load contact');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="display-contact">
+        <div className="display-contact__loading">
+          <p>Loading contact...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !contact) {
     return (
       <div className="display-contact">
         <div className="display-contact__error">
-          <h1 className="display-contact__error-title">Contact Not Found</h1>
+          <h1 className="display-contact__error-title">{error || 'Contact Not Found'}</h1>
           <p className="display-contact__error-subtitle">
-            The contact with ID {id} could not be found.
+            {error || `The contact with ID ${id} could not be found.`}
           </p>
           <button 
             className="display-contact__back-button"
@@ -54,9 +97,7 @@ export const DisplayContact: FC<DisplayContactProps> = ({ contacts, accounts, ti
     );
   }
 
-  const account = accounts.find(acc => acc.id === parseInt(contact.accountId, 10));
-  const accountTickets = tickets.filter(ticket => ticket.accountId === contact.accountId);
-  const openTickets = accountTickets.filter(ticket => ticket.status !== 'closed');
+  const openTickets = tickets.filter(ticket => ticket.status !== 'closed');
 
   return (
     <div className="display-contact">
@@ -97,7 +138,7 @@ export const DisplayContact: FC<DisplayContactProps> = ({ contacts, accounts, ti
 
       <div className="display-contact__summary">
         <div className="display-contact__summary-card">
-          <div className="display-contact__summary-value">{accountTickets.length}</div>
+          <div className="display-contact__summary-value">{tickets.length}</div>
           <div className="display-contact__summary-label">Account Tickets</div>
         </div>
         <div className="display-contact__summary-card">
@@ -109,9 +150,9 @@ export const DisplayContact: FC<DisplayContactProps> = ({ contacts, accounts, ti
       <div className="display-contact__content">
         <section className="display-contact__section">
           <h2 className="display-contact__section-title">Account Tickets</h2>
-          {accountTickets.length > 0 ? (
+          {tickets.length > 0 ? (
             <ul className="display-contact__list">
-              {accountTickets.map((ticket) => (
+              {tickets.map((ticket) => (
                 <li key={ticket.id} className="display-contact__list-item">
                   <div className="display-contact__ticket-card">
                     <div className="display-contact__ticket-header">

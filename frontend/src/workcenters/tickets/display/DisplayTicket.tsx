@@ -1,46 +1,94 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { accountsApi, contactsApi, ticketsApi } from '../../../api';
+import type { Account, Contact, Ticket } from '../../../types';
 import './DisplayTicket.css';
 
-export interface Account {
-  id: number;
-  name: string;
-  industry: string;
-}
+export interface DisplayTicketProps {}
 
-export interface Contact {
-  id: number;
-  accountId: string;
-  fullName: string;
-  email: string;
-}
-
-export interface Ticket {
-  id: string;
-  accountId: string;
-  title: string;
-  status: 'open' | 'in_progress' | 'closed';
-}
-
-export interface DisplayTicketProps {
-  tickets: Ticket[];
-  accounts: Account[];
-  contacts: Contact[];
-}
-
-export const DisplayTicket: FC<DisplayTicketProps> = ({ tickets, accounts, contacts }) => {
+export const DisplayTicket: FC<DisplayTicketProps> = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  const ticket = tickets.find(t => t.id === id);
+  const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!ticket) {
+  useEffect(() => {
+    const loadData = async () => {
+      if (!id) {
+        setError('No ticket ID provided');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch all accounts and their tickets to find this ticket
+        const accounts = await accountsApi.search();
+        
+        let foundTicket = null;
+        let foundAccount = null;
+        
+        for (const acc of accounts) {
+          try {
+            const ticketsData = await ticketsApi.getByAccount(acc.id);
+            const match = ticketsData.find(t => t.id === id);
+            if (match) {
+              foundTicket = match;
+              foundAccount = acc;
+              break;
+            }
+          } catch (err) {
+            console.error(`Error fetching tickets for account ${acc.id}:`, err);
+          }
+        }
+
+        if (!foundTicket || !foundAccount) {
+          setError('Ticket not found');
+          setIsLoading(false);
+          return;
+        }
+
+        setTicket(foundTicket);
+        setAccount(foundAccount);
+
+        // Fetch contacts and all tickets for the account
+        const [contactsData, allTicketsData] = await Promise.all([
+          contactsApi.getByAccount(foundAccount.id),
+          ticketsApi.getByAccount(foundAccount.id)
+        ]);
+        
+        setContacts(contactsData);
+        setTickets(allTicketsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load ticket');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="display-ticket">
+        <div className="display-ticket__loading">
+          <p>Loading ticket...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !ticket) {
     return (
       <div className="display-ticket">
         <div className="display-ticket__error">
-          <h1 className="display-ticket__error-title">Ticket Not Found</h1>
+          <h1 className="display-ticket__error-title">{error || 'Ticket Not Found'}</h1>
           <p className="display-ticket__error-subtitle">
-            The ticket with ID {id} could not be found.
+            {error || `The ticket with ID ${id} could not be found.`}
           </p>
           <button 
             className="display-ticket__back-button"
@@ -53,10 +101,7 @@ export const DisplayTicket: FC<DisplayTicketProps> = ({ tickets, accounts, conta
     );
   }
 
-  const account = accounts.find(acc => acc.id === parseInt(ticket.accountId, 10));
-  const accountContacts = contacts.filter(contact => contact.accountId === ticket.accountId);
-  const accountTickets = tickets.filter(t => t.accountId === ticket.accountId);
-  const openTickets = accountTickets.filter(t => t.status !== 'closed');
+  const openTickets = tickets.filter(t => t.status !== 'closed');
 
   return (
     <div className="display-ticket">
@@ -101,11 +146,11 @@ export const DisplayTicket: FC<DisplayTicketProps> = ({ tickets, accounts, conta
 
       <div className="display-ticket__summary">
         <div className="display-ticket__summary-card">
-          <div className="display-ticket__summary-value">{accountContacts.length}</div>
+          <div className="display-ticket__summary-value">{contacts.length}</div>
           <div className="display-ticket__summary-label">Account Contacts</div>
         </div>
         <div className="display-ticket__summary-card">
-          <div className="display-ticket__summary-value">{accountTickets.length}</div>
+          <div className="display-ticket__summary-value">{tickets.length}</div>
           <div className="display-ticket__summary-label">Total Tickets</div>
         </div>
         <div className="display-ticket__summary-card">
@@ -117,9 +162,9 @@ export const DisplayTicket: FC<DisplayTicketProps> = ({ tickets, accounts, conta
       <div className="display-ticket__content">
         <section className="display-ticket__section">
           <h2 className="display-ticket__section-title">Account Contacts</h2>
-          {accountContacts.length > 0 ? (
+          {contacts.length > 0 ? (
             <ul className="display-ticket__list">
-              {accountContacts.map((contact) => (
+              {contacts.map((contact) => (
                 <li key={contact.id} className="display-ticket__list-item">
                   <button
                     className="display-ticket__contact-card"
@@ -147,9 +192,9 @@ export const DisplayTicket: FC<DisplayTicketProps> = ({ tickets, accounts, conta
 
         <section className="display-ticket__section">
           <h2 className="display-ticket__section-title">Other Account Tickets</h2>
-          {accountTickets.filter(t => t.id !== ticket.id).length > 0 ? (
+          {tickets.filter(t => t.id !== ticket.id).length > 0 ? (
             <ul className="display-ticket__list">
-              {accountTickets
+              {tickets
                 .filter(t => t.id !== ticket.id)
                 .map((otherTicket) => (
                   <li key={otherTicket.id} className="display-ticket__list-item">

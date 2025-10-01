@@ -1,1 +1,8 @@
-export type { Account, CreateAccountInput } from './account';
+export type { 
+  Account, 
+  CreateAccountInput,
+  Contact,
+  CreateContactInput,
+  Ticket,
+  CreateTicketInput
+} from './account';
