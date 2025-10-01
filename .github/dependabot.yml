@@ -1,0 +1,61 @@
+# Dependabot configuration for My CRM monorepo
+# Updates GitHub Actions, frontend npm packages, and backend Go modules
+version: 2
+updates:
+  # GitHub Actions - Keep workflow actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Frontend npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    # Group minor and patch updates together to reduce PR noise
+    groups:
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Backend Go modules
+  - package-ecosystem: "gomod"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Group minor and patch updates together to reduce PR noise
+    groups:
+      go-dependencies:
+        update-types:
+          - "minor"
+          - "patch"
