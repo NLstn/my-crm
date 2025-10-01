@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"testing"
 
 	"gorm.io/driver/sqlite"
@@ -33,8 +32,6 @@ func setupTestDB(t *testing.T) repository.Repository {
 	); err != nil {
 		t.Fatalf("failed to migrate test database: %v", err)
 	}
-
-	log.Printf("test database initialized successfully")
 
 	return repository.NewPostgresRepository(db)
 }
