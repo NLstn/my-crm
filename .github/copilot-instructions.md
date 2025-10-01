@@ -6,7 +6,7 @@ Welcome! This document helps autonomous agents, copilots, or other AI-powered to
 
 - Deliver a simple CRM experience that tracks **accounts**, their **contacts**, and **support tickets**.
 - Provide a clean separation between the React frontend (`frontend/`) and Go backend (`backend/`), sharing documentation in `docs/`.
-- Support both rapid prototyping (in-memory storage) and production-ready PostgreSQL persistence.
+- Provide production-ready PostgreSQL persistence for the backend.
 
 ## Key components
 

@@ -63,7 +63,7 @@ cp .env.sample .env
 
 Key environment variables:
 - `PORT` - Server port (default: 8080)
-- `DATABASE_URL` - PostgreSQL connection string (optional, uses in-memory storage if not set)
+- `DATABASE_URL` - PostgreSQL connection string (required)
 
 ## Air Configuration
 
