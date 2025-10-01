@@ -49,7 +49,6 @@ describe('CreateTicket', () => {
   });
 
   it('shows error when submitting empty form', async () => {
-    const user = userEvent.setup();
     renderWithRouter(
       <CreateTicket 
         accounts={mockAccounts} 

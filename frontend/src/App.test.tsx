@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { Dashboard } from './pages/Dashboard';
 import { SearchAccounts } from './workcenters/accounts';
 import { sampleAccounts } from './pages/Dashboard';

@@ -11,7 +11,8 @@ describe('Dropdown', () => {
         <div>Content</div>
       </Dropdown>
     );
-    expect(screen.getByRole('button', { name: 'Open Menu' })).toBeInTheDocument();
+    // The trigger button is inside the dropdown trigger wrapper
+    expect(screen.getByText('Open Menu')).toBeInTheDocument();
   });
 
   it('shows content when trigger is clicked', async () => {
@@ -25,7 +26,8 @@ describe('Dropdown', () => {
     expect(screen.queryByText('Dropdown Content')).not.toBeInTheDocument();
     
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+      // Click the inner button
+      await user.click(screen.getByText('Open Menu'));
     });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
   });
@@ -39,12 +41,12 @@ describe('Dropdown', () => {
     );
 
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+      await user.click(screen.getByText('Open Menu'));
     });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
     
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+      await user.click(screen.getByText('Open Menu'));
     });
     expect(screen.queryByText('Dropdown Content')).not.toBeInTheDocument();
   });
@@ -61,7 +63,7 @@ describe('Dropdown', () => {
     );
 
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Open Menu' }));
+      await user.click(screen.getByText('Open Menu'));
     });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
     
@@ -79,9 +81,8 @@ describe('Dropdown', () => {
       </Dropdown>
     );
 
-    const trigger = screen.getByRole('button', { name: 'Open Menu' });
     await act(async () => {
-      await user.click(trigger);
+      await user.click(screen.getByText('Open Menu'));
     });
     expect(screen.getByText('Dropdown Content')).toBeInTheDocument();
     

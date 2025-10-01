@@ -4,7 +4,7 @@ import { Button, Input } from '../../../components';
 import { accountsApi } from '../../../api';
 import './CreateAccount.css';
 
-export interface CreateAccountProps {}
+export type CreateAccountProps = Record<string, never>;
 
 export const CreateAccount: FC<CreateAccountProps> = () => {
   const [name, setName] = useState('');

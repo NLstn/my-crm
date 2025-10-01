@@ -5,7 +5,7 @@ import { accountsApi, contactsApi } from '../../../api';
 import type { Account } from '../../../types';
 import './CreateContact.css';
 
-export interface CreateContactProps {}
+export type CreateContactProps = Record<string, never>;
 
 export const CreateContact: FC<CreateContactProps> = () => {
   const [fullName, setFullName] = useState('');
