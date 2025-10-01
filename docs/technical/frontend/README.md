@@ -63,25 +63,25 @@ The application uses a comprehensive theme system based on CSS Custom Properties
 --color-primary: #3b82f6         /* Primary brand color (blue) */
 --color-primary-light: #60a5fa   /* Lighter variant */
 --color-primary-dark: #2563eb    /* Darker variant */
---color-secondary: #8b5cf6       /* Secondary brand color (purple) */
+--color-secondary: #1d4ed8       /* Secondary brand color (darker blue) */
 ```
 
 #### Background Colors (Dark Theme)
 ```css
---color-background: #0f172a           /* Main background */
---color-background-elevated: #1e293b  /* Elevated surfaces */
---color-background-hover: #334155     /* Hover states */
---color-surface: #1e293b              /* Card/panel backgrounds */
---color-surface-raised: #334155       /* Raised surfaces */
+--color-background: #0a0a0a           /* Main background (near black) */
+--color-background-elevated: #1a1a1a  /* Elevated surfaces */
+--color-background-hover: #2a2a2a     /* Hover states */
+--color-surface: #1a1a1a              /* Card/panel backgrounds */
+--color-surface-raised: #2a2a2a       /* Raised surfaces */
 ```
 
 #### Text Colors
 ```css
---color-text-primary: #f1f5f9      /* Primary text */
---color-text-secondary: #cbd5e1    /* Secondary text */
---color-text-tertiary: #94a3b8     /* Tertiary text */
---color-text-muted: #64748b        /* Muted/disabled text */
---color-text-inverted: #0f172a     /* Inverted text (for dark backgrounds) */
+--color-text-primary: #ffffff      /* Primary text (white) */
+--color-text-secondary: #d4d4d4    /* Secondary text (light gray) */
+--color-text-tertiary: #a3a3a3     /* Tertiary text (medium gray) */
+--color-text-muted: #737373        /* Muted/disabled text (dark gray) */
+--color-text-inverted: #0a0a0a     /* Inverted text (for light backgrounds) */
 ```
 
 #### Semantic Colors
