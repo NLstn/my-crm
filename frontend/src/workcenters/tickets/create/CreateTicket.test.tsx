@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { act } from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
-import { CreateTicket, Account } from './CreateTicket';
+import { CreateTicket } from './CreateTicket';
+import { accountsApi, ticketsApi } from '../../../api';
+import type { Account, Ticket } from '../../../types';
 
 const mockNavigate = vi.fn();
 
@@ -15,30 +16,69 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('../../../api', () => ({
+  accountsApi: {
+    search: vi.fn(),
+  },
+  ticketsApi: {
+    create: vi.fn(),
+    getByAccount: vi.fn(),
+  },
+  contactsApi: {
+    getByAccount: vi.fn(),
+    search: vi.fn(),
+    create: vi.fn(),
+  },
+}));
+
+const accountsApiMock = vi.mocked(accountsApi);
+const ticketsApiMock = vi.mocked(ticketsApi);
+
+const buildAccount = (overrides: Partial<Account> = {}): Account => ({
+  id: overrides.id ?? 'acc-1',
+  displayId: overrides.displayId ?? 'ACC-1',
+  name: overrides.name ?? 'Acme Corp',
+  industry: overrides.industry ?? 'Manufacturing',
+  createdAt: overrides.createdAt ?? '2024-01-01T00:00:00Z',
+  updatedAt: overrides.updatedAt ?? '2024-01-01T00:00:00Z',
+});
+
 const mockAccounts: Account[] = [
-  { id: 1, name: 'Acme Corp' },
-  { id: 2, name: 'Globex Corporation' },
-  { id: 3, name: 'Initech' },
+  buildAccount({ id: 'acc-1', displayId: 'ACC-1', name: 'Acme Corp' }),
+  buildAccount({ id: 'acc-2', displayId: 'ACC-2', name: 'Globex Corporation', industry: 'Technology' }),
+  buildAccount({ id: 'acc-3', displayId: 'ACC-3', name: 'Initech', industry: 'Software' }),
 ];
 
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
+const renderWithRouter = async () => {
+  render(
+    <BrowserRouter>
+      <CreateTicket />
+    </BrowserRouter>
+  );
+
+  await screen.findByText('Create New Ticket');
 };
 
 describe('CreateTicket', () => {
-  const mockOnCreateTicket = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
+    accountsApiMock.search.mockResolvedValue(mockAccounts);
+    ticketsApiMock.create.mockResolvedValue({
+      id: 'tic-123',
+      accountId: 'acc-1',
+      title: 'Created ticket',
+      status: 'open',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    } as Ticket);
   });
 
-  it('renders the create ticket form', () => {
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('renders the create ticket form', async () => {
+    await renderWithRouter();
 
     expect(screen.getByText('Create New Ticket')).toBeDefined();
     expect(screen.getByLabelText(/Title/i)).toBeDefined();
@@ -49,173 +89,152 @@ describe('CreateTicket', () => {
   });
 
   it('shows error when submitting empty form', async () => {
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
+    await renderWithRouter();
 
-    const form = screen.getByRole('button', { name: /Create Ticket/i }).closest('form');
-    await act(async () => {
-      // Submit form programmatically to bypass HTML5 validation
-      const event = new Event('submit', { bubbles: true, cancelable: true });
-      form?.dispatchEvent(event);
-    });
+    const form = document.querySelector('form');
+    expect(form).not.toBeNull();
 
-    expect(screen.getByText('Title is required')).toBeDefined();
-    expect(screen.getByText('Account is required')).toBeDefined();
-    expect(mockOnCreateTicket).not.toHaveBeenCalled();
+    if (form) {
+      fireEvent.submit(form);
+    }
+
+    expect(await screen.findByText('Title is required')).toBeDefined();
+    expect(await screen.findByText('Account is required')).toBeDefined();
+    expect(ticketsApiMock.create).not.toHaveBeenCalled();
   });
 
   it('creates ticket and navigates when valid data is provided', async () => {
     const user = userEvent.setup();
-    mockOnCreateTicket.mockReturnValue('tic-123');
+    ticketsApiMock.create.mockResolvedValue({
+      id: 'tic-123',
+      accountId: 'acc-1',
+      title: 'Need help with setup',
+      status: 'open',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    } as Ticket);
 
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
+    await renderWithRouter();
 
-    const titleInput = screen.getByLabelText(/Title/i);
-    const accountDropdown = screen.getByLabelText(/Account/i) as HTMLSelectElement;
-    const statusDropdown = screen.getByLabelText(/Status/i) as HTMLSelectElement;
-    const submitButton = screen.getByRole('button', { name: /Create Ticket/i });
+    await user.type(screen.getByLabelText(/Title/i), 'Need help with setup');
+    await user.selectOptions(screen.getByLabelText(/Account/i), 'acc-1');
+    await user.selectOptions(screen.getByLabelText(/Status/i), 'open');
+    await user.click(screen.getByRole('button', { name: /Create Ticket/i }));
 
-    await act(async () => {
-      await user.type(titleInput, 'Need help with setup');
-      await user.selectOptions(accountDropdown, '1');
-      await user.selectOptions(statusDropdown, 'open');
-      await user.click(submitButton);
+    await waitFor(() => {
+      expect(ticketsApiMock.create).toHaveBeenCalledWith('acc-1', {
+        title: 'Need help with setup',
+        status: 'open',
+      });
     });
 
-    expect(mockOnCreateTicket).toHaveBeenCalledWith('Need help with setup', '1', 'open');
-    expect(mockNavigate).toHaveBeenCalledWith('/ticket/tic-123');
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/ticket/tic-123');
+    });
   });
 
   it('trims whitespace from title', async () => {
     const user = userEvent.setup();
-    mockOnCreateTicket.mockReturnValue('tic-456');
+    ticketsApiMock.create.mockResolvedValue({
+      id: 'tic-456',
+      accountId: 'acc-2',
+      title: 'Urgent issue',
+      status: 'open',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    } as Ticket);
 
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
+    await renderWithRouter();
 
-    const titleInput = screen.getByLabelText(/Title/i);
-    const accountDropdown = screen.getByLabelText(/Account/i) as HTMLSelectElement;
-    const submitButton = screen.getByRole('button', { name: /Create Ticket/i });
+    await user.type(screen.getByLabelText(/Title/i), '  Urgent issue  ');
+    await user.selectOptions(screen.getByLabelText(/Account/i), 'acc-2');
+    await user.click(screen.getByRole('button', { name: /Create Ticket/i }));
 
-    await act(async () => {
-      await user.type(titleInput, '  Urgent issue  ');
-      await user.selectOptions(accountDropdown, '2');
-      await user.click(submitButton);
+    await waitFor(() => {
+      expect(ticketsApiMock.create).toHaveBeenCalledWith('acc-2', {
+        title: 'Urgent issue',
+        status: 'open',
+      });
     });
-
-    expect(mockOnCreateTicket).toHaveBeenCalledWith('Urgent issue', '2', 'open');
   });
 
   it('clears errors when user types', async () => {
     const user = userEvent.setup();
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
 
-    const form = screen.getByRole('button', { name: /Create Ticket/i }).closest('form');
-    await act(async () => {
-      // Submit form programmatically to bypass HTML5 validation
-      const event = new Event('submit', { bubbles: true, cancelable: true });
-      form?.dispatchEvent(event);
+    await renderWithRouter();
+
+    const form = document.querySelector('form');
+    expect(form).not.toBeNull();
+
+    if (form) {
+      fireEvent.submit(form);
+    }
+
+    expect(await screen.findByText('Title is required')).toBeDefined();
+
+    await user.type(screen.getByLabelText(/Title/i), 'A');
+
+    await waitFor(() => {
+      expect(screen.queryByText('Title is required')).toBeNull();
     });
-
-    expect(screen.getByText('Title is required')).toBeDefined();
-
-    const titleInput = screen.getByLabelText(/Title/i);
-    await act(async () => {
-      await user.type(titleInput, 'A');
-    });
-
-    expect(screen.queryByText('Title is required')).toBeNull();
   });
 
   it('navigates to search when cancel is clicked', async () => {
     const user = userEvent.setup();
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
 
-    const cancelButton = screen.getByRole('button', { name: /Cancel/i });
-    await user.click(cancelButton);
+    await renderWithRouter();
+
+    await user.click(screen.getByRole('button', { name: /Cancel/i }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/tickets/search');
   });
 
-  it('displays all account options in dropdown', () => {
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
+  it('displays all account options in dropdown', async () => {
+    await renderWithRouter();
 
     const accountDropdown = screen.getByLabelText(/Account/i) as HTMLSelectElement;
-    const options = Array.from(accountDropdown.options).map(opt => opt.text);
-    
-    expect(options).toContain('Acme Corp');
-    expect(options).toContain('Globex Corporation');
-    expect(options).toContain('Initech');
-    expect(options).toContain('Select an account...');
+    const optionTexts = Array.from(accountDropdown.options).map(opt => opt.textContent);
+
+    expect(optionTexts).toContain('Select an account...');
+    expect(optionTexts).toContain('Acme Corp');
+    expect(optionTexts).toContain('Globex Corporation');
+    expect(optionTexts).toContain('Initech');
   });
 
-  it('displays all status options in dropdown', () => {
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
+  it('displays all status options in dropdown', async () => {
+    await renderWithRouter();
 
     const statusDropdown = screen.getByLabelText(/Status/i) as HTMLSelectElement;
-    const options = Array.from(statusDropdown.options).map(opt => opt.text);
-    
-    expect(options).toContain('Open');
-    expect(options).toContain('In Progress');
-    expect(options).toContain('Closed');
+    const optionTexts = Array.from(statusDropdown.options).map(opt => opt.textContent?.trim());
+
+    expect(optionTexts).toContain('Open');
+    expect(optionTexts).toContain('In Progress');
+    expect(optionTexts).toContain('Closed');
   });
 
   it('allows selecting different statuses', async () => {
     const user = userEvent.setup();
-    mockOnCreateTicket.mockReturnValue('tic-789');
+    ticketsApiMock.create.mockResolvedValue({
+      id: 'tic-789',
+      accountId: 'acc-3',
+      title: 'Follow up call',
+      status: 'in_progress',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    } as Ticket);
 
-    renderWithRouter(
-      <CreateTicket 
-        accounts={mockAccounts} 
-        onCreateTicket={mockOnCreateTicket} 
-      />
-    );
+    await renderWithRouter();
 
-    const titleInput = screen.getByLabelText(/Title/i);
-    const accountDropdown = screen.getByLabelText(/Account/i) as HTMLSelectElement;
-    const statusDropdown = screen.getByLabelText(/Status/i) as HTMLSelectElement;
-    const submitButton = screen.getByRole('button', { name: /Create Ticket/i });
+    await user.type(screen.getByLabelText(/Title/i), 'Follow up call');
+    await user.selectOptions(screen.getByLabelText(/Account/i), 'acc-3');
+    await user.selectOptions(screen.getByLabelText(/Status/i), 'in_progress');
+    await user.click(screen.getByRole('button', { name: /Create Ticket/i }));
 
-    await act(async () => {
-      await user.type(titleInput, 'Follow up call');
-      await user.selectOptions(accountDropdown, '3');
-      await user.selectOptions(statusDropdown, 'in_progress');
-      await user.click(submitButton);
+    await waitFor(() => {
+      expect(ticketsApiMock.create).toHaveBeenCalledWith('acc-3', {
+        title: 'Follow up call',
+        status: 'in_progress',
+      });
     });
-
-    expect(mockOnCreateTicket).toHaveBeenCalledWith('Follow up call', '3', 'in_progress');
   });
 });
