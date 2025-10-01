@@ -46,11 +46,11 @@ See `frontend/src/components/README.md` for detailed documentation on all compon
 
 ```bash
 cd backend
-cp .env.sample .env # optionally configure DATABASE_URL
+cp .env.sample .env # configure DATABASE_URL
 go run ./cmd/server
 ```
 
-The server uses an in-memory store by default, which is ideal for rapid prototyping and development. To enable PostgreSQL persistence, set `DATABASE_URL=postgres://user:pass@localhost:5432/mycrm?sslmode=disable` in your `.env` file.
+The server requires a PostgreSQL database connection. Set `DATABASE_URL=postgres://user:pass@localhost:5432/mycrm?sslmode=disable` in your `.env` file.
 
 ### Database migrations
 

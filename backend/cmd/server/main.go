@@ -17,27 +17,23 @@ import (
 func main() {
 	cfg := config.Load()
 
-	var repo repository.Repository
-	var cleanup func()
+	if cfg.DatabaseURL == "" {
+		log.Fatal("DATABASE_URL must be set")
+	}
 
-	if cfg.DatabaseURL != "" {
-		db, err := server.NewPostgresConnection(cfg.DatabaseURL)
+	db, err := server.NewPostgresConnection(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("failed to connect to postgres: %v", err)
+	}
+
+	repo := repository.NewPostgresRepository(db)
+	cleanup := func() {
+		sqlDB, err := db.DB()
 		if err != nil {
-			log.Fatalf("failed to connect to postgres: %v", err)
+			log.Printf("error getting underlying sql.DB: %v", err)
+			return
 		}
-
-		repo = repository.NewPostgresRepository(db)
-		cleanup = func() {
-			sqlDB, err := db.DB()
-			if err != nil {
-				log.Printf("error getting underlying sql.DB: %v", err)
-				return
-			}
-			_ = sqlDB.Close()
-		}
-	} else {
-		repo = repository.NewMemoryRepository()
-		cleanup = func() {}
+		_ = sqlDB.Close()
 	}
 
 	srv := server.New(server.Options{
