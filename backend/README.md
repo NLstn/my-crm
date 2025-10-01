@@ -4,7 +4,7 @@ Go HTTP API for My CRM application.
 
 ## Prerequisites
 
-- Go 1.22 or higher
+- Go 1.24 or higher
 - PostgreSQL (optional, uses in-memory storage by default)
 - [Air](https://github.com/cosmtrek/air) (optional, for hot reload during development)
 

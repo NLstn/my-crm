@@ -16,7 +16,7 @@ docs/       Reference guides and implementation notes
 
 - Node.js 20+
 - npm 10+
-- Go 1.22+
+- Go 1.24+
 - PostgreSQL 14+ (for the database-backed repository)
 
 ### Frontend development server
