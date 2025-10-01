@@ -18,17 +18,15 @@ export const SearchContacts: FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const accountsData = await accountsApi.search();
+        
+        // Fetch all contacts directly using the new search API
+        const [contactsData, accountsData] = await Promise.all([
+          contactsApi.search(),
+          accountsApi.search()
+        ]);
+        
+        setContacts(contactsData);
         setAccounts(accountsData);
-        
-        // Fetch contacts for all accounts
-        const contactsPromises = accountsData.map((account: Account) => 
-          contactsApi.getByAccount(account.id)
-        );
-        const contactsArrays = await Promise.all(contactsPromises);
-        const allContacts = contactsArrays.flat();
-        setContacts(allContacts);
-        
         setError(null);
       } catch (err) {
         console.error('Error fetching data:', err);

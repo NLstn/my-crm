@@ -178,3 +178,114 @@ func TestHandleCreateAccountValidation(t *testing.T) {
 		t.Fatalf("expected status 400, got %d", resp.Code)
 	}
 }
+
+func TestHandleSearchContacts(t *testing.T) {
+	_, repo, router := setupTestRouter()
+
+	// Create test accounts
+	account1, err := repo.CreateAccount(context.Background(), repository.CreateAccountInput{
+		Name:     "Acme Corp",
+		Industry: "Manufacturing",
+	})
+	if err != nil {
+		t.Fatalf("failed to create account1: %v", err)
+	}
+
+	account2, err := repo.CreateAccount(context.Background(), repository.CreateAccountInput{
+		Name:     "TechStart",
+		Industry: "Technology",
+	})
+	if err != nil {
+		t.Fatalf("failed to create account2: %v", err)
+	}
+
+	// Create test contacts
+	_, err = repo.CreateContact(context.Background(), repository.CreateContactInput{
+		AccountID: account1.ID,
+		FullName:  "John Doe",
+		Email:     "john.doe@acme.com",
+	})
+	if err != nil {
+		t.Fatalf("failed to create contact1: %v", err)
+	}
+
+	_, err = repo.CreateContact(context.Background(), repository.CreateContactInput{
+		AccountID: account2.ID,
+		FullName:  "Jane Smith",
+		Email:     "jane.smith@techstart.com",
+	})
+	if err != nil {
+		t.Fatalf("failed to create contact2: %v", err)
+	}
+
+	_, err = repo.CreateContact(context.Background(), repository.CreateContactInput{
+		AccountID: account1.ID,
+		FullName:  "Bob Johnson",
+		Email:     "bob.johnson@acme.com",
+	})
+	if err != nil {
+		t.Fatalf("failed to create contact3: %v", err)
+	}
+
+	// Test 1: Search all contacts (no query)
+	req := httptest.NewRequest(http.MethodGet, "/contacts", nil)
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.Code)
+	}
+
+	var allContacts []map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &allContacts); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(allContacts) != 3 {
+		t.Fatalf("expected 3 contacts, got %d", len(allContacts))
+	}
+
+	// Test 2: Search by name
+	reqSearch := httptest.NewRequest(http.MethodGet, "/contacts?q=John", nil)
+	respSearch := httptest.NewRecorder()
+
+	router.ServeHTTP(respSearch, reqSearch)
+
+	if respSearch.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", respSearch.Code)
+	}
+
+	var searchContacts []map[string]any
+	if err := json.Unmarshal(respSearch.Body.Bytes(), &searchContacts); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(searchContacts) != 2 {
+		t.Fatalf("expected 2 contacts matching 'John', got %d", len(searchContacts))
+	}
+
+	// Test 3: Search by email
+	reqEmail := httptest.NewRequest(http.MethodGet, "/contacts?q=techstart.com", nil)
+	respEmail := httptest.NewRecorder()
+
+	router.ServeHTTP(respEmail, reqEmail)
+
+	if respEmail.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", respEmail.Code)
+	}
+
+	var emailContacts []map[string]any
+	if err := json.Unmarshal(respEmail.Body.Bytes(), &emailContacts); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(emailContacts) != 1 {
+		t.Fatalf("expected 1 contact with 'techstart.com', got %d", len(emailContacts))
+	}
+
+	if emailContacts[0]["fullName"] != "Jane Smith" {
+		t.Fatalf("expected contact name 'Jane Smith', got %v", emailContacts[0]["fullName"])
+	}
+}
+

@@ -4,6 +4,27 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export const contactsApi = {
   /**
+   * Search contacts across all accounts
+   * @param query - Optional search query to filter by name or email
+   * @returns Array of contacts matching the search
+   */
+  async search(query?: string): Promise<Contact[]> {
+    const url = new URL(`${API_BASE_URL}/contacts`);
+    if (query) {
+      url.searchParams.set('q', query);
+    }
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to search contacts' }));
+      throw new Error(error.error || 'Failed to search contacts');
+    }
+
+    return response.json();
+  },
+
+  /**
    * Get all contacts for a specific account
    * @param accountId - The UUID of the account
    * @returns Array of contacts for the account
