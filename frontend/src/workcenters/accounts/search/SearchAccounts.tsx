@@ -1,32 +1,39 @@
-import { FC, useState, useMemo } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
+import { Account } from '../../../types';
+import { accountsApi } from '../../../api';
 import './SearchAccounts.css';
 
-export interface Account {
-  id: number;
-  name: string;
-  industry: string;
-}
+export interface SearchAccountsProps {}
 
-export interface SearchAccountsProps {
-  accounts: Account[];
-}
-
-export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
-  const [searchName, setSearchName] = useState('');
+export const SearchAccounts: FC<SearchAccountsProps> = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const filteredAccounts = useMemo(() => {
-    if (!searchName.trim()) {
-      return accounts;
+  const loadAccounts = async (query: string = '') => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const results = await accountsApi.search(query);
+      setAccounts(results);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load accounts');
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const lowerSearchName = searchName.toLowerCase();
-    return accounts.filter(account =>
-      account.name.toLowerCase().includes(lowerSearchName)
-    );
-  }, [accounts, searchName]);
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+
+  const handleSearch = () => {
+    loadAccounts(searchQuery);
+  };
 
   return (
     <div className="search-accounts">
@@ -48,24 +55,45 @@ export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
 
       <div className="search-accounts__filters">
         <Input
-          id="account-name"
-          label="Account Name"
-          placeholder="Search by account name..."
-          value={searchName}
-          onChange={(e) => setSearchName(e.target.value)}
+          id="search-query"
+          label="Search"
+          placeholder="Search by name, industry, or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
         />
+        <Button
+          onClick={handleSearch}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Searching...' : 'Search'}
+        </Button>
       </div>
 
       <div className="search-accounts__results">
         <div className="search-accounts__results-header">
           <h2 className="search-accounts__results-title">
-            Results ({filteredAccounts.length})
+            Results ({accounts.length})
           </h2>
         </div>
 
-        {filteredAccounts.length > 0 ? (
+        {error ? (
+          <div className="search-accounts__error">
+            <p className="search-accounts__error-title">Error</p>
+            <p className="search-accounts__error-subtitle">{error}</p>
+            <Button onClick={() => loadAccounts()}>Retry</Button>
+          </div>
+        ) : isLoading ? (
+          <div className="search-accounts__loading">
+            <p>Loading accounts...</p>
+          </div>
+        ) : accounts.length > 0 ? (
           <ul className="search-accounts__list">
-            {filteredAccounts.map((account) => (
+            {accounts.map((account) => (
               <li key={account.id} className="search-accounts__list-item">
                 <button 
                   className="search-accounts__account-card"
@@ -76,7 +104,7 @@ export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
                     <h3 className="search-accounts__account-name">
                       {account.name}
                     </h3>
-                    <span className="search-accounts__account-id">ID: {account.id}</span>
+                    <span className="search-accounts__account-id">{account.displayId}</span>
                   </div>
                   <div className="search-accounts__account-details">
                     <span className="search-accounts__account-industry">
@@ -89,7 +117,7 @@ export const SearchAccounts: FC<SearchAccountsProps> = ({ accounts }) => {
           </ul>
         ) : (
           <div className="search-accounts__empty">
-            {searchName.trim() ? (
+            {searchQuery.trim() ? (
               <>
                 <p className="search-accounts__empty-title">No accounts found</p>
                 <p className="search-accounts__empty-subtitle">

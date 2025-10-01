@@ -9,8 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
-
 	"github.com/my-crm/backend/internal/config"
 	"github.com/my-crm/backend/internal/repository"
 	"github.com/my-crm/backend/internal/server"
@@ -35,7 +33,12 @@ func main() {
 
 		repo = repository.NewPostgresRepository(db)
 		cleanup = func() {
-			_ = db.Close()
+			sqlDB, err := db.DB()
+			if err != nil {
+				log.Printf("error getting underlying sql.DB: %v", err)
+				return
+			}
+			_ = sqlDB.Close()
 		}
 	default:
 		repo = repository.NewMemoryRepository()

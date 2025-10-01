@@ -6,15 +6,11 @@ import { SearchAccounts, DisplayAccount, CreateAccount } from './workcenters/acc
 import { SearchContacts, DisplayContact, CreateContact } from './workcenters/contacts';
 import { SearchTickets, DisplayTicket, CreateTicket } from './workcenters/tickets';
 import { sampleAccounts, sampleContacts, sampleTickets } from './pages/Dashboard';
-import type { Account, Contact, Ticket } from './pages/Dashboard';
+import type { Contact, Ticket } from './pages/Dashboard';
 import './App.css';
-
-// Re-export types for use in other parts of the app
-export type { Account, Contact, Ticket } from './pages/Dashboard';
 
 function AppContent() {
   const navigate = useNavigate();
-  const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
   const [contacts, setContacts] = useState<Contact[]>(sampleContacts);
   const [tickets, setTickets] = useState<Ticket[]>(sampleTickets);
 
@@ -24,21 +20,6 @@ function AppContent() {
 
   const handleNavigate = (workCenter: { path: string }) => {
     navigate(workCenter.path);
-  };
-
-  const handleCreateAccount = (name: string): number => {
-    // Generate a new ID (max existing ID + 1)
-    const maxId = accounts.reduce((max, acc) => Math.max(max, acc.id), 0);
-    const newId = maxId + 1;
-
-    const newAccount: Account = {
-      id: newId,
-      name,
-      industry: '', // Default empty industry for now
-    };
-
-    setAccounts([...accounts, newAccount]);
-    return newId;
   };
 
   const handleCreateContact = (fullName: string, email: string, accountId: string): number => {
@@ -83,30 +64,24 @@ function AppContent() {
     >
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/accounts/search" element={<SearchAccounts accounts={accounts} />} />
-        <Route path="/accounts/create" element={<CreateAccount onCreateAccount={handleCreateAccount} />} />
-        <Route path="/account/:id" element={
-          <DisplayAccount 
-            accounts={accounts} 
-            contacts={contacts} 
-            tickets={tickets} 
-          />
-        } />
-        <Route path="/contacts/search" element={<SearchContacts contacts={contacts} accounts={accounts} />} />
-        <Route path="/contacts/create" element={<CreateContact accounts={accounts} onCreateContact={handleCreateContact} />} />
+        <Route path="/accounts/search" element={<SearchAccounts />} />
+        <Route path="/accounts/create" element={<CreateAccount />} />
+        <Route path="/account/:id" element={<DisplayAccount />} />
+        <Route path="/contacts/search" element={<SearchContacts contacts={contacts} accounts={sampleAccounts} />} />
+        <Route path="/contacts/create" element={<CreateContact accounts={sampleAccounts} onCreateContact={handleCreateContact} />} />
         <Route path="/contact/:id" element={
           <DisplayContact 
             contacts={contacts} 
-            accounts={accounts} 
+            accounts={sampleAccounts} 
             tickets={tickets} 
           />
         } />
-        <Route path="/tickets/search" element={<SearchTickets tickets={tickets} accounts={accounts} />} />
-        <Route path="/tickets/create" element={<CreateTicket accounts={accounts} onCreateTicket={handleCreateTicket} />} />
+        <Route path="/tickets/search" element={<SearchTickets tickets={tickets} accounts={sampleAccounts} />} />
+        <Route path="/tickets/create" element={<CreateTicket accounts={sampleAccounts} onCreateTicket={handleCreateTicket} />} />
         <Route path="/ticket/:id" element={
           <DisplayTicket 
             tickets={tickets} 
-            accounts={accounts} 
+            accounts={sampleAccounts} 
             contacts={contacts}
           />
         } />

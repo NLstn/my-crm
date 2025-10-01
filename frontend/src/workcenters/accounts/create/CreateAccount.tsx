@@ -1,18 +1,19 @@
 import { FC, FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
+import { accountsApi } from '../../../api';
 import './CreateAccount.css';
 
-export interface CreateAccountProps {
-  onCreateAccount: (name: string) => number;
-}
+export interface CreateAccountProps {}
 
-export const CreateAccount: FC<CreateAccountProps> = ({ onCreateAccount }) => {
+export const CreateAccount: FC<CreateAccountProps> = () => {
   const [name, setName] = useState('');
+  const [industry, setIndustry] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     // Validate that name is not empty
@@ -23,12 +24,22 @@ export const CreateAccount: FC<CreateAccountProps> = ({ onCreateAccount }) => {
 
     // Clear any previous errors
     setError('');
+    setIsSubmitting(true);
 
-    // Create the account and get the new ID
-    const newAccountId = onCreateAccount(name.trim());
+    try {
+      // Create the account via API
+      const newAccount = await accountsApi.create({
+        name: name.trim(),
+        industry: industry.trim(),
+      });
 
-    // Navigate to the display account workcenter
-    navigate(`/account/${newAccountId}`);
+      // Navigate to the display account workcenter
+      navigate(`/account/${newAccount.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create account');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -59,19 +70,30 @@ export const CreateAccount: FC<CreateAccountProps> = ({ onCreateAccount }) => {
           placeholder="Enter account name..."
         />
 
+        <Input
+          id="account-industry"
+          label="Industry"
+          fullWidth
+          value={industry}
+          onChange={(e) => setIndustry(e.target.value)}
+          placeholder="Enter industry (optional)..."
+        />
+
         <div className="create-account__actions">
           <Button
             type="button"
             variant="secondary"
             onClick={handleCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="primary"
+            disabled={isSubmitting}
           >
-            Create Account
+            {isSubmitting ? 'Creating...' : 'Create Account'}
           </Button>
         </div>
       </form>
