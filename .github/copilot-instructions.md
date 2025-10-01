@@ -54,7 +54,7 @@ JSON payloads and response shapes are defined in `backend/internal/http/api.go`.
 
 - GitHub Actions workflow `.github/workflows/ci.yml` runs linting and tests for both frontend and backend on pushes and pull requests.
 - Frontend uses ESLint (with React, TypeScript, and accessibility rules) plus Vitest with Testing Library.
-- Backend relies on Go's standard tooling (`go vet`, `go test`) alongside an in-memory repository for deterministic tests; PostgreSQL implementation lives next to it.
+- Backend relies on Go's standard tooling (`go vet`, `go test`) with tests using an in-memory SQLite database for isolation; PostgreSQL implementation is used in production.
 
 ## Extending the system
 

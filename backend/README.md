@@ -63,7 +63,7 @@ cp .env.sample .env
 
 Key environment variables:
 - `PORT` - Server port (default: 8080)
-- `DATABASE_URL` - PostgreSQL connection string (optional)
+- `DATABASE_URL` - PostgreSQL connection string (optional, uses in-memory storage if not set)
 
 ## Air Configuration
 
@@ -85,6 +85,8 @@ Run tests with coverage:
 ```bash
 go test -cover ./...
 ```
+
+Tests use an in-memory SQLite database for fast, isolated test execution without requiring a real database connection.
 
 ## Database Migrations
 
