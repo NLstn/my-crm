@@ -199,6 +199,41 @@ Always use CSS variables instead of hardcoded colors:
 }
 ```
 
+### Theme Switching
+
+The application supports both dark and light themes with seamless switching.
+
+#### Using the Theme Hook
+
+```typescript
+import { useTheme } from '../hooks/useTheme';
+
+function MyComponent() {
+  const { theme, toggleTheme } = useTheme();
+  
+  return (
+    <button onClick={toggleTheme}>
+      Current theme: {theme}
+    </button>
+  );
+}
+```
+
+#### How It Works
+
+1. **Theme State**: The `useTheme` hook manages the current theme (light or dark)
+2. **Persistence**: Theme preference is saved to localStorage (`crm-theme` key)
+3. **Application**: Theme is applied via `data-theme` attribute on the document element
+4. **CSS Variables**: Light theme overrides are defined in `theme.css` under `[data-theme="light"]`
+
+#### Implementation Details
+
+- Default theme: Dark
+- Toggle function: Switches between light and dark
+- Automatic persistence: Theme preference survives page reloads
+- CSS-based: Uses CSS custom properties for instant theme switching
+- No flicker: Theme is applied during initial render
+
 ## Component Library
 
 The application now includes a reusable component library in `src/components/`. See the [Component Library README](../../../frontend/src/components/README.md) for comprehensive documentation on all available components.
@@ -582,28 +617,28 @@ Output: `dist/` directory with optimized static files
 
 ### Planned Features
 
-1. **Theme Switcher**: Toggle between dark/light themes (UI ready, needs implementation)
+1. ~~**Theme Switcher**: Toggle between dark/light themes~~ ✅ **COMPLETED**
 2. ~~**Component Library**: Extract reusable components~~ ✅ **COMPLETED**
 3. ~~**Form Input Components**: Reusable input components~~ ✅ **COMPLETED**
 4. **Form Management**: Add/edit accounts, contacts, tickets
-4. **Real API Integration**: Connect to backend API
-5. **State Management**: Add global state solution
-6. **Routing**: Multi-page navigation (React Router)
-7. **Authentication**: User login/logout
-8. **Real-time Updates**: WebSocket support
-9. **Data Persistence**: Local storage for offline support
-10. **Advanced Filtering**: Search and filter functionality
+5. **Real API Integration**: Connect to backend API
+6. **State Management**: Add global state solution
+7. **Routing**: Multi-page navigation (React Router)
+8. **Authentication**: User login/logout
+9. **Real-time Updates**: WebSocket support
+10. **Data Persistence**: Local storage for offline support
+11. **Advanced Filtering**: Search and filter functionality
 
 ### Technical Debt
 
 - ~~Extract components from App.tsx~~ ✅ **DONE** - Header component created
+- ~~Complete theme switcher functionality in ProfileDropdown~~ ✅ **DONE** - useTheme hook implemented
 - Add comprehensive test coverage (basic tests added for components)
 - Set up Prettier for code formatting
 - Add Storybook for component development
 - Implement proper error boundaries
 - Add loading states
 - Improve type safety (remove sample data types from App.tsx)
-- Complete theme switcher functionality in ProfileDropdown
 
 ## Resources
 
