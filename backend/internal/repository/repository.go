@@ -368,9 +368,9 @@ func (r *PostgresRepository) SearchContacts(ctx context.Context, query string) (
 			return nil, err
 		}
 	} else {
-		// Search in full_name and email fields using ILIKE for case-insensitive matching
+		// Search in full_name and email fields using LOWER for database-agnostic case-insensitive matching
 		searchPattern := "%" + query + "%"
-		if err := db.Where("full_name ILIKE ? OR email ILIKE ?", searchPattern, searchPattern).
+		if err := db.Where("LOWER(full_name) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?)", searchPattern, searchPattern).
 			Order("created_at DESC").
 			Find(&contacts).Error; err != nil {
 			return nil, err
