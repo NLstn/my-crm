@@ -49,7 +49,6 @@ describe('CreateContact', () => {
   });
 
   it('shows error when submitting empty form', async () => {
-    const user = userEvent.setup();
     renderWithRouter(
       <CreateContact 
         accounts={mockAccounts} 

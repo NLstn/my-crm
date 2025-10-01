@@ -5,7 +5,7 @@ import { Account } from '../../../types';
 import { accountsApi } from '../../../api';
 import './SearchAccounts.css';
 
-export interface SearchAccountsProps {}
+export type SearchAccountsProps = Record<string, never>;
 
 export const SearchAccounts: FC<SearchAccountsProps> = () => {
   const [searchQuery, setSearchQuery] = useState('');

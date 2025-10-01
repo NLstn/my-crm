@@ -4,7 +4,7 @@ import { accountsApi, contactsApi, ticketsApi } from '../../../api';
 import type { Account, Ticket } from '../../../types';
 import './DisplayContact.css';
 
-export interface DisplayContactProps {}
+export type DisplayContactProps = Record<string, never>;
 
 export const DisplayContact: FC<DisplayContactProps> = () => {
   const { id } = useParams<{ id: string }>();
@@ -169,7 +169,7 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
             </ul>
           ) : (
             <div className="display-contact__empty">
-              <p className="display-contact__empty-text">No tickets for this contact's account</p>
+              <p className="display-contact__empty-text">No tickets for this contact&apos;s account</p>
             </div>
           )}
         </section>

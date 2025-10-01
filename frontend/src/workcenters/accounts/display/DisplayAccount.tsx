@@ -4,7 +4,7 @@ import { Account, Contact, Ticket } from '../../../types';
 import { accountsApi, contactsApi, ticketsApi } from '../../../api';
 import './DisplayAccount.css';
 
-export interface DisplayAccountProps {}
+export type DisplayAccountProps = Record<string, never>;
 
 export const DisplayAccount: FC<DisplayAccountProps> = () => {
   const { id } = useParams<{ id: string }>();

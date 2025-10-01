@@ -30,6 +30,9 @@ export const Dropdown: FC<DropdownProps> = ({ trigger, children, align = 'right'
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
       setIsOpen(false);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setIsOpen(!isOpen);
     }
   };
 
@@ -38,12 +41,20 @@ export const Dropdown: FC<DropdownProps> = ({ trigger, children, align = 'right'
   };
 
   return (
-    <div className="dropdown" ref={dropdownRef} onKeyDown={handleKeyDown}>
-      <div className="dropdown__trigger" onClick={handleTriggerClick}>
+    <div className="dropdown" ref={dropdownRef}>
+      <div 
+        className="dropdown__trigger" 
+        onClick={handleTriggerClick}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+      >
         {trigger}
       </div>
       {isOpen && (
-        <div className={`dropdown__content dropdown__content--${align}`}>
+        <div className={`dropdown__content dropdown__content--${align}`} role="menu">
           {children}
         </div>
       )}

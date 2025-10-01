@@ -5,7 +5,7 @@ import { accountsApi, ticketsApi } from '../../../api';
 import type { Account } from '../../../types';
 import './CreateTicket.css';
 
-export interface CreateTicketProps {}
+export type CreateTicketProps = Record<string, never>;
 
 export const CreateTicket: FC<CreateTicketProps> = () => {
   const [title, setTitle] = useState('');
