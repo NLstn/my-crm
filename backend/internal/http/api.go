@@ -29,6 +29,7 @@ func (a *API) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /accounts/{accountID}/contacts", a.handleCreateContact)
 	mux.HandleFunc("GET /accounts/{accountID}/tickets", a.handleGetTicketsByAccount)
 	mux.HandleFunc("POST /accounts/{accountID}/tickets", a.handleCreateTicket)
+	mux.HandleFunc("GET /contacts", a.handleSearchContacts)
 }
 
 type healthResponse struct {
@@ -329,6 +330,18 @@ func toContactResponse(contact domain.Contact) contactResponse {
 		CreatedAt: contact.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: contact.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
+}
+
+func (a *API) handleSearchContacts(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+
+	contacts, err := a.repo.SearchContacts(r.Context(), query)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toContactResponses(contacts))
 }
 
 func toTicketResponses(tickets []domain.Ticket) []ticketResponse {

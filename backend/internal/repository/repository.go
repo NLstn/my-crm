@@ -23,6 +23,7 @@ type Repository interface {
 
 	GetContactsByAccount(ctx context.Context, accountID string) ([]domain.Contact, error)
 	CreateContact(ctx context.Context, input CreateContactInput) (domain.Contact, error)
+	SearchContacts(ctx context.Context, query string) ([]domain.Contact, error)
 
 	GetTicketsByAccount(ctx context.Context, accountID string) ([]domain.Ticket, error)
 	CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error)
@@ -206,6 +207,32 @@ func (r *MemoryRepository) CreateContact(_ context.Context, input CreateContactI
 	return contact, nil
 }
 
+func (r *MemoryRepository) SearchContacts(_ context.Context, query string) ([]domain.Contact, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	res := make([]domain.Contact, 0)
+
+	// If query is empty, return all contacts
+	if query == "" {
+		for _, contact := range r.contacts {
+			res = append(res, contact)
+		}
+		return res, nil
+	}
+
+	// Simple case-insensitive search in fullName and email
+	queryLower := toLower(query)
+	for _, contact := range r.contacts {
+		if contains(toLower(contact.FullName), queryLower) ||
+			contains(toLower(contact.Email), queryLower) {
+			res = append(res, contact)
+		}
+	}
+
+	return res, nil
+}
+
 func (r *MemoryRepository) GetTicketsByAccount(_ context.Context, accountID string) ([]domain.Ticket, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -328,6 +355,29 @@ func (r *PostgresRepository) CreateContact(ctx context.Context, input CreateCont
 	}
 
 	return contact, nil
+}
+
+func (r *PostgresRepository) SearchContacts(ctx context.Context, query string) ([]domain.Contact, error) {
+	var contacts []domain.Contact
+
+	db := r.db.WithContext(ctx)
+
+	if query == "" {
+		// Return all contacts when no query provided
+		if err := db.Order("created_at DESC").Find(&contacts).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		// Search in full_name and email fields using ILIKE for case-insensitive matching
+		searchPattern := "%" + query + "%"
+		if err := db.Where("full_name ILIKE ? OR email ILIKE ?", searchPattern, searchPattern).
+			Order("created_at DESC").
+			Find(&contacts).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	return contacts, nil
 }
 
 func (r *PostgresRepository) GetTicketsByAccount(ctx context.Context, accountID string) ([]domain.Ticket, error) {
