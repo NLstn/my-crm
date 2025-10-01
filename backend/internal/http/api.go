@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/my-crm/backend/internal/domain"
 	"github.com/my-crm/backend/internal/repository"
 )
@@ -22,14 +20,11 @@ func NewAPI(repo repository.Repository) *API {
 }
 
 // RegisterRoutes attaches all handlers to the provided router.
-func (a *API) RegisterRoutes(router chi.Router) {
-	router.Get("/healthz", a.handleHealth)
-
-	router.Route("/accounts", func(r chi.Router) {
-		r.Get("/", a.handleSearchAccounts)
-		r.Post("/", a.handleCreateAccount)
-		r.Get("/{accountID}", a.handleGetAccount)
-	})
+func (a *API) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /healthz", a.handleHealth)
+	mux.HandleFunc("GET /accounts", a.handleSearchAccounts)
+	mux.HandleFunc("POST /accounts", a.handleCreateAccount)
+	mux.HandleFunc("GET /accounts/{accountID}", a.handleGetAccount)
 }
 
 type healthResponse struct {
@@ -98,7 +93,7 @@ func (a *API) handleCreateAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) handleGetAccount(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "accountID")
+	id := r.PathValue("accountID")
 	if id == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "accountID is required"})
 		return

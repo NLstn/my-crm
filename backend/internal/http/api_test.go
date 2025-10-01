@@ -8,17 +8,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/my-crm/backend/internal/repository"
 )
 
-func setupTestRouter() (*API, *repository.MemoryRepository, chi.Router) {
+func setupTestRouter() (*API, *repository.MemoryRepository, *http.ServeMux) {
 	repo := repository.NewMemoryRepository()
 	api := NewAPI(repo)
-	r := chi.NewRouter()
-	api.RegisterRoutes(r)
-	return api, repo, r
+	mux := http.NewServeMux()
+	api.RegisterRoutes(mux)
+	return api, repo, mux
 }
 
 func TestHandleCreateAndSearchAccounts(t *testing.T) {

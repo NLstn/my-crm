@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/time/rate"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -35,29 +33,26 @@ type Options struct {
 func New(opts Options) *Server {
 	repo := opts.Repo
 
-	r := chi.NewRouter()
+	mux := http.NewServeMux()
 
-	// Custom middleware
-	r.Use(custommiddleware.CorsMiddleware)
-	r.Use(custommiddleware.LoggingMiddleware)
+	apiHandlers := api.NewAPI(repo)
+	apiHandlers.RegisterRoutes(mux)
+
+	// Chain middleware: recoverer -> rate limit -> logging -> CORS -> handler
+	var handler http.Handler = mux
+	handler = custommiddleware.CorsMiddleware(handler)
+	handler = custommiddleware.LoggingMiddleware(handler)
 
 	// Create rate limiter: 10 requests per second with burst of 20
 	rateLimiter := custommiddleware.NewIPRateLimiter(rate.Limit(10), 20)
-	r.Use(custommiddleware.RateLimitMiddleware(rateLimiter))
-
-	// Chi built-in middleware
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Recoverer)
-
-	apiHandlers := api.NewAPI(repo)
-	apiHandlers.RegisterRoutes(r)
+	handler = custommiddleware.RateLimitMiddleware(rateLimiter)(handler)
+	handler = custommiddleware.RecovererMiddleware(handler)
 
 	return &Server{
 		repo: repo,
 		server: &http.Server{
 			Addr:         opts.Address,
-			Handler:      r,
+			Handler:      handler,
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  60 * time.Second,
