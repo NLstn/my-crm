@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import { Dropdown } from '../Dropdown/Dropdown';
+import { useTheme } from '../../hooks/useTheme';
 import './ProfileDropdown.css';
 
 export interface ProfileDropdownProps {
@@ -7,6 +8,8 @@ export interface ProfileDropdownProps {
 }
 
 export const ProfileDropdown: FC<ProfileDropdownProps> = ({ initials = 'NL' }) => {
+  const { theme, toggleTheme } = useTheme();
+  
   const trigger = (
     <div className="profile-dropdown__trigger" role="button" aria-label="User menu" tabIndex={0}>
       <div className="profile-dropdown__avatar">
@@ -32,11 +35,11 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ initials = 'NL' }) =
           <button
             type="button"
             className="profile-dropdown__item"
-            onClick={() => console.log('Theme switch clicked')}
+            onClick={toggleTheme}
           >
-            <span className="profile-dropdown__item-icon">🌙</span>
+            <span className="profile-dropdown__item-icon">{theme === 'dark' ? '🌙' : '☀️'}</span>
             <span className="profile-dropdown__item-text">Theme</span>
-            <span className="profile-dropdown__item-badge">Dark</span>
+            <span className="profile-dropdown__item-badge">{theme === 'dark' ? 'Dark' : 'Light'}</span>
           </button>
         </div>
       </div>
