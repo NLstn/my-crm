@@ -29,6 +29,7 @@ type Repository interface {
 	CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error)
 	UpdateTicketStatus(ctx context.Context, ticketID string, status string) (domain.Ticket, error)
 
+	GetEmployee(ctx context.Context, id string) (domain.Employee, error)
 	SearchEmployees(ctx context.Context, query string) ([]domain.Employee, error)
 	CreateEmployee(ctx context.Context, input CreateEmployeeInput) (domain.Employee, error)
 }
@@ -293,6 +294,18 @@ func (r *MemoryRepository) UpdateTicketStatus(_ context.Context, ticketID string
 	return ticket, nil
 }
 
+func (r *MemoryRepository) GetEmployee(_ context.Context, id string) (domain.Employee, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	employee, ok := r.employees[id]
+	if !ok {
+		return domain.Employee{}, ErrNotFound
+	}
+
+	return employee, nil
+}
+
 func (r *MemoryRepository) SearchEmployees(_ context.Context, query string) ([]domain.Employee, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -492,6 +505,19 @@ func (r *PostgresRepository) UpdateTicketStatus(ctx context.Context, ticketID st
 	}
 
 	return ticket, nil
+}
+
+func (r *PostgresRepository) GetEmployee(ctx context.Context, id string) (domain.Employee, error) {
+	var employee domain.Employee
+
+	if err := r.db.WithContext(ctx).First(&employee, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.Employee{}, ErrNotFound
+		}
+		return domain.Employee{}, err
+	}
+
+	return employee, nil
 }
 
 func (r *PostgresRepository) SearchEmployees(ctx context.Context, query string) ([]domain.Employee, error) {

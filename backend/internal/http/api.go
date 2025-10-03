@@ -33,6 +33,7 @@ func (a *API) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /contacts", a.handleSearchContacts)
 	mux.HandleFunc("GET /employees", a.handleSearchEmployees)
 	mux.HandleFunc("POST /employees", a.handleCreateEmployee)
+	mux.HandleFunc("GET /employees/{employeeID}", a.handleGetEmployee)
 }
 
 type healthResponse struct {
@@ -431,6 +432,26 @@ type employeeResponse struct {
 	Email     string `json:"email"`
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`
+}
+
+func (a *API) handleGetEmployee(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("employeeID")
+	if id == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "employeeID is required"})
+		return
+	}
+
+	employee, err := a.repo.GetEmployee(r.Context(), id)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "employee not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toEmployeeResponse(employee))
 }
 
 func (a *API) handleSearchEmployees(w http.ResponseWriter, r *http.Request) {

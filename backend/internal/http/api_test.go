@@ -530,3 +530,53 @@ func TestHandleCreateEmployeeValidation(t *testing.T) {
 		t.Fatalf("expected status 400, got %d", resp2.Code)
 	}
 }
+
+func TestHandleGetEmployee(t *testing.T) {
+	_, repo, router := setupTestRouter(t)
+
+	// Create an employee
+	employee, err := repo.CreateEmployee(context.Background(), repository.CreateEmployeeInput{
+		Name:  "Alice Johnson",
+		Email: "alice@example.com",
+	})
+	if err != nil {
+		t.Fatalf("failed to create employee: %v", err)
+	}
+
+	// Get the employee
+	req := httptest.NewRequest(http.MethodGet, "/employees/"+employee.ID, nil)
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.Code)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &result); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if result["id"] != employee.ID {
+		t.Fatalf("expected employee ID %s, got %v", employee.ID, result["id"])
+	}
+
+	if result["name"] != "Alice Johnson" {
+		t.Fatalf("expected name 'Alice Johnson', got %v", result["name"])
+	}
+}
+
+func TestHandleGetEmployeeNotFound(t *testing.T) {
+	_, _, router := setupTestRouter(t)
+
+	// Try to get non-existent employee
+	req := httptest.NewRequest(http.MethodGet, "/employees/non-existent-id", nil)
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", resp.Code)
+	}
+}

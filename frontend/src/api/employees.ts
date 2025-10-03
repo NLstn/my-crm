@@ -4,6 +4,25 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export const employeesApi = {
   /**
+   * Get a single employee by ID
+   * @param id - The employee ID
+   * @returns The employee
+   */
+  async getById(id: string): Promise<Employee> {
+    const response = await fetch(`${API_BASE_URL}/employees/${id}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Employee not found');
+      }
+      const error = await response.json().catch(() => ({ error: 'Failed to fetch employee' }));
+      throw new Error(error.error || 'Failed to fetch employee');
+    }
+
+    return response.json();
+  },
+
+  /**
    * Search employees
    * @param query - Optional search query to filter by name or email
    * @returns Array of employees matching the search

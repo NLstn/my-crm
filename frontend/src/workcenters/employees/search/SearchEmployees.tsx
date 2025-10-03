@@ -115,7 +115,11 @@ export const SearchEmployees: FC = () => {
           <ul className="search-employees__list">
             {filteredEmployees.map((employee) => (
               <li key={employee.id} className="search-employees__list-item">
-                <div className="search-employees__employee-card">
+                <button 
+                  className="search-employees__employee-card"
+                  onClick={() => navigate(`/employee/${employee.id}`)}
+                  type="button"
+                >
                   <div className="search-employees__employee-header">
                     <h3 className="search-employees__employee-name">
                       {employee.name}
@@ -127,7 +131,7 @@ export const SearchEmployees: FC = () => {
                       {employee.email}
                     </span>
                   </div>
-                </div>
+                </button>
               </li>
             ))}
           </ul>
