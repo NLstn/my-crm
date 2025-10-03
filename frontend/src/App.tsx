@@ -6,6 +6,7 @@ import { DisplayContact, CreateContact } from './workcenters/contacts';
 import { SearchContacts } from './workcenters/contacts/search/SearchContacts';
 import { DisplayTicket, CreateTicket } from './workcenters/tickets';
 import { SearchTickets } from './workcenters/tickets/search/SearchTickets';
+import { SearchEmployees, CreateEmployee } from './workcenters/employees';
 import { SettingsDashboard, DefineIndustries } from './workcenters/settings';
 import './App.css';
 
@@ -36,6 +37,8 @@ function AppContent() {
         <Route path="/tickets/search" element={<SearchTickets />} />
         <Route path="/tickets/create" element={<CreateTicket />} />
         <Route path="/ticket/:id" element={<DisplayTicket />} />
+        <Route path="/employees/search" element={<SearchEmployees />} />
+        <Route path="/employees/create" element={<CreateEmployee />} />
         <Route path="/settings" element={<SettingsDashboard />} />
         <Route path="/settings/accounts/industries" element={<DefineIndustries />} />
       </Routes>

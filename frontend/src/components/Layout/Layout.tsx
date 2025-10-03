@@ -45,6 +45,17 @@ const defaultWorkCenters: WorkCenter[] = [
     ]
   },
   { 
+    id: 'employees', 
+    name: 'Employees', 
+    icon: '👤', 
+    path: '/employees',
+    defaultPath: '/employees/search',
+    subItems: [
+      { id: 'employees-search', name: 'Search Employees', path: '/employees/search' },
+      { id: 'employees-create', name: 'Create Employee', path: '/employees/create' },
+    ]
+  },
+  { 
     id: 'settings', 
     name: 'Admin Settings', 
     icon: '⚙️', 
