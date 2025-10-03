@@ -4,5 +4,7 @@ export type {
   Contact,
   CreateContactInput,
   Ticket,
-  CreateTicketInput
+  CreateTicketInput,
+  Employee,
+  CreateEmployeeInput
 } from './account';

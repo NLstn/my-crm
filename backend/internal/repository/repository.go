@@ -28,6 +28,9 @@ type Repository interface {
 	GetTicketsByAccount(ctx context.Context, accountID string) ([]domain.Ticket, error)
 	CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error)
 	UpdateTicketStatus(ctx context.Context, ticketID string, status string) (domain.Ticket, error)
+
+	SearchEmployees(ctx context.Context, query string) ([]domain.Employee, error)
+	CreateEmployee(ctx context.Context, input CreateEmployeeInput) (domain.Employee, error)
 }
 
 // CreateAccountInput captures the data needed to create an account.
@@ -51,20 +54,28 @@ type CreateTicketInput struct {
 	Status    string
 }
 
+// CreateEmployeeInput captures the data needed to create an employee.
+type CreateEmployeeInput struct {
+	Name  string
+	Email string
+}
+
 // MemoryRepository provides an in-memory implementation suitable for tests and development.
 type MemoryRepository struct {
-	mu       sync.RWMutex
-	accounts map[string]domain.Account
-	contacts map[string]domain.Contact
-	tickets  map[string]domain.Ticket
+	mu        sync.RWMutex
+	accounts  map[string]domain.Account
+	contacts  map[string]domain.Contact
+	tickets   map[string]domain.Ticket
+	employees map[string]domain.Employee
 }
 
 // NewMemoryRepository seeds the in-memory repository with optional fixtures.
 func NewMemoryRepository() *MemoryRepository {
 	return &MemoryRepository{
-		accounts: make(map[string]domain.Account),
-		contacts: make(map[string]domain.Contact),
-		tickets:  make(map[string]domain.Ticket),
+		accounts:  make(map[string]domain.Account),
+		contacts:  make(map[string]domain.Contact),
+		tickets:   make(map[string]domain.Ticket),
+		employees: make(map[string]domain.Employee),
 	}
 }
 
@@ -287,6 +298,49 @@ func (r *MemoryRepository) UpdateTicketStatus(_ context.Context, ticketID string
 	return ticket, nil
 }
 
+func (r *MemoryRepository) SearchEmployees(_ context.Context, query string) ([]domain.Employee, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	res := make([]domain.Employee, 0)
+
+	// If query is empty, return all employees
+	if query == "" {
+		for _, employee := range r.employees {
+			res = append(res, employee)
+		}
+		return res, nil
+	}
+
+	// Simple case-insensitive search in name and email
+	queryLower := toLower(query)
+	for _, employee := range r.employees {
+		if contains(toLower(employee.Name), queryLower) ||
+			contains(toLower(employee.Email), queryLower) {
+			res = append(res, employee)
+		}
+	}
+
+	return res, nil
+}
+
+func (r *MemoryRepository) CreateEmployee(_ context.Context, input CreateEmployeeInput) (domain.Employee, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	now := time.Now().UTC()
+	employee := domain.Employee{
+		ID:        uuid.NewString(),
+		Name:      input.Name,
+		Email:     input.Email,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	r.employees[employee.ID] = employee
+	return employee, nil
+}
+
 // PostgresRepository is a database-backed implementation using GORM.
 type PostgresRepository struct {
 	db *gorm.DB
@@ -451,4 +505,41 @@ func (r *PostgresRepository) UpdateTicketStatus(ctx context.Context, ticketID st
 	}
 
 	return ticket, nil
+}
+
+func (r *PostgresRepository) SearchEmployees(ctx context.Context, query string) ([]domain.Employee, error) {
+	var employees []domain.Employee
+
+	db := r.db.WithContext(ctx)
+
+	if query == "" {
+		// Return all employees when no query provided
+		if err := db.Order("created_at DESC").Find(&employees).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		// Search in name and email fields using LOWER for database-agnostic case-insensitive matching
+		searchPattern := "%" + query + "%"
+		if err := db.Where("LOWER(name) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?)", searchPattern, searchPattern).
+			Order("created_at DESC").
+			Find(&employees).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	return employees, nil
+}
+
+func (r *PostgresRepository) CreateEmployee(ctx context.Context, input CreateEmployeeInput) (domain.Employee, error) {
+	employee := domain.Employee{
+		ID:    uuid.NewString(),
+		Name:  input.Name,
+		Email: input.Email,
+	}
+
+	if err := r.db.WithContext(ctx).Create(&employee).Error; err != nil {
+		return domain.Employee{}, err
+	}
+
+	return employee, nil
 }

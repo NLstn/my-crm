@@ -31,6 +31,8 @@ func (a *API) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /accounts/{accountID}/tickets", a.handleCreateTicket)
 	mux.HandleFunc("PATCH /accounts/{accountID}/tickets/{ticketID}", a.handleUpdateTicketStatus)
 	mux.HandleFunc("GET /contacts", a.handleSearchContacts)
+	mux.HandleFunc("GET /employees", a.handleSearchEmployees)
+	mux.HandleFunc("POST /employees", a.handleCreateEmployee)
 }
 
 type healthResponse struct {
@@ -452,4 +454,76 @@ func (a *API) handleUpdateTicketStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, toTicketResponse(ticket))
+}
+
+type employeeResponse struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+func (a *API) handleSearchEmployees(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+
+	employees, err := a.repo.SearchEmployees(r.Context(), query)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toEmployeeResponses(employees))
+}
+
+type createEmployeeRequest struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func (a *API) handleCreateEmployee(w http.ResponseWriter, r *http.Request) {
+	var req createEmployeeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid payload"})
+		return
+	}
+
+	if req.Name == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "name is required"})
+		return
+	}
+
+	if req.Email == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "email is required"})
+		return
+	}
+
+	employee, err := a.repo.CreateEmployee(r.Context(), repository.CreateEmployeeInput{
+		Name:  req.Name,
+		Email: req.Email,
+	})
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, toEmployeeResponse(employee))
+}
+
+func toEmployeeResponses(employees []domain.Employee) []employeeResponse {
+	res := make([]employeeResponse, 0, len(employees))
+	for _, employee := range employees {
+		res = append(res, toEmployeeResponse(employee))
+	}
+	return res
+}
+
+func toEmployeeResponse(employee domain.Employee) employeeResponse {
+	return employeeResponse{
+		ID:        employee.ID,
+		Name:      employee.Name,
+		Email:     employee.Email,
+		CreatedAt: employee.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: employee.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
 }

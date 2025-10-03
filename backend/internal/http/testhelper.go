@@ -29,6 +29,7 @@ func setupTestDB(t *testing.T) repository.Repository {
 		&domain.Account{},
 		&domain.Contact{},
 		&domain.Ticket{},
+		&domain.Employee{},
 	); err != nil {
 		t.Fatalf("failed to migrate test database: %v", err)
 	}

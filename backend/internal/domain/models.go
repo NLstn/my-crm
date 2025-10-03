@@ -40,3 +40,13 @@ type Ticket struct {
 	UpdatedAt time.Time      `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
+
+// Employee represents a person who works at the company.
+type Employee struct {
+	ID        string         `json:"id" gorm:"primaryKey;type:uuid"`
+	Name      string         `json:"name" gorm:"not null"`
+	Email     string         `json:"email" gorm:"not null"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}

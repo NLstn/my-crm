@@ -42,3 +42,16 @@ export interface CreateTicketInput {
   title: string;
   status?: string;
 }
+
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmployeeInput {
+  name: string;
+  email: string;
+}
