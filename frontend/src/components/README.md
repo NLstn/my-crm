@@ -4,6 +4,52 @@ This directory contains reusable UI components for the My CRM application. All c
 
 ## Component Index
 
+### Layout Components
+
+#### Card
+A reusable tile/card container component with multiple variants for different use cases.
+
+**Location**: `components/Card/Card.tsx`
+
+**Features**:
+- Multiple variants: default, summary, clickable, section
+- Interactive and non-interactive modes
+- Hover effects and transitions
+- Consistent styling with theme system
+- Fully accessible with keyboard navigation
+- Can render as button or div element
+
+**Usage**:
+```tsx
+import { Card } from './components/Card';
+
+// Default card
+<Card>Content here</Card>
+
+// Clickable card
+<Card variant="clickable" onClick={handleClick}>
+  Clickable content
+</Card>
+
+// Summary card (for metrics)
+<Card variant="summary">
+  <div className="card__value">42</div>
+  <div className="card__label">Total Items</div>
+</Card>
+
+// Section card (for content grouping)
+<Card variant="section">
+  <h2>Section Title</h2>
+  <p>Section content</p>
+</Card>
+```
+
+**Variants**:
+- `default`: Basic card with hover effects
+- `summary`: Centered content for displaying metrics
+- `clickable`: Larger interactive cards with pronounced hover effect
+- `section`: Cards for grouping content sections
+
 ### Form Components
 
 #### Button
@@ -507,9 +553,9 @@ Planned components to be added:
 
 - [x] **Button** - Reusable button component with variants ✅ **Added**
 - [x] **Input** - Text input with validation ✅ **Added**
+- [x] **Card** - Content card/tile container ✅ **Added**
 - [ ] **Form** - Form wrapper with validation
 - [ ] **Modal** - Dialog/modal overlay
-- [ ] **Card** - Content card container
 - [ ] **Table** - Data table with sorting
 - [ ] **Tabs** - Tabbed interface
 - [ ] **Toast** - Notification messages

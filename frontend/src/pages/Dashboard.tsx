@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Card } from '../components';
 import '../App.css';
 
 export type Account = {
@@ -63,33 +64,35 @@ export function Dashboard() {
       </header>
 
       <main className="app__content">
-        <section className="panel">
+        <Card variant="section" className="panel">
           <h2>Accounts</h2>
           <ul className="list">
             {sampleAccounts.map((account) => (
               <li key={account.id}>
-                <button
-                  type="button"
+                <Card
+                  variant="default"
                   className={account.id === selectedAccountId ? 'list__item list__item--active' : 'list__item'}
                   onClick={() => setSelectedAccountId(account.id)}
                 >
                   <span className="list__item-title">{account.name}</span>
                   <span className="list__item-subtitle">{account.industry}</span>
-                </button>
+                </Card>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section className="panel">
+        <Card variant="section" className="panel">
           <h2>Contacts</h2>
           {selectedAccountId ? (
             accountContacts.length ? (
               <ul className="list">
                 {accountContacts.map((contact) => (
-                  <li key={contact.id} className="list__item">
-                    <span className="list__item-title">{contact.fullName}</span>
-                    <span className="list__item-subtitle">{contact.email}</span>
+                  <li key={contact.id}>
+                    <Card variant="default" className="list__item">
+                      <span className="list__item-title">{contact.fullName}</span>
+                      <span className="list__item-subtitle">{contact.email}</span>
+                    </Card>
                   </li>
                 ))}
               </ul>
@@ -99,17 +102,19 @@ export function Dashboard() {
           ) : (
             <p className="placeholder">Select an account to see contacts.</p>
           )}
-        </section>
+        </Card>
 
-        <section className="panel">
+        <Card variant="section" className="panel">
           <h2>Tickets</h2>
           {selectedAccountId ? (
             accountTickets.length ? (
               <ul className="list">
                 {accountTickets.map((ticket) => (
-                  <li key={ticket.id} className={`list__item ticket ticket--${ticket.status}`}>
-                    <span className="list__item-title">{ticket.title}</span>
-                    <span className="ticket__status">{ticket.status.replace('_', ' ')}</span>
+                  <li key={ticket.id}>
+                    <Card variant="default" className={`list__item ticket ticket--${ticket.status}`}>
+                      <span className="list__item-title">{ticket.title}</span>
+                      <span className="ticket__status">{ticket.status.replace('_', ' ')}</span>
+                    </Card>
                   </li>
                 ))}
               </ul>
@@ -119,17 +124,17 @@ export function Dashboard() {
           ) : (
             <p className="placeholder">Select an account to see tickets.</p>
           )}
-        </section>
+        </Card>
       </main>
 
       <aside className="app__sidebar">
         {activeAccount ? (
-          <div className="sidebar__card">
+          <Card variant="section" className="sidebar__card">
             <h3>{activeAccount.name}</h3>
             <p>Industry: {activeAccount.industry}</p>
             <p>Contacts: {accountContacts.length}</p>
             <p>Open tickets: {accountTickets.filter((ticket) => ticket.status !== 'closed').length}</p>
-          </div>
+          </Card>
         ) : (
           <p className="placeholder">Choose an account to see a quick summary.</p>
         )}
