@@ -202,6 +202,16 @@ describe('DisplayContact', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/account/1');
   });
 
+  it('navigates to ticket when ticket card is clicked', async () => {
+    const user = userEvent.setup();
+    await renderWithRouter('1');
+
+    const ticketButton = await screen.findByRole('button', { name: /Issue with product/i });
+    await user.click(ticketButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/ticket/1');
+  });
+
   it('displays correct statistics for different contacts', async () => {
     await renderWithRouter('2');
 

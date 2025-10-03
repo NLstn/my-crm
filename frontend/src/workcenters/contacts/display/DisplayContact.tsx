@@ -154,7 +154,11 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
             <ul className="display-contact__list">
               {tickets.map((ticket) => (
                 <li key={ticket.id} className="display-contact__list-item">
-                  <div className="display-contact__ticket-card">
+                  <button
+                    className="display-contact__ticket-card"
+                    onClick={() => navigate(`/ticket/${ticket.id}`)}
+                    type="button"
+                  >
                     <div className="display-contact__ticket-header">
                       <div className="display-contact__ticket-title">
                         {ticket.title}
@@ -163,7 +167,7 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
                         {ticket.status.replace('_', ' ')}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 </li>
               ))}
             </ul>
