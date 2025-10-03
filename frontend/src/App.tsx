@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout/Layout';
 import { Dashboard } from './pages/Dashboard';
+import { NotFound } from './pages/NotFound';
 import { SearchAccounts, DisplayAccount, CreateAccount } from './workcenters/accounts';
 import { DisplayContact, CreateContact } from './workcenters/contacts';
 import { SearchContacts } from './workcenters/contacts/search/SearchContacts';
@@ -39,6 +40,7 @@ function AppContent() {
         <Route path="/ticket/:id" element={<DisplayTicket />} />
         <Route path="/settings" element={<SettingsDashboard />} />
         <Route path="/settings/accounts/industries" element={<DefineIndustries />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
   );
