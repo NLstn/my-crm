@@ -1,5 +1,5 @@
 import { FC, FormEvent, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Input } from '../../../components';
 import { accountsApi, contactsApi } from '../../../api';
 import type { Account } from '../../../types';
@@ -8,6 +8,7 @@ import './CreateContact.css';
 export type CreateContactProps = Record<string, never>;
 
 export const CreateContact: FC<CreateContactProps> = () => {
+  const [searchParams] = useSearchParams();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [accountId, setAccountId] = useState('');
@@ -22,6 +23,12 @@ export const CreateContact: FC<CreateContactProps> = () => {
       try {
         const data = await accountsApi.search();
         setAccounts(data);
+        
+        // Pre-fill account from URL params if provided
+        const prefilledAccountId = searchParams.get('accountId');
+        if (prefilledAccountId && data.some(acc => acc.id === prefilledAccountId)) {
+          setAccountId(prefilledAccountId);
+        }
       } catch (err) {
         console.error('Failed to load accounts:', err);
       } finally {
@@ -30,7 +37,7 @@ export const CreateContact: FC<CreateContactProps> = () => {
     };
 
     loadAccounts();
-  }, []);
+  }, [searchParams]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -196,6 +196,24 @@ describe('CreateContact', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/contacts/search');
   });
 
+  it('pre-fills account from URL parameter', async () => {
+    // Mock window.location.search
+    delete (window as { location?: Location }).location;
+    window.location = { search: '?accountId=acc-2' } as Location;
+
+    render(
+      <BrowserRouter>
+        <CreateContact />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => expect(accountsApiMock.search).toHaveBeenCalled());
+    await screen.findByText('Create New Contact');
+
+    const accountDropdown = screen.getByLabelText(/Account/i) as HTMLSelectElement;
+    expect(accountDropdown.value).toBe('acc-2');
+  });
+
   it('displays all account options in dropdown', async () => {
     await renderWithRouter();
 
