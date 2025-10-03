@@ -65,13 +65,7 @@
 /* Account Section */
 .display-contact__account-section {
   margin-bottom: var(--spacing-2xl);
-}
-
-.display-contact__section-title {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-lg) 0;
+  /* Header styles now handled by Card component */
 }
 
 .display-contact__account-card {

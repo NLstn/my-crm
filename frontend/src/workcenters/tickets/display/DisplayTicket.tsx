@@ -176,8 +176,7 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
         </div>
       </div>
 
-      <div className="display-ticket__account-section">
-        <h2 className="display-ticket__section-title">Associated Account</h2>
+      <Card variant="section" className="display-ticket__account-section" title="Associated Account">
         {account ? (
           <Card 
             variant="clickable"
@@ -193,11 +192,10 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
             <p className="display-ticket__empty-text">Account not found</p>
           </div>
         )}
-      </div>
+      </Card>
 
       <div className="display-ticket__content">
-        <Card variant="section" className="display-ticket__section">
-          <h2 className="display-ticket__section-title">Account Contacts</h2>
+        <Card variant="section" className="display-ticket__section" title="Account Contacts">
           {contacts.length > 0 ? (
             <ul className="display-ticket__list">
               {contacts.map((contact) => (
@@ -226,8 +224,7 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
           )}
         </Card>
 
-        <Card variant="section" className="display-ticket__section">
-          <h2 className="display-ticket__section-title">Other Account Tickets</h2>
+        <Card variant="section" className="display-ticket__section" title="Other Account Tickets">
           {tickets.filter(t => t.id !== ticket.id).length > 0 ? (
             <ul className="display-ticket__list">
               {tickets

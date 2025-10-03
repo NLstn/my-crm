@@ -97,21 +97,7 @@
 }
 
 .display-account__section {
-  /* Base card styles now handled by Card component */
-}
-
-.display-account__section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
-}
-
-.display-account__section-title {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin: 0;
+  /* Base card styles and header now handled by Card component */
 }
 
 /* Lists */
