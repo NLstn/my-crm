@@ -28,7 +28,9 @@ export interface CreateContactInput {
 
 export interface Ticket {
   id: string;
+  displayId: number;
   accountId: string;
+  contactId: string;
   title: string;
   status: string;
   createdAt: string;
@@ -36,6 +38,7 @@ export interface Ticket {
 }
 
 export interface CreateTicketInput {
+  contactId: string;
   title: string;
   status?: string;
 }

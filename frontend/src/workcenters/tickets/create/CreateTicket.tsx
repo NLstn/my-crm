@@ -1,8 +1,8 @@
 import { FC, FormEvent, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
-import { accountsApi, ticketsApi } from '../../../api';
-import type { Account } from '../../../types';
+import { accountsApi, contactsApi, ticketsApi } from '../../../api';
+import type { Account, Contact } from '../../../types';
 import './CreateTicket.css';
 
 export type CreateTicketProps = Record<string, never>;
@@ -10,11 +10,14 @@ export type CreateTicketProps = Record<string, never>;
 export const CreateTicket: FC<CreateTicketProps> = () => {
   const [title, setTitle] = useState('');
   const [accountId, setAccountId] = useState('');
+  const [contactId, setContactId] = useState('');
   const [status, setStatus] = useState<string>('open');
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ title?: string; accountId?: string }>({});
+  const [errors, setErrors] = useState<{ title?: string; accountId?: string; contactId?: string }>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,11 +35,38 @@ export const CreateTicket: FC<CreateTicketProps> = () => {
     loadAccounts();
   }, []);
 
+  useEffect(() => {
+    const loadContacts = async () => {
+      if (!accountId) {
+        setContacts([]);
+        setContactId('');
+        return;
+      }
+
+      setIsLoadingContacts(true);
+      try {
+        const data = await contactsApi.getByAccount(accountId);
+        setContacts(data);
+        // Auto-select first contact if available
+        if (data.length > 0) {
+          setContactId(data[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load contacts:', err);
+        setContacts([]);
+      } finally {
+        setIsLoadingContacts(false);
+      }
+    };
+
+    loadContacts();
+  }, [accountId]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     // Validate fields
-    const newErrors: { title?: string; accountId?: string } = {};
+    const newErrors: { title?: string; accountId?: string; contactId?: string } = {};
     
     if (!title.trim()) {
       newErrors.title = 'Title is required';
@@ -44,6 +74,10 @@ export const CreateTicket: FC<CreateTicketProps> = () => {
     
     if (!accountId) {
       newErrors.accountId = 'Account is required';
+    }
+
+    if (!contactId) {
+      newErrors.contactId = 'Contact is required';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -59,6 +93,7 @@ export const CreateTicket: FC<CreateTicketProps> = () => {
       
       // Create the ticket via API
       const newTicket = await ticketsApi.create(accountId, {
+        contactId: contactId,
         title: title.trim(),
         status: status
       });
@@ -139,6 +174,39 @@ export const CreateTicket: FC<CreateTicketProps> = () => {
           </select>
           {errors.accountId && (
             <span className="create-ticket__error">{errors.accountId}</span>
+          )}
+        </div>
+
+        <div className="create-ticket__field">
+          <label htmlFor="ticket-contact" className="create-ticket__label">
+            Contact <span className="create-ticket__required">*</span>
+          </label>
+          <select
+            id="ticket-contact"
+            className={`create-ticket__select ${errors.contactId ? 'create-ticket__select--error' : ''}`}
+            value={contactId}
+            onChange={(e) => {
+              setContactId(e.target.value);
+              if (errors.contactId) setErrors({ ...errors, contactId: undefined });
+            }}
+            required
+            disabled={!accountId || isLoadingContacts || contacts.length === 0}
+          >
+            <option value="">
+              {isLoadingContacts 
+                ? 'Loading contacts...' 
+                : contacts.length === 0 
+                  ? 'No contacts available'
+                  : 'Select a contact...'}
+            </option>
+            {contacts.map((contact) => (
+              <option key={contact.id} value={contact.id}>
+                {contact.fullName} ({contact.email})
+              </option>
+            ))}
+          </select>
+          {errors.contactId && (
+            <span className="create-ticket__error">{errors.contactId}</span>
           )}
         </div>
 

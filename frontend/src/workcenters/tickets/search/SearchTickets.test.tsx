@@ -45,7 +45,9 @@ const buildAccount = (overrides: Partial<Account> = {}): Account => ({
 
 const buildTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
   id: overrides.id ?? 'tic-1',
+  displayId: overrides.displayId ?? 1,
   accountId: overrides.accountId ?? 'acc-1',
+  contactId: overrides.contactId ?? 'con-1',
   title: overrides.title ?? 'Onboarding call',
   status: overrides.status ?? 'open',
   createdAt: overrides.createdAt ?? '2024-01-01T00:00:00Z',
@@ -60,14 +62,14 @@ const mockAccounts: Account[] = [
 
 const mockTicketsByAccount: Record<string, Ticket[]> = {
   'acc-1': [
-    buildTicket({ id: 'tic-1', accountId: 'acc-1', title: 'Onboarding call', status: 'open' }),
-    buildTicket({ id: 'tic-2', accountId: 'acc-1', title: 'Setup assistance', status: 'in_progress' }),
+    buildTicket({ id: 'tic-1', displayId: 1, accountId: 'acc-1', contactId: 'con-1', title: 'Onboarding call', status: 'open' }),
+    buildTicket({ id: 'tic-2', displayId: 2, accountId: 'acc-1', contactId: 'con-2', title: 'Setup assistance', status: 'in_progress' }),
   ],
   'acc-2': [
-    buildTicket({ id: 'tic-3', accountId: 'acc-2', title: 'Renewal contract review', status: 'closed' }),
+    buildTicket({ id: 'tic-3', displayId: 3, accountId: 'acc-2', contactId: 'con-3', title: 'Renewal contract review', status: 'closed' }),
   ],
   'acc-3': [
-    buildTicket({ id: 'tic-4', accountId: 'acc-3', title: 'Technical support needed', status: 'open' }),
+    buildTicket({ id: 'tic-4', displayId: 4, accountId: 'acc-3', contactId: 'con-4', title: 'Technical support needed', status: 'open' }),
   ],
 };
 
