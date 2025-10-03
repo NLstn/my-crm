@@ -31,7 +31,9 @@ type Contact struct {
 // Ticket represents a support interaction linked to an account.
 type Ticket struct {
 	ID        string         `json:"id" gorm:"primaryKey;type:uuid"`
+	DisplayID int            `json:"displayId" gorm:"uniqueIndex;autoIncrement:false"`
 	AccountID string         `json:"accountId" gorm:"type:uuid;not null;index"`
+	ContactID string         `json:"contactId" gorm:"type:uuid;not null;index"`
 	Title     string         `json:"title" gorm:"not null"`
 	Status    string         `json:"status" gorm:"not null;default:'open'"`
 	CreatedAt time.Time      `json:"createdAt"`

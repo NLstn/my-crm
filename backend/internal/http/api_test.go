@@ -301,9 +301,20 @@ func TestHandleUpdateTicketStatus(t *testing.T) {
 		t.Fatalf("failed to create account: %v", err)
 	}
 
+	// Create a contact for the ticket
+	contact, err := repo.CreateContact(context.Background(), repository.CreateContactInput{
+		AccountID: account.ID,
+		FullName:  "Test Contact",
+		Email:     "test@test.com",
+	})
+	if err != nil {
+		t.Fatalf("failed to create contact: %v", err)
+	}
+
 	// Create a ticket
 	ticket, err := repo.CreateTicket(context.Background(), repository.CreateTicketInput{
 		AccountID: account.ID,
+		ContactID: contact.ID,
 		Title:     "Test Ticket",
 		Status:    "open",
 	})
@@ -381,9 +392,20 @@ func TestHandleUpdateTicketStatusValidation(t *testing.T) {
 		t.Fatalf("failed to create account: %v", err)
 	}
 
+	// Create a contact for the ticket
+	contact, err := repo.CreateContact(context.Background(), repository.CreateContactInput{
+		AccountID: account.ID,
+		FullName:  "Test Contact",
+		Email:     "test@test.com",
+	})
+	if err != nil {
+		t.Fatalf("failed to create contact: %v", err)
+	}
+
 	// Create a ticket
 	ticket, err := repo.CreateTicket(context.Background(), repository.CreateTicketInput{
 		AccountID: account.ID,
+		ContactID: contact.ID,
 		Title:     "Test Ticket",
 		Status:    "open",
 	})
