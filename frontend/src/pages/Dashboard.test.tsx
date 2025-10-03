@@ -10,7 +10,7 @@ describe('Dashboard', () => {
     expect(screen.getByText(/track accounts, their contacts, and support tickets/i)).toBeInTheDocument();
   });
 
-  it('renders all panels', () => {
+  it('renders all cards', () => {
     render(<Dashboard />);
 
     expect(screen.getByRole('heading', { level: 2, name: /accounts/i })).toBeInTheDocument();

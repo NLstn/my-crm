@@ -71,7 +71,7 @@ The application uses a comprehensive theme system based on CSS Custom Properties
 --color-background: #0a0a0a           /* Main background (near black) */
 --color-background-elevated: #1a1a1a  /* Elevated surfaces */
 --color-background-hover: #2a2a2a     /* Hover states */
---color-surface: #1a1a1a              /* Card/panel backgrounds */
+--color-surface: #1a1a1a              /* Card backgrounds */
 --color-surface-raised: #2a2a2a       /* Raised surfaces */
 ```
 
@@ -379,14 +379,14 @@ The project uses BEM (Block Element Modifier) methodology:
 
 ```css
 /* Block */
-.panel { }
+.card { }
 
 /* Element */
-.panel__header { }
-.panel__content { }
+.card__header { }
+.card__content { }
 
 /* Modifier */
-.panel--highlighted { }
+.card--highlighted { }
 .list__item--active { }
 ```
 
