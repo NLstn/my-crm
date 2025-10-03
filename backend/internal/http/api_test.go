@@ -405,3 +405,128 @@ func TestHandleUpdateTicketStatusValidation(t *testing.T) {
 		t.Fatalf("expected status 400, got %d", resp.Code)
 	}
 }
+
+func TestHandleCreateAndSearchEmployees(t *testing.T) {
+	_, _, router := setupTestRouter(t)
+
+	// Create first employee
+	payload := map[string]string{
+		"name":  "John Doe",
+		"email": "john.doe@example.com",
+	}
+	body, _ := json.Marshal(payload)
+
+	req := httptest.NewRequest(http.MethodPost, "/employees", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", resp.Code)
+	}
+
+	var employee1 map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &employee1); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if employee1["name"] != "John Doe" {
+		t.Fatalf("expected name 'John Doe', got %v", employee1["name"])
+	}
+
+	// Create second employee
+	payload2 := map[string]string{
+		"name":  "Jane Smith",
+		"email": "jane.smith@example.com",
+	}
+	body2, _ := json.Marshal(payload2)
+
+	req2 := httptest.NewRequest(http.MethodPost, "/employees", bytes.NewReader(body2))
+	req2.Header.Set("Content-Type", "application/json")
+	resp2 := httptest.NewRecorder()
+
+	router.ServeHTTP(resp2, req2)
+
+	if resp2.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", resp2.Code)
+	}
+
+	// Search all employees
+	searchReq := httptest.NewRequest(http.MethodGet, "/employees", nil)
+	searchResp := httptest.NewRecorder()
+
+	router.ServeHTTP(searchResp, searchReq)
+
+	if searchResp.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", searchResp.Code)
+	}
+
+	var employees []map[string]any
+	if err := json.Unmarshal(searchResp.Body.Bytes(), &employees); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(employees) != 2 {
+		t.Fatalf("expected 2 employees, got %d", len(employees))
+	}
+
+	// Search by name
+	searchByNameReq := httptest.NewRequest(http.MethodGet, "/employees?q=John", nil)
+	searchByNameResp := httptest.NewRecorder()
+
+	router.ServeHTTP(searchByNameResp, searchByNameReq)
+
+	if searchByNameResp.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", searchByNameResp.Code)
+	}
+
+	var filteredEmployees []map[string]any
+	if err := json.Unmarshal(searchByNameResp.Body.Bytes(), &filteredEmployees); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(filteredEmployees) != 1 {
+		t.Fatalf("expected 1 employee matching 'John', got %d", len(filteredEmployees))
+	}
+
+	if filteredEmployees[0]["name"] != "John Doe" {
+		t.Fatalf("expected employee name 'John Doe', got %v", filteredEmployees[0]["name"])
+	}
+}
+
+func TestHandleCreateEmployeeValidation(t *testing.T) {
+	_, _, router := setupTestRouter(t)
+
+	// Test missing name
+	payload := map[string]string{
+		"email": "test@example.com",
+	}
+	body, _ := json.Marshal(payload)
+
+	req := httptest.NewRequest(http.MethodPost, "/employees", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", resp.Code)
+	}
+
+	// Test missing email
+	payload2 := map[string]string{
+		"name": "Test Employee",
+	}
+	body2, _ := json.Marshal(payload2)
+
+	req2 := httptest.NewRequest(http.MethodPost, "/employees", bytes.NewReader(body2))
+	req2.Header.Set("Content-Type", "application/json")
+	resp2 := httptest.NewRecorder()
+
+	router.ServeHTTP(resp2, req2)
+
+	if resp2.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", resp2.Code)
+	}
+}

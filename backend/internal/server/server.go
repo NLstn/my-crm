@@ -105,6 +105,7 @@ func NewPostgresConnection(dsn string) (*gorm.DB, error) {
 		&domain.Account{},
 		&domain.Contact{},
 		&domain.Ticket{},
+		&domain.Employee{},
 	); err != nil {
 		return nil, err
 	}
