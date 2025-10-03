@@ -29,6 +29,7 @@ func (a *API) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /accounts/{accountID}/contacts", a.handleCreateContact)
 	mux.HandleFunc("GET /accounts/{accountID}/tickets", a.handleGetTicketsByAccount)
 	mux.HandleFunc("POST /accounts/{accountID}/tickets", a.handleCreateTicket)
+	mux.HandleFunc("PATCH /accounts/{accountID}/tickets/{ticketID}", a.handleUpdateTicketStatus)
 	mux.HandleFunc("GET /contacts", a.handleSearchContacts)
 }
 
@@ -361,4 +362,63 @@ func toTicketResponse(ticket domain.Ticket) ticketResponse {
 		CreatedAt: ticket.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: ticket.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
+}
+
+type updateTicketStatusRequest struct {
+	Status string `json:"status"`
+}
+
+func (a *API) handleUpdateTicketStatus(w http.ResponseWriter, r *http.Request) {
+	accountID := r.PathValue("accountID")
+	if accountID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "accountID is required"})
+		return
+	}
+
+	ticketID := r.PathValue("ticketID")
+	if ticketID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "ticketID is required"})
+		return
+	}
+
+	// Verify account exists
+	_, err := a.repo.GetAccount(r.Context(), accountID)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "account not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	var req updateTicketStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid payload"})
+		return
+	}
+
+	if req.Status == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "status is required"})
+		return
+	}
+
+	// Update the ticket status
+	ticket, err := a.repo.UpdateTicketStatus(r.Context(), ticketID, req.Status)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "ticket not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	// Verify the ticket belongs to the specified account
+	if ticket.AccountID != accountID {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "ticket not found"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toTicketResponse(ticket))
 }

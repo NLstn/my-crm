@@ -15,6 +15,7 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -72,6 +73,25 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
     loadData();
   }, [id]);
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!ticket || !account || isUpdatingStatus) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const updatedTicket = await ticketsApi.updateStatus(account.id, ticket.id, newStatus);
+      setTicket(updatedTicket);
+      
+      // Update the ticket in the tickets list as well
+      setTickets(prevTickets => 
+        prevTickets.map(t => t.id === updatedTicket.id ? updatedTicket : t)
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update ticket status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="display-ticket">
@@ -122,6 +142,38 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
           <span className={`display-ticket__status display-ticket__status--${ticket.status}`}>
             {ticket.status.replace('_', ' ')}
           </span>
+          <div className="display-ticket__status-buttons">
+            {ticket.status !== 'open' && (
+              <button
+                className="display-ticket__status-button"
+                onClick={() => handleStatusChange('open')}
+                disabled={isUpdatingStatus}
+                type="button"
+              >
+                Mark as Open
+              </button>
+            )}
+            {ticket.status !== 'in_progress' && (
+              <button
+                className="display-ticket__status-button"
+                onClick={() => handleStatusChange('in_progress')}
+                disabled={isUpdatingStatus}
+                type="button"
+              >
+                Mark as In Progress
+              </button>
+            )}
+            {ticket.status !== 'closed' && (
+              <button
+                className="display-ticket__status-button"
+                onClick={() => handleStatusChange('closed')}
+                disabled={isUpdatingStatus}
+                type="button"
+              >
+                Mark as Closed
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

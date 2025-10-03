@@ -23,6 +23,7 @@ vi.mock('../../../api', () => ({
   ticketsApi: {
     getByAccount: vi.fn(),
     create: vi.fn(),
+    updateStatus: vi.fn(),
   },
   contactsApi: {
     getByAccount: vi.fn(),
@@ -216,5 +217,35 @@ describe('DisplayTicket', () => {
     await renderWithRouter('/ticket/tic-1');
 
     expect(await screen.findByText('No other tickets for this account')).toBeDefined();
+  });
+
+  it('allows changing ticket status', async () => {
+    const user = userEvent.setup();
+    
+    // Mock the updateStatus to return the updated ticket
+    const updatedTicket = buildTicket({ id: 'tic-1', accountId: 'acc-1', title: 'Onboarding call', status: 'in_progress' });
+    ticketsApiMock.updateStatus = vi.fn().mockResolvedValue(updatedTicket);
+
+    await renderWithRouter('/ticket/tic-1');
+
+    // Find and click the "Mark as In Progress" button
+    const inProgressButton = await screen.findByRole('button', { name: /Mark as In Progress/i });
+    await user.click(inProgressButton);
+
+    // Verify the API was called with correct parameters
+    await waitFor(() => {
+      expect(ticketsApiMock.updateStatus).toHaveBeenCalledWith('acc-1', 'tic-1', 'in_progress');
+    });
+  });
+
+  it('displays status change buttons for non-current statuses', async () => {
+    await renderWithRouter('/ticket/tic-1');
+
+    // For an "open" ticket, should show "In Progress" and "Closed" buttons
+    expect(await screen.findByRole('button', { name: /Mark as In Progress/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Mark as Closed/i })).toBeDefined();
+    
+    // Should not show "Mark as Open" button since it's already open
+    expect(screen.queryByRole('button', { name: /Mark as Open/i })).toBeNull();
   });
 });

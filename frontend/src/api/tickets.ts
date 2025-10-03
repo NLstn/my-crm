@@ -47,4 +47,31 @@ export const ticketsApi = {
 
     return response.json();
   },
+
+  /**
+   * Update the status of a ticket
+   * @param accountId - The UUID of the account
+   * @param ticketId - The UUID of the ticket
+   * @param status - The new status for the ticket
+   * @returns The updated ticket
+   */
+  async updateStatus(accountId: string, ticketId: string, status: string): Promise<Ticket> {
+    const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/tickets/${ticketId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Ticket or account not found');
+      }
+      const error = await response.json().catch(() => ({ error: 'Failed to update ticket status' }));
+      throw new Error(error.error || 'Failed to update ticket status');
+    }
+
+    return response.json();
+  },
 };
