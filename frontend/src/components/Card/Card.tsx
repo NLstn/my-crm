@@ -65,6 +65,7 @@ export const Card: FC<CardProps> = ({
   ].filter(Boolean).join(' ');
 
   // Remove non-standard HTML attributes
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { variant: _, as: __, ...htmlProps } = rest;
 
   if (isButton) {
