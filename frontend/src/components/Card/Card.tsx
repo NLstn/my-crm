@@ -1,7 +1,7 @@
-import { FC, ReactNode, ButtonHTMLAttributes } from 'react';
+import { FC, ReactNode, ButtonHTMLAttributes, HTMLAttributes, MouseEvent } from 'react';
 import './Card.css';
 
-export interface CardProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface CardProps {
   /** Visual variant of the card */
   variant?: 'default' | 'summary' | 'clickable' | 'section';
   /** Child content to render inside the card */
@@ -10,6 +10,12 @@ export interface CardProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   /** Whether the card should be rendered as a button (clickable) */
   as?: 'div' | 'button';
+  /** Click handler */
+  onClick?: (event: MouseEvent<HTMLButtonElement | HTMLDivElement>) => void;
+  /** Disabled state (only for buttons) */
+  disabled?: boolean;
+  /** Additional HTML attributes */
+  [key: string]: unknown;
 }
 
 /**
@@ -45,11 +51,11 @@ export const Card: FC<CardProps> = ({
   className = '',
   as,
   onClick,
+  disabled,
   ...rest
 }) => {
   // Determine if card should be a button based on props
   const isButton = as === 'button' || onClick !== undefined || variant === 'clickable';
-  const Component = isButton ? 'button' : 'div';
   
   const classes = [
     'card',
@@ -58,22 +64,26 @@ export const Card: FC<CardProps> = ({
     className
   ].filter(Boolean).join(' ');
 
+  // Remove non-standard HTML attributes
+  const { variant: _, as: __, ...htmlProps } = rest;
+
   if (isButton) {
     return (
-      <Component
+      <button
         type="button"
         className={classes}
-        onClick={onClick}
-        {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+        onClick={onClick as (event: MouseEvent<HTMLButtonElement>) => void}
+        disabled={disabled}
+        {...(htmlProps as ButtonHTMLAttributes<HTMLButtonElement>)}
       >
         {children}
-      </Component>
+      </button>
     );
   }
 
   return (
-    <Component className={classes}>
+    <div className={classes} {...(htmlProps as HTMLAttributes<HTMLDivElement>)}>
       {children}
-    </Component>
+    </div>
   );
 };

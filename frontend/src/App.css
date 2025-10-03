@@ -35,14 +35,10 @@
 }
 
 .panel {
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  padding: var(--spacing-xl);
+  /* Base card styles now handled by Card component */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  border: 1px solid var(--color-border);
 }
 
 .panel h2 {
@@ -64,22 +60,9 @@
 }
 
 .list__item {
-  width: 100%;
-  text-align: left;
+  /* Base card styles now handled by Card component */
   background: var(--color-background-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  transition: all var(--transition-base);
   display: block;
-  color: var(--color-text-primary);
-}
-
-.list__item:hover {
-  transform: translateY(-2px);
-  border-color: var(--color-primary);
-  background: var(--color-background-hover);
-  box-shadow: var(--shadow-hover);
 }
 
 .list__item--active {
@@ -140,11 +123,10 @@
 
 .app__sidebar {
   grid-column: 4 / 5;
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  padding: var(--spacing-xl);
-  border: 1px solid var(--color-border);
+}
+
+.sidebar__card {
+  /* Base card styles now handled by Card component */
 }
 
 .sidebar__card h3 {
