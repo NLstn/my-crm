@@ -71,17 +71,7 @@
 }
 
 .display-account__summary-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  text-align: center;
-  transition: all var(--transition-base);
-}
-
-.display-account__summary-card:hover {
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-md);
+  /* Base card styles now handled by Card component */
 }
 
 .display-account__summary-value {
@@ -107,10 +97,7 @@
 }
 
 .display-account__section {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  /* Base card styles now handled by Card component */
 }
 
 .display-account__section-header {
@@ -144,17 +131,8 @@
 
 /* Contact Cards */
 .display-account__contact-card {
-  padding: var(--spacing-lg);
+  /* Base card styles now handled by Card component */
   background-color: var(--color-background-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-base);
-}
-
-.display-account__contact-card:hover {
-  background-color: var(--color-background-hover);
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-sm);
 }
 
 .display-account__contact-name {
@@ -171,17 +149,8 @@
 
 /* Ticket Cards */
 .display-account__ticket-card {
-  padding: var(--spacing-lg);
+  /* Base card styles now handled by Card component */
   background-color: var(--color-background-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-base);
-}
-
-.display-account__ticket-card:hover {
-  background-color: var(--color-background-hover);
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-sm);
 }
 
 .display-account__ticket-header {

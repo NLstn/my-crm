@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { accountsApi, contactsApi, ticketsApi } from '../../../api';
 import type { Account, Contact, Ticket } from '../../../types';
+import { Card } from '../../../components';
 import './DisplayTicket.css';
 
 export type DisplayTicketProps = Record<string, never>;
@@ -178,15 +179,15 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
       <div className="display-ticket__account-section">
         <h2 className="display-ticket__section-title">Associated Account</h2>
         {account ? (
-          <button 
+          <Card 
+            variant="clickable"
             className="display-ticket__account-card"
             onClick={() => navigate(`/account/${account.id}`)}
-            type="button"
           >
             <div className="display-ticket__account-name">{account.name}</div>
             <div className="display-ticket__account-industry">{account.industry}</div>
             <div className="display-ticket__account-link">View Account →</div>
-          </button>
+          </Card>
         ) : (
           <div className="display-ticket__empty">
             <p className="display-ticket__empty-text">Account not found</p>
@@ -195,16 +196,16 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
       </div>
 
       <div className="display-ticket__content">
-        <section className="display-ticket__section">
+        <Card variant="section" className="display-ticket__section">
           <h2 className="display-ticket__section-title">Account Contacts</h2>
           {contacts.length > 0 ? (
             <ul className="display-ticket__list">
               {contacts.map((contact) => (
                 <li key={contact.id} className="display-ticket__list-item">
-                  <button
+                  <Card
+                    variant="default"
                     className="display-ticket__contact-card"
                     onClick={() => navigate(`/contact/${contact.id}`)}
-                    type="button"
                   >
                     <div className="display-ticket__contact-header">
                       <div className="display-ticket__contact-name">
@@ -214,7 +215,7 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
                     <div className="display-ticket__contact-email">
                       {contact.email}
                     </div>
-                  </button>
+                  </Card>
                 </li>
               ))}
             </ul>
@@ -223,9 +224,9 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
               <p className="display-ticket__empty-text">No contacts for this ticket&apos;s account</p>
             </div>
           )}
-        </section>
+        </Card>
 
-        <section className="display-ticket__section">
+        <Card variant="section" className="display-ticket__section">
           <h2 className="display-ticket__section-title">Other Account Tickets</h2>
           {tickets.filter(t => t.id !== ticket.id).length > 0 ? (
             <ul className="display-ticket__list">
@@ -233,10 +234,10 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
                 .filter(t => t.id !== ticket.id)
                 .map((otherTicket) => (
                   <li key={otherTicket.id} className="display-ticket__list-item">
-                    <button
+                    <Card
+                      variant="default"
                       className="display-ticket__ticket-card"
                       onClick={() => navigate(`/ticket/${otherTicket.id}`)}
-                      type="button"
                     >
                       <div className="display-ticket__ticket-header">
                         <div className="display-ticket__ticket-title">
@@ -246,7 +247,7 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
                           {otherTicket.status.replace('_', ' ')}
                         </span>
                       </div>
-                    </button>
+                    </Card>
                   </li>
                 ))}
             </ul>
@@ -255,7 +256,7 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
               <p className="display-ticket__empty-text">No other tickets for this account</p>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

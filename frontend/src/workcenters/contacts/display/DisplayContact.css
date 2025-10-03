@@ -78,22 +78,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  padding: var(--spacing-xl);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-  font-size: inherit;
-}
-
-.display-contact__account-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  /* Base card styles now handled by Card component */
 }
 
 .display-contact__account-name {
@@ -122,20 +107,6 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-.display-contact__summary-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  text-align: center;
-  transition: all var(--transition-base);
-}
-
-.display-contact__summary-card:hover {
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-md);
-}
-
 .display-contact__summary-value {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
@@ -158,13 +129,6 @@
   gap: var(--spacing-2xl);
 }
 
-.display-contact__section {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-}
-
 /* Lists */
 .display-contact__list {
   list-style: none;
@@ -182,22 +146,8 @@
 
 /* Ticket Cards */
 .display-contact__ticket-card {
-  padding: var(--spacing-lg);
+  /* Base card styles now handled by Card component */
   background-color: var(--color-background-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-base);
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-  font-size: inherit;
-}
-
-.display-contact__ticket-card:hover {
-  background-color: var(--color-background-hover);
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-sm);
 }
 
 .display-contact__ticket-header {
