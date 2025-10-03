@@ -208,10 +208,10 @@ describe('SearchTickets', () => {
   it('displays ticket IDs', async () => {
     await renderComponent();
 
-    expect(screen.getByText('ID: tic-1')).toBeDefined();
-    expect(screen.getByText('ID: tic-2')).toBeDefined();
-    expect(screen.getByText('ID: tic-3')).toBeDefined();
-    expect(screen.getByText('ID: tic-4')).toBeDefined();
+    expect(screen.getByText('ID: 1')).toBeDefined();
+    expect(screen.getByText('ID: 2')).toBeDefined();
+    expect(screen.getByText('ID: 3')).toBeDefined();
+    expect(screen.getByText('ID: 4')).toBeDefined();
   });
 
   it('displays status badges correctly', async () => {

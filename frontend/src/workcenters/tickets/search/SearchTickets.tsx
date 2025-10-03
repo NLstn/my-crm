@@ -149,7 +149,7 @@ export const SearchTickets: FC = () => {
                   </div>
                   <div className="search-tickets__ticket-details">
                     <span className="search-tickets__ticket-id">
-                      ID: {ticket.id}
+                      ID: {ticket.displayId}
                     </span>
                     <span className="search-tickets__ticket-account">
                       {getAccountName(ticket.accountId)}
