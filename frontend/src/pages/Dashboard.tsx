@@ -64,7 +64,7 @@ export function Dashboard() {
       </header>
 
       <main className="app__content">
-        <Card variant="section" className="panel" title="Accounts">
+        <Card variant="section" title="Accounts">
           <ul className="list">
             {sampleAccounts.map((account) => (
               <li key={account.id}>
@@ -81,7 +81,7 @@ export function Dashboard() {
           </ul>
         </Card>
 
-        <Card variant="section" className="panel" title="Contacts">
+        <Card variant="section" title="Contacts">
           {selectedAccountId ? (
             accountContacts.length ? (
               <ul className="list">
@@ -102,7 +102,7 @@ export function Dashboard() {
           )}
         </Card>
 
-        <Card variant="section" className="panel" title="Tickets">
+        <Card variant="section" title="Tickets">
           {selectedAccountId ? (
             accountTickets.length ? (
               <ul className="list">

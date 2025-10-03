@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 describe('App', () => {
-  it('renders the dashboard with CRM heading and panels', () => {
+  it('renders the dashboard with CRM heading and cards', () => {
     render(
       <BrowserRouter>
         <Layout>

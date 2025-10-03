@@ -34,22 +34,6 @@
   display: contents;
 }
 
-.panel {
-  /* Base card styles now handled by Card component */
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.panel h2 {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--spacing-md);
-}
-
 .list {
   list-style: none;
   padding: 0;
