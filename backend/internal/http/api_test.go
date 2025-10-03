@@ -288,3 +288,120 @@ func TestHandleSearchContacts(t *testing.T) {
 		t.Fatalf("expected contact name 'Jane Smith', got %v", emailContacts[0]["fullName"])
 	}
 }
+
+func TestHandleUpdateTicketStatus(t *testing.T) {
+	_, repo, router := setupTestRouter(t)
+
+	// Create an account
+	account, err := repo.CreateAccount(context.Background(), repository.CreateAccountInput{
+		Name:     "Test Company",
+		Industry: "Testing",
+	})
+	if err != nil {
+		t.Fatalf("failed to create account: %v", err)
+	}
+
+	// Create a ticket
+	ticket, err := repo.CreateTicket(context.Background(), repository.CreateTicketInput{
+		AccountID: account.ID,
+		Title:     "Test Ticket",
+		Status:    "open",
+	})
+	if err != nil {
+		t.Fatalf("failed to create ticket: %v", err)
+	}
+
+	// Update the ticket status
+	payload := map[string]string{
+		"status": "in_progress",
+	}
+	body, _ := json.Marshal(payload)
+
+	req := httptest.NewRequest(http.MethodPatch, "/accounts/"+account.ID+"/tickets/"+ticket.ID, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.Code)
+	}
+
+	var data map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &data); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if data["status"] != "in_progress" {
+		t.Fatalf("expected status 'in_progress', got %v", data["status"])
+	}
+
+	if data["id"] != ticket.ID {
+		t.Fatalf("expected ticket ID %s, got %v", ticket.ID, data["id"])
+	}
+}
+
+func TestHandleUpdateTicketStatusNotFound(t *testing.T) {
+	_, repo, router := setupTestRouter(t)
+
+	// Create an account
+	account, err := repo.CreateAccount(context.Background(), repository.CreateAccountInput{
+		Name:     "Test Company",
+		Industry: "Testing",
+	})
+	if err != nil {
+		t.Fatalf("failed to create account: %v", err)
+	}
+
+	payload := map[string]string{
+		"status": "closed",
+	}
+	body, _ := json.Marshal(payload)
+
+	req := httptest.NewRequest(http.MethodPatch, "/accounts/"+account.ID+"/tickets/non-existent-ticket", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", resp.Code)
+	}
+}
+
+func TestHandleUpdateTicketStatusValidation(t *testing.T) {
+	_, repo, router := setupTestRouter(t)
+
+	// Create an account
+	account, err := repo.CreateAccount(context.Background(), repository.CreateAccountInput{
+		Name:     "Test Company",
+		Industry: "Testing",
+	})
+	if err != nil {
+		t.Fatalf("failed to create account: %v", err)
+	}
+
+	// Create a ticket
+	ticket, err := repo.CreateTicket(context.Background(), repository.CreateTicketInput{
+		AccountID: account.ID,
+		Title:     "Test Ticket",
+		Status:    "open",
+	})
+	if err != nil {
+		t.Fatalf("failed to create ticket: %v", err)
+	}
+
+	// Test missing status
+	payload := map[string]string{}
+	body, _ := json.Marshal(payload)
+
+	req := httptest.NewRequest(http.MethodPatch, "/accounts/"+account.ID+"/tickets/"+ticket.ID, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", resp.Code)
+	}
+}
