@@ -427,3 +427,117 @@ func TestHandleUpdateTicketStatusValidation(t *testing.T) {
 		t.Fatalf("expected status 400, got %d", resp.Code)
 	}
 }
+
+func TestHandleUpdateAccount(t *testing.T) {
+	_, repo, router := setupTestRouter(t)
+
+	// Create an account first
+	createPayload := map[string]string{
+		"name":     "Test Company",
+		"industry": "Technology",
+	}
+	createBody, _ := json.Marshal(createPayload)
+	createReq := httptest.NewRequest(http.MethodPost, "/accounts", bytes.NewReader(createBody))
+	createReq.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+
+	router.ServeHTTP(createResp, createReq)
+
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("expected create status 201, got %d", createResp.Code)
+	}
+
+	var created accountResponse
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		t.Fatalf("failed to decode created account: %v", err)
+	}
+
+	// Test updating industry
+	updatePayload := map[string]string{
+		"industry": "Manufacturing",
+	}
+	updateBody, _ := json.Marshal(updatePayload)
+	updateReq := httptest.NewRequest(http.MethodPut, "/accounts/"+created.ID, bytes.NewReader(updateBody))
+	updateReq.Header.Set("Content-Type", "application/json")
+	updateResp := httptest.NewRecorder()
+
+	router.ServeHTTP(updateResp, updateReq)
+
+	if updateResp.Code != http.StatusOK {
+		t.Fatalf("expected update status 200, got %d", updateResp.Code)
+	}
+
+	var updated accountResponse
+	if err := json.NewDecoder(updateResp.Body).Decode(&updated); err != nil {
+		t.Fatalf("failed to decode updated account: %v", err)
+	}
+
+	if updated.Industry != "Manufacturing" {
+		t.Errorf("expected industry 'Manufacturing', got '%s'", updated.Industry)
+	}
+
+	// Verify the update persisted
+	account, err := repo.GetAccount(context.Background(), created.ID)
+	if err != nil {
+		t.Fatalf("failed to get account from repo: %v", err)
+	}
+
+	if account.Industry != "Manufacturing" {
+		t.Errorf("expected industry 'Manufacturing' in repo, got '%s'", account.Industry)
+	}
+}
+
+func TestHandleUpdateAccountNotFound(t *testing.T) {
+	_, _, router := setupTestRouter(t)
+
+	updatePayload := map[string]string{
+		"industry": "Manufacturing",
+	}
+	updateBody, _ := json.Marshal(updatePayload)
+	updateReq := httptest.NewRequest(http.MethodPut, "/accounts/nonexistent-id", bytes.NewReader(updateBody))
+	updateReq.Header.Set("Content-Type", "application/json")
+	updateResp := httptest.NewRecorder()
+
+	router.ServeHTTP(updateResp, updateReq)
+
+	if updateResp.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", updateResp.Code)
+	}
+}
+
+func TestHandleUpdateAccountValidation(t *testing.T) {
+	_, _, router := setupTestRouter(t)
+
+	// Create an account first
+	createPayload := map[string]string{
+		"name":     "Test Company",
+		"industry": "Technology",
+	}
+	createBody, _ := json.Marshal(createPayload)
+	createReq := httptest.NewRequest(http.MethodPost, "/accounts", bytes.NewReader(createBody))
+	createReq.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+
+	router.ServeHTTP(createResp, createReq)
+
+	var created accountResponse
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		t.Fatalf("failed to decode created account: %v", err)
+	}
+
+	// Test updating with empty name
+	updatePayload := map[string]string{
+		"name": "",
+	}
+	updateBody, _ := json.Marshal(updatePayload)
+	updateReq := httptest.NewRequest(http.MethodPut, "/accounts/"+created.ID, bytes.NewReader(updateBody))
+	updateReq.Header.Set("Content-Type", "application/json")
+	updateResp := httptest.NewRecorder()
+
+	router.ServeHTTP(updateResp, updateReq)
+
+	if updateResp.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", updateResp.Code)
+	}
+
+}
