@@ -46,6 +46,7 @@ type CreateContactInput struct {
 // CreateTicketInput captures the data needed to create a ticket.
 type CreateTicketInput struct {
 	AccountID string
+	ContactID string
 	Title     string
 	Status    string
 }
@@ -253,9 +254,13 @@ func (r *MemoryRepository) CreateTicket(_ context.Context, input CreateTicketInp
 	defer r.mu.Unlock()
 
 	now := time.Now().UTC()
+	// Generate a simple numeric displayId based on the number of tickets
+	displayId := len(r.tickets) + 1
 	ticket := domain.Ticket{
 		ID:        uuid.NewString(),
+		DisplayID: displayId,
 		AccountID: input.AccountID,
+		ContactID: input.ContactID,
 		Title:     input.Title,
 		Status:    input.Status,
 		CreatedAt: now,
@@ -408,9 +413,17 @@ func (r *PostgresRepository) GetTicketsByAccount(ctx context.Context, accountID 
 }
 
 func (r *PostgresRepository) CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error) {
+	// Get the next display ID by counting existing tickets
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&domain.Ticket{}).Count(&count).Error; err != nil {
+		return domain.Ticket{}, err
+	}
+
 	ticket := domain.Ticket{
 		ID:        uuid.NewString(),
+		DisplayID: int(count) + 1,
 		AccountID: input.AccountID,
+		ContactID: input.ContactID,
 		Title:     input.Title,
 		Status:    input.Status,
 	}

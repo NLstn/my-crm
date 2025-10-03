@@ -148,7 +148,9 @@ type contactResponse struct {
 
 type ticketResponse struct {
 	ID        string `json:"id"`
+	DisplayID int    `json:"displayId"`
 	AccountID string `json:"accountId"`
+	ContactID string `json:"contactId"`
 	Title     string `json:"title"`
 	Status    string `json:"status"`
 	CreatedAt string `json:"createdAt"`
@@ -262,8 +264,9 @@ func (a *API) handleGetTicketsByAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 type createTicketRequest struct {
-	Title  string `json:"title"`
-	Status string `json:"status"`
+	ContactID string `json:"contactId"`
+	Title     string `json:"title"`
+	Status    string `json:"status"`
 }
 
 func (a *API) handleCreateTicket(w http.ResponseWriter, r *http.Request) {
@@ -295,6 +298,31 @@ func (a *API) handleCreateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.ContactID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "contactId is required"})
+		return
+	}
+
+	// Verify contact exists and belongs to the account
+	contacts, err := a.repo.GetContactsByAccount(r.Context(), accountID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+	
+	contactFound := false
+	for _, c := range contacts {
+		if c.ID == req.ContactID {
+			contactFound = true
+			break
+		}
+	}
+	
+	if !contactFound {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "contact not found or does not belong to account"})
+		return
+	}
+
 	// Default to "open" if no status provided
 	status := req.Status
 	if status == "" {
@@ -303,6 +331,7 @@ func (a *API) handleCreateTicket(w http.ResponseWriter, r *http.Request) {
 
 	ticket, err := a.repo.CreateTicket(r.Context(), repository.CreateTicketInput{
 		AccountID: accountID,
+		ContactID: req.ContactID,
 		Title:     req.Title,
 		Status:    status,
 	})
@@ -356,7 +385,9 @@ func toTicketResponses(tickets []domain.Ticket) []ticketResponse {
 func toTicketResponse(ticket domain.Ticket) ticketResponse {
 	return ticketResponse{
 		ID:        ticket.ID,
+		DisplayID: ticket.DisplayID,
 		AccountID: ticket.AccountID,
+		ContactID: ticket.ContactID,
 		Title:     ticket.Title,
 		Status:    ticket.Status,
 		CreatedAt: ticket.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
