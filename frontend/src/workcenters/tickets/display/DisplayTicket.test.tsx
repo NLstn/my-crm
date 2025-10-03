@@ -47,7 +47,9 @@ const buildAccount = (overrides: Partial<Account> = {}): Account => ({
 
 const buildTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
   id: overrides.id ?? 'tic-1',
+  displayId: overrides.displayId ?? 1,
   accountId: overrides.accountId ?? 'acc-1',
+  contactId: overrides.contactId ?? 'con-1',
   title: overrides.title ?? 'Onboarding call',
   status: overrides.status ?? 'open',
   createdAt: overrides.createdAt ?? '2024-01-01T00:00:00Z',
@@ -90,14 +92,14 @@ beforeEach(() => {
   ticketsApiMock.getByAccount.mockImplementation(async (accountId: string) => {
     if (accountId === 'acc-1') {
       return [
-        buildTicket({ id: 'tic-1', accountId: 'acc-1', title: 'Onboarding call', status: 'open' }),
-        buildTicket({ id: 'tic-2', accountId: 'acc-1', title: 'Setup assistance', status: 'in_progress' }),
+        buildTicket({ id: 'tic-1', displayId: 1, accountId: 'acc-1', contactId: 'con-1', title: 'Onboarding call', status: 'open' }),
+        buildTicket({ id: 'tic-2', displayId: 2, accountId: 'acc-1', contactId: 'con-2', title: 'Setup assistance', status: 'in_progress' }),
       ];
     }
 
     if (accountId === 'acc-2') {
       return [
-        buildTicket({ id: 'tic-3', accountId: 'acc-2', title: 'Renewal contract review', status: 'closed' }),
+        buildTicket({ id: 'tic-3', displayId: 3, accountId: 'acc-2', contactId: 'con-3', title: 'Renewal contract review', status: 'closed' }),
       ];
     }
 
@@ -127,7 +129,7 @@ describe('DisplayTicket', () => {
     await renderWithRouter('/ticket/tic-1');
 
     expect(await screen.findByText('Onboarding call')).toBeDefined();
-    expect(screen.getByText('ID: tic-1')).toBeDefined();
+    expect(screen.getByText('ID: 1')).toBeDefined();
     expect(screen.getAllByText(/open/i).length).toBeGreaterThan(0);
   });
 
@@ -157,10 +159,8 @@ describe('DisplayTicket', () => {
   it('displays summary statistics', async () => {
     await renderWithRouter('/ticket/tic-1');
 
-    const accountContactLabels = await screen.findAllByText('Account Contacts');
-    expect(accountContactLabels.length).toBeGreaterThan(0);
-    expect(screen.getByText('Total Tickets')).toBeDefined();
-    expect(screen.getAllByText(/Open Tickets/i).length).toBeGreaterThan(0);
+    // Summary tiles have been removed, so just verify the page loads
+    expect(await screen.findByText('Onboarding call')).toBeDefined();
   });
 
   it('shows error when ticket is not found', async () => {
@@ -209,7 +209,7 @@ describe('DisplayTicket', () => {
   it('shows empty state when no other tickets exist', async () => {
     ticketsApiMock.getByAccount.mockImplementation(async (accountId: string) => {
       if (accountId === 'acc-1') {
-        return [buildTicket({ id: 'tic-1', accountId: 'acc-1', title: 'Onboarding call', status: 'open' })];
+        return [buildTicket({ id: 'tic-1', displayId: 1, accountId: 'acc-1', contactId: 'con-1', title: 'Onboarding call', status: 'open' })];
       }
       return [];
     });
@@ -223,7 +223,7 @@ describe('DisplayTicket', () => {
     const user = userEvent.setup();
     
     // Mock the updateStatus to return the updated ticket
-    const updatedTicket = buildTicket({ id: 'tic-1', accountId: 'acc-1', title: 'Onboarding call', status: 'in_progress' });
+    const updatedTicket = buildTicket({ id: 'tic-1', displayId: 1, accountId: 'acc-1', contactId: 'con-1', title: 'Onboarding call', status: 'in_progress' });
     ticketsApiMock.updateStatus = vi.fn().mockResolvedValue(updatedTicket);
 
     await renderWithRouter('/ticket/tic-1');

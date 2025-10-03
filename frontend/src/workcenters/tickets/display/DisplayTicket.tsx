@@ -121,15 +121,13 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
     );
   }
 
-  const openTickets = tickets.filter(t => t.status !== 'closed');
-
   return (
     <div className="display-ticket">
       <div className="display-ticket__header">
         <div className="display-ticket__header-content">
           <div className="display-ticket__header-main">
             <h1 className="display-ticket__title">{ticket.title}</h1>
-            <span className="display-ticket__id">ID: {ticket.id}</span>
+            <span className="display-ticket__id">ID: {ticket.displayId}</span>
           </div>
           <button 
             className="display-ticket__back-button"
@@ -194,21 +192,6 @@ export const DisplayTicket: FC<DisplayTicketProps> = () => {
             <p className="display-ticket__empty-text">Account not found</p>
           </div>
         )}
-      </div>
-
-      <div className="display-ticket__summary">
-        <div className="display-ticket__summary-card">
-          <div className="display-ticket__summary-value">{contacts.length}</div>
-          <div className="display-ticket__summary-label">Account Contacts</div>
-        </div>
-        <div className="display-ticket__summary-card">
-          <div className="display-ticket__summary-value">{tickets.length}</div>
-          <div className="display-ticket__summary-label">Total Tickets</div>
-        </div>
-        <div className="display-ticket__summary-card">
-          <div className="display-ticket__summary-value">{openTickets.length}</div>
-          <div className="display-ticket__summary-label">Open Tickets</div>
-        </div>
       </div>
 
       <div className="display-ticket__content">
