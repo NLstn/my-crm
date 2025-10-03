@@ -1,0 +1,64 @@
+/* Base Card Styles */
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+/* Interactive Card */
+.card--interactive {
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+}
+
+.card--interactive:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Default Card Variant */
+.card--default {
+  padding: var(--spacing-lg);
+}
+
+.card--default.card--interactive:hover {
+  background-color: var(--color-background-hover);
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Clickable Card Variant (larger interactive cards) */
+.card--clickable {
+  padding: var(--spacing-xl);
+}
+
+.card--clickable:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Summary Card Variant (for metrics) */
+.card--summary {
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.card--summary:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* Section Card Variant (for content grouping) */
+.card--section {
+  padding: var(--spacing-xl);
+}
+
+.card--section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

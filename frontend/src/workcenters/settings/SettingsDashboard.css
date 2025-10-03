@@ -28,15 +28,7 @@
 }
 
 .settings-section-tile {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  transition: box-shadow 0.2s ease;
-}
-
-.settings-section-tile:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  /* Base card styles now handled by Card component */
 }
 
 .settings-section-tile__header {

@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Card } from '../../components';
 import './SettingsDashboard.css';
 
 export type SettingsDashboardProps = Record<string, never>;
@@ -50,7 +51,7 @@ export const SettingsDashboard: FC<SettingsDashboardProps> = () => {
 
       <div className="settings-dashboard__sections">
         {settingsSections.map((section) => (
-          <div key={section.id} className="settings-section-tile">
+          <Card key={section.id} variant="section" className="settings-section-tile">
             <div className="settings-section-tile__header">
               <span className="settings-section-tile__icon">{section.icon}</span>
               <div>
@@ -89,7 +90,7 @@ export const SettingsDashboard: FC<SettingsDashboardProps> = () => {
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

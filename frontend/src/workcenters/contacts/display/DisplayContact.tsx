@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { accountsApi, contactsApi, ticketsApi } from '../../../api';
 import type { Account, Ticket } from '../../../types';
+import { Card } from '../../../components';
 import './DisplayContact.css';
 
 export type DisplayContactProps = Record<string, never>;
@@ -120,15 +121,15 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
       <div className="display-contact__account-section">
         <h2 className="display-contact__section-title">Associated Account</h2>
         {account ? (
-          <button 
+          <Card 
+            variant="clickable"
             className="display-contact__account-card"
             onClick={() => navigate(`/account/${account.id}`)}
-            type="button"
           >
             <div className="display-contact__account-name">{account.name}</div>
             <div className="display-contact__account-industry">{account.industry}</div>
             <div className="display-contact__account-link">View Account →</div>
-          </button>
+          </Card>
         ) : (
           <div className="display-contact__empty">
             <p className="display-contact__empty-text">Account not found</p>
@@ -137,27 +138,27 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
       </div>
 
       <div className="display-contact__summary">
-        <div className="display-contact__summary-card">
+        <Card variant="summary" className="display-contact__summary-card">
           <div className="display-contact__summary-value">{tickets.length}</div>
           <div className="display-contact__summary-label">Account Tickets</div>
-        </div>
-        <div className="display-contact__summary-card">
+        </Card>
+        <Card variant="summary" className="display-contact__summary-card">
           <div className="display-contact__summary-value">{openTickets.length}</div>
           <div className="display-contact__summary-label">Open Tickets</div>
-        </div>
+        </Card>
       </div>
 
       <div className="display-contact__content">
-        <section className="display-contact__section">
+        <Card variant="section" className="display-contact__section">
           <h2 className="display-contact__section-title">Account Tickets</h2>
           {tickets.length > 0 ? (
             <ul className="display-contact__list">
               {tickets.map((ticket) => (
                 <li key={ticket.id} className="display-contact__list-item">
-                  <button
+                  <Card
+                    variant="default"
                     className="display-contact__ticket-card"
                     onClick={() => navigate(`/ticket/${ticket.id}`)}
-                    type="button"
                   >
                     <div className="display-contact__ticket-header">
                       <div className="display-contact__ticket-title">
@@ -167,7 +168,7 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
                         {ticket.status.replace('_', ' ')}
                       </span>
                     </div>
-                  </button>
+                  </Card>
                 </li>
               ))}
             </ul>
@@ -176,7 +177,7 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
               <p className="display-contact__empty-text">No tickets for this contact&apos;s account</p>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );
