@@ -2,7 +2,8 @@ import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Account, Contact, Ticket } from '../../../types';
 import { accountsApi, contactsApi, ticketsApi } from '../../../api';
-import { Button, Card } from '../../../components';
+import { Button, Card, Select } from '../../../components';
+import { useIndustries } from '../../../contexts/IndustriesContext';
 import './DisplayAccount.css';
 
 export type DisplayAccountProps = Record<string, never>;
@@ -15,6 +16,10 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingIndustry, setIsEditingIndustry] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState('');
+  const [isSavingIndustry, setIsSavingIndustry] = useState(false);
+  const { industries } = useIndustries();
 
   useEffect(() => {
     const loadAccount = async () => {
@@ -33,6 +38,7 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
         ]);
         
         setAccount(accountData);
+        setSelectedIndustry(accountData.industry);
         setContacts(contactsData);
         setTickets(ticketsData);
       } catch (err) {
@@ -44,6 +50,30 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
 
     loadAccount();
   }, [id]);
+
+  const handleEditIndustry = () => {
+    setIsEditingIndustry(true);
+  };
+
+  const handleCancelEditIndustry = () => {
+    setIsEditingIndustry(false);
+    setSelectedIndustry(account?.industry || '');
+  };
+
+  const handleSaveIndustry = async () => {
+    if (!id) return;
+
+    setIsSavingIndustry(true);
+    try {
+      const updatedAccount = await accountsApi.update(id, { industry: selectedIndustry });
+      setAccount(updatedAccount);
+      setIsEditingIndustry(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update industry');
+    } finally {
+      setIsSavingIndustry(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -91,7 +121,55 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
             Back to Search
           </button>
         </div>
-        <p className="display-account__industry">{account.industry || 'No industry specified'}</p>
+        <div className="display-account__industry-section">
+          {isEditingIndustry ? (
+            <div className="display-account__industry-edit">
+              <Select
+                id="account-industry"
+                label="Industry"
+                value={selectedIndustry}
+                onChange={(e) => setSelectedIndustry(e.target.value)}
+                disabled={isSavingIndustry}
+              >
+                <option value="">No industry</option>
+                {industries.map((ind) => (
+                  <option key={ind.id} value={ind.name}>
+                    {ind.name}
+                  </option>
+                ))}
+              </Select>
+              <div className="display-account__industry-actions">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveIndustry}
+                  disabled={isSavingIndustry}
+                >
+                  {isSavingIndustry ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleCancelEditIndustry}
+                  disabled={isSavingIndustry}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="display-account__industry-display">
+              <p className="display-account__industry">{account.industry || 'No industry specified'}</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleEditIndustry}
+              >
+                Edit Industry
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="display-account__summary">

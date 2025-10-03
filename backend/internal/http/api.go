@@ -25,6 +25,7 @@ func (a *API) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /accounts", a.handleSearchAccounts)
 	mux.HandleFunc("POST /accounts", a.handleCreateAccount)
 	mux.HandleFunc("GET /accounts/{accountID}", a.handleGetAccount)
+	mux.HandleFunc("PUT /accounts/{accountID}", a.handleUpdateAccount)
 	mux.HandleFunc("GET /accounts/{accountID}/contacts", a.handleGetContactsByAccount)
 	mux.HandleFunc("POST /accounts/{accountID}/contacts", a.handleCreateContact)
 	mux.HandleFunc("GET /accounts/{accountID}/tickets", a.handleGetTicketsByAccount)
@@ -106,6 +107,52 @@ func (a *API) handleGetAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	account, err := a.repo.GetAccount(r.Context(), id)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "account not found"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toAccountResponse(account))
+}
+
+type updateAccountRequest struct {
+	Name     *string `json:"name"`
+	Industry *string `json:"industry"`
+}
+
+func (a *API) handleUpdateAccount(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("accountID")
+	if id == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "accountID is required"})
+		return
+	}
+
+	var req updateAccountRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid payload"})
+		return
+	}
+
+	// At least one field must be provided
+	if req.Name == nil && req.Industry == nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "at least one field must be provided"})
+		return
+	}
+
+	// If name is provided, it must not be empty
+	if req.Name != nil && *req.Name == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "name cannot be empty"})
+		return
+	}
+
+	account, err := a.repo.UpdateAccount(r.Context(), id, repository.UpdateAccountInput{
+		Name:     req.Name,
+		Industry: req.Industry,
+	})
 	if errors.Is(err, repository.ErrNotFound) {
 		writeJSON(w, http.StatusNotFound, errorResponse{Error: "account not found"})
 		return

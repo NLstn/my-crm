@@ -64,4 +64,30 @@ export const accountsApi = {
 
     return response.json();
   },
+
+  /**
+   * Update an existing account
+   * @param id - The UUID of the account to update
+   * @param input - Partial account data to update
+   * @returns The updated account
+   */
+  async update(id: string, input: Partial<CreateAccountInput>): Promise<Account> {
+    const response = await fetch(`${API_BASE_URL}/accounts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Account not found');
+      }
+      const error = await response.json().catch(() => ({ error: 'Failed to update account' }));
+      throw new Error(error.error || 'Failed to update account');
+    }
+
+    return response.json();
+  },
 };

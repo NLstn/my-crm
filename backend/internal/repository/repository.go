@@ -19,6 +19,7 @@ var ErrNotFound = errors.New("record not found")
 type Repository interface {
 	GetAccount(ctx context.Context, id string) (domain.Account, error)
 	CreateAccount(ctx context.Context, input CreateAccountInput) (domain.Account, error)
+	UpdateAccount(ctx context.Context, id string, input UpdateAccountInput) (domain.Account, error)
 	SearchAccounts(ctx context.Context, query string) ([]domain.Account, error)
 
 	GetContactsByAccount(ctx context.Context, accountID string) ([]domain.Contact, error)
@@ -34,6 +35,12 @@ type Repository interface {
 type CreateAccountInput struct {
 	Name     string
 	Industry string
+}
+
+// UpdateAccountInput captures the data needed to update an account.
+type UpdateAccountInput struct {
+	Name     *string
+	Industry *string
 }
 
 // CreateContactInput captures the data needed to create a contact.
@@ -97,6 +104,27 @@ func (r *MemoryRepository) GetAccount(_ context.Context, id string) (domain.Acco
 		return domain.Account{}, ErrNotFound
 	}
 
+	return account, nil
+}
+
+func (r *MemoryRepository) UpdateAccount(_ context.Context, id string, input UpdateAccountInput) (domain.Account, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	account, ok := r.accounts[id]
+	if !ok {
+		return domain.Account{}, ErrNotFound
+	}
+
+	if input.Name != nil {
+		account.Name = *input.Name
+	}
+	if input.Industry != nil {
+		account.Industry = *input.Industry
+	}
+	account.UpdatedAt = time.Now().UTC()
+
+	r.accounts[id] = account
 	return account, nil
 }
 
@@ -325,6 +353,38 @@ func (r *PostgresRepository) GetAccount(ctx context.Context, id string) (domain.
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return domain.Account{}, ErrNotFound
 		}
+		return domain.Account{}, err
+	}
+
+	return account, nil
+}
+
+func (r *PostgresRepository) UpdateAccount(ctx context.Context, id string, input UpdateAccountInput) (domain.Account, error) {
+	var account domain.Account
+
+	if err := r.db.WithContext(ctx).First(&account, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.Account{}, ErrNotFound
+		}
+		return domain.Account{}, err
+	}
+
+	updates := make(map[string]interface{})
+	if input.Name != nil {
+		updates["name"] = *input.Name
+	}
+	if input.Industry != nil {
+		updates["industry"] = *input.Industry
+	}
+
+	if len(updates) > 0 {
+		if err := r.db.WithContext(ctx).Model(&account).Updates(updates).Error; err != nil {
+			return domain.Account{}, err
+		}
+	}
+
+	// Reload the account to get the updated values
+	if err := r.db.WithContext(ctx).First(&account, "id = ?", id).Error; err != nil {
 		return domain.Account{}, err
 	}
 

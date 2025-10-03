@@ -19,3 +19,6 @@ export type { LayoutProps } from './Layout';
 
 export { Sidebar } from './Sidebar';
 export type { SidebarProps, WorkCenter } from './Sidebar';
+
+export { Select } from './Select';
+export type { SelectProps } from './Select';
