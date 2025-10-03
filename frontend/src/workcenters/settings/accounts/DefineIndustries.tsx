@@ -1,46 +1,33 @@
 import { FC, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from '../../../components';
+import { useIndustries } from '../../../contexts/IndustriesContext';
 import './DefineIndustries.css';
 
 export type DefineIndustriesProps = Record<string, never>;
 
-interface Industry {
-  id: string;
-  name: string;
-  description: string;
-}
-
-const defaultIndustries: Industry[] = [
-  { id: '1', name: 'Technology', description: 'Software, hardware, and IT services' },
-  { id: '2', name: 'Manufacturing', description: 'Production and industrial goods' },
-  { id: '3', name: 'Healthcare', description: 'Medical services and pharmaceuticals' },
-  { id: '4', name: 'Finance', description: 'Banking, insurance, and financial services' },
-  { id: '5', name: 'Retail', description: 'Consumer goods and retail sales' },
-];
-
 export const DefineIndustries: FC<DefineIndustriesProps> = () => {
   const navigate = useNavigate();
-  const [industries, setIndustries] = useState<Industry[]>(defaultIndustries);
+  const { industries, addIndustry, updateIndustry, deleteIndustry } = useIndustries();
   const [newIndustryName, setNewIndustryName] = useState('');
   const [newIndustryDescription, setNewIndustryDescription] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleAddIndustry = () => {
     if (newIndustryName.trim()) {
-      const newIndustry: Industry = {
+      const newIndustry = {
         id: Date.now().toString(),
         name: newIndustryName.trim(),
         description: newIndustryDescription.trim(),
       };
-      setIndustries([...industries, newIndustry]);
+      addIndustry(newIndustry);
       setNewIndustryName('');
       setNewIndustryDescription('');
     }
   };
 
   const handleDeleteIndustry = (id: string) => {
-    setIndustries(industries.filter(industry => industry.id !== id));
+    deleteIndustry(id);
     if (editingId === id) {
       setEditingId(null);
     }
@@ -51,9 +38,7 @@ export const DefineIndustries: FC<DefineIndustriesProps> = () => {
   };
 
   const handleUpdateIndustry = (id: string, field: 'name' | 'description', value: string) => {
-    setIndustries(industries.map(industry =>
-      industry.id === id ? { ...industry, [field]: value } : industry
-    ));
+    updateIndustry(id, field, value);
   };
 
   const handleBackToSettings = () => {
@@ -141,14 +126,14 @@ export const DefineIndustries: FC<DefineIndustriesProps> = () => {
                     <Button
                       onClick={() => handleEditIndustry(industry.id)}
                       variant="secondary"
-                      size="small"
+                      size="sm"
                     >
                       {editingId === industry.id ? 'Done' : 'Edit'}
                     </Button>
                     <Button
                       onClick={() => handleDeleteIndustry(industry.id)}
                       variant="danger"
-                      size="small"
+                      size="sm"
                     >
                       Delete
                     </Button>

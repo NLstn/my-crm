@@ -7,6 +7,7 @@ import { SearchContacts } from './workcenters/contacts/search/SearchContacts';
 import { DisplayTicket, CreateTicket } from './workcenters/tickets';
 import { SearchTickets } from './workcenters/tickets/search/SearchTickets';
 import { SettingsDashboard, DefineIndustries } from './workcenters/settings';
+import { IndustriesProvider } from './contexts/IndustriesContext';
 import './App.css';
 
 function AppContent() {
@@ -46,7 +47,9 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <IndustriesProvider>
+        <AppContent />
+      </IndustriesProvider>
     </BrowserRouter>
   );
 }

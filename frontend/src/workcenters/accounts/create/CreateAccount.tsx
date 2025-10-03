@@ -1,7 +1,8 @@
 import { FC, FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input } from '../../../components';
+import { Button, Input, Select } from '../../../components';
 import { accountsApi } from '../../../api';
+import { useIndustries } from '../../../contexts/IndustriesContext';
 import './CreateAccount.css';
 
 export type CreateAccountProps = Record<string, never>;
@@ -12,6 +13,7 @@ export const CreateAccount: FC<CreateAccountProps> = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { industries } = useIndustries();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -70,14 +72,20 @@ export const CreateAccount: FC<CreateAccountProps> = () => {
           placeholder="Enter account name..."
         />
 
-        <Input
+        <Select
           id="account-industry"
           label="Industry"
           fullWidth
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
-          placeholder="Enter industry (optional)..."
-        />
+        >
+          <option value="">Select an industry (optional)</option>
+          {industries.map((ind) => (
+            <option key={ind.id} value={ind.name}>
+              {ind.name}
+            </option>
+          ))}
+        </Select>
 
         <div className="create-account__actions">
           <Button

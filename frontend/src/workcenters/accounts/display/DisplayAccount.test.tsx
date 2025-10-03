@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { DisplayAccount } from './DisplayAccount';
+import { IndustriesProvider } from '../../../contexts/IndustriesContext';
 import type { Account, Contact, Ticket } from '../../../types';
 import { accountsApi, contactsApi, ticketsApi } from '../../../api';
 
@@ -20,6 +21,7 @@ vi.mock('../../../api', () => ({
   accountsApi: {
     getById: vi.fn(),
     search: vi.fn(),
+    update: vi.fn(),
   },
   contactsApi: {
     getByAccount: vi.fn(),
@@ -63,9 +65,11 @@ const buildTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
 const renderDisplayAccount = async (accountId = 'acc-1') => {
   render(
     <MemoryRouter initialEntries={[`/account/${accountId}`]}>
-      <Routes>
-        <Route path="/account/:id" element={<DisplayAccount />} />
-      </Routes>
+      <IndustriesProvider>
+        <Routes>
+          <Route path="/account/:id" element={<DisplayAccount />} />
+        </Routes>
+      </IndustriesProvider>
     </MemoryRouter>
   );
 

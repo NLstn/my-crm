@@ -39,10 +39,32 @@
   border-radius: var(--radius-full);
 }
 
+.display-account__industry-section {
+  margin-top: var(--spacing-md);
+}
+
+.display-account__industry-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
 .display-account__industry {
   font-size: var(--font-size-base);
   color: var(--color-text-secondary);
-  margin: var(--spacing-sm) 0 0 0;
+  margin: 0;
+}
+
+.display-account__industry-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-width: 400px;
+}
+
+.display-account__industry-actions {
+  display: flex;
+  gap: var(--spacing-sm);
 }
 
 .display-account__back-button {

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { CreateAccount } from './CreateAccount';
 import { accountsApi } from '../../../api';
+import { IndustriesProvider } from '../../../contexts/IndustriesContext';
 import type { Account } from '../../../types';
 
 const mockNavigate = vi.fn();
@@ -25,7 +26,13 @@ vi.mock('../../../api', () => ({
 const accountsApiMock = vi.mocked(accountsApi);
 
 const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
+  return render(
+    <BrowserRouter>
+      <IndustriesProvider>
+        {component}
+      </IndustriesProvider>
+    </BrowserRouter>
+  );
 };
 
 describe('CreateAccount', () => {
@@ -75,11 +82,11 @@ describe('CreateAccount', () => {
     renderWithRouter(<CreateAccount />);
 
     const nameInput = screen.getByLabelText(/Account Name/i);
-    const industryInput = screen.getByLabelText(/Industry/i);
+    const industrySelect = screen.getByLabelText(/Industry/i);
     const submitButton = screen.getByRole('button', { name: /Create Account/i });
 
     await user.type(nameInput, 'New Company');
-    await user.type(industryInput, 'Technology');
+    await user.selectOptions(industrySelect, 'Technology');
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -101,11 +108,11 @@ describe('CreateAccount', () => {
     renderWithRouter(<CreateAccount />);
 
     const nameInput = screen.getByLabelText(/Account Name/i);
-    const industryInput = screen.getByLabelText(/Industry/i);
+    const industrySelect = screen.getByLabelText(/Industry/i);
     const submitButton = screen.getByRole('button', { name: /Create Account/i });
 
     await user.type(nameInput, '  Test Account  ');
-    await user.type(industryInput, '  Manufacturing  ');
+    await user.selectOptions(industrySelect, 'Manufacturing');
     await user.click(submitButton);
 
     await waitFor(() => {
