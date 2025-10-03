@@ -44,6 +44,16 @@ const defaultWorkCenters: WorkCenter[] = [
       { id: 'tickets-create', name: 'Create Ticket', path: '/tickets/create' },
     ]
   },
+  { 
+    id: 'settings', 
+    name: 'Admin Settings', 
+    icon: '⚙️', 
+    path: '/settings',
+    defaultPath: '/settings',
+    subItems: [
+      { id: 'settings-accounts', name: 'Accounts', path: '/settings/accounts/industries' },
+    ]
+  },
 ];
 
 export const Layout: FC<LayoutProps> = ({ 
