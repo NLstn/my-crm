@@ -14,6 +14,14 @@ export interface CardProps {
   onClick?: (event: MouseEvent<HTMLButtonElement | HTMLDivElement>) => void;
   /** Disabled state (only for buttons) */
   disabled?: boolean;
+  /** Optional header title */
+  title?: string;
+  /** Optional header subtitle/description */
+  subtitle?: string;
+  /** Optional icon for the header (emoji or ReactNode) */
+  icon?: ReactNode;
+  /** Optional action element to render in the header (e.g., a button) */
+  headerAction?: ReactNode;
   /** Additional HTML attributes */
   [key: string]: unknown;
 }
@@ -39,10 +47,15 @@ export interface CardProps {
  * </Card>
  * 
  * @example
- * // Section card (for content grouping)
- * <Card variant="section">
- *   <h2>Section Title</h2>
+ * // Section card with header
+ * <Card variant="section" title="Contacts" headerAction={<Button>Add</Button>}>
  *   <p>Section content</p>
+ * </Card>
+ * 
+ * @example
+ * // Card with icon and subtitle
+ * <Card variant="section" icon="👥" title="Accounts" subtitle="Manage your accounts">
+ *   <p>Card content</p>
  * </Card>
  */
 export const Card: FC<CardProps> = ({ 
@@ -52,6 +65,10 @@ export const Card: FC<CardProps> = ({
   as,
   onClick,
   disabled,
+  title,
+  subtitle,
+  icon,
+  headerAction,
   ...rest
 }) => {
   // Determine if card should be a button based on props
@@ -66,7 +83,30 @@ export const Card: FC<CardProps> = ({
 
   // Remove non-standard HTML attributes
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { variant: _, as: __, ...htmlProps } = rest;
+  const { variant: _, as: __, title: ___, subtitle: ____, icon: _____, headerAction: ______, ...htmlProps } = rest;
+
+  // Render the header if title is provided
+  const renderHeader = () => {
+    if (!title && !icon) return null;
+
+    return (
+      <div className="card__header">
+        {icon && <span className="card__header-icon">{icon}</span>}
+        <div className="card__header-content">
+          {title && <h2 className="card__header-title">{title}</h2>}
+          {subtitle && <p className="card__header-subtitle">{subtitle}</p>}
+        </div>
+        {headerAction && <div className="card__header-action">{headerAction}</div>}
+      </div>
+    );
+  };
+
+  const content = (
+    <>
+      {renderHeader()}
+      {children && <div className="card__body">{children}</div>}
+    </>
+  );
 
   if (isButton) {
     return (
@@ -77,14 +117,14 @@ export const Card: FC<CardProps> = ({
         disabled={disabled}
         {...(htmlProps as ButtonHTMLAttributes<HTMLButtonElement>)}
       >
-        {children}
+        {content}
       </button>
     );
   }
 
   return (
     <div className={classes} {...(htmlProps as HTMLAttributes<HTMLDivElement>)}>
-      {children}
+      {content}
     </div>
   );
 };

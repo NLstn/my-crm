@@ -51,14 +51,14 @@ export const SettingsDashboard: FC<SettingsDashboardProps> = () => {
 
       <div className="settings-dashboard__sections">
         {settingsSections.map((section) => (
-          <Card key={section.id} variant="section" className="settings-section-tile">
-            <div className="settings-section-tile__header">
-              <span className="settings-section-tile__icon">{section.icon}</span>
-              <div>
-                <h2 className="settings-section-tile__title">{section.name}</h2>
-                <p className="settings-section-tile__description">{section.description}</p>
-              </div>
-            </div>
+          <Card 
+            key={section.id} 
+            variant="section" 
+            className="settings-section-tile"
+            icon={section.icon}
+            title={section.name}
+            subtitle={section.description}
+          >
             <div className="settings-section-tile__links">
               {section.links.map((link) => (
                 <button

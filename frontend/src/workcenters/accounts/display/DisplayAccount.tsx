@@ -110,9 +110,11 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
       </div>
 
       <div className="display-account__content">
-        <Card variant="section" className="display-account__section">
-          <div className="display-account__section-header">
-            <h2 className="display-account__section-title">Contacts</h2>
+        <Card 
+          variant="section" 
+          className="display-account__section"
+          title="Contacts"
+          headerAction={
             <Button
               variant="primary"
               size="sm"
@@ -120,7 +122,8 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
             >
               Create Contact
             </Button>
-          </div>
+          }
+        >
           {contacts.length > 0 ? (
             <ul className="display-account__list">
               {contacts.map((contact) => (
@@ -149,8 +152,7 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
           )}
         </Card>
 
-        <Card variant="section" className="display-account__section">
-          <h2 className="display-account__section-title">Tickets</h2>
+        <Card variant="section" className="display-account__section" title="Tickets">
           {tickets.length > 0 ? (
             <ul className="display-account__list">
               {tickets.map((ticket) => (

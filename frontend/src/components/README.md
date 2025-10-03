@@ -14,6 +14,7 @@ A reusable tile/card container component with multiple variants for different us
 **Features**:
 - Multiple variants: default, summary, clickable, section
 - Interactive and non-interactive modes
+- Built-in header support with optional title, subtitle, icon, and action button
 - Hover effects and transitions
 - Consistent styling with theme system
 - Fully accessible with keyboard navigation
@@ -37,10 +38,20 @@ import { Card } from './components/Card';
   <div className="card__label">Total Items</div>
 </Card>
 
-// Section card (for content grouping)
-<Card variant="section">
-  <h2>Section Title</h2>
+// Section card with header
+<Card variant="section" title="Section Title">
   <p>Section content</p>
+</Card>
+
+// Card with icon, subtitle, and action button
+<Card 
+  variant="section" 
+  icon="👥" 
+  title="Contacts" 
+  subtitle="Manage your contacts"
+  headerAction={<Button size="sm">Add Contact</Button>}
+>
+  <p>Card content</p>
 </Card>
 ```
 

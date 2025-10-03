@@ -133,4 +133,48 @@ describe('Card', () => {
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('Header', () => {
+    it('renders header with title', () => {
+      render(<Card title="Test Title">Content</Card>);
+      expect(screen.getByRole('heading', { name: 'Test Title' })).toBeInTheDocument();
+    });
+
+    it('renders header with title and subtitle', () => {
+      render(<Card title="Test Title" subtitle="Test Subtitle">Content</Card>);
+      expect(screen.getByRole('heading', { name: 'Test Title' })).toBeInTheDocument();
+      expect(screen.getByText('Test Subtitle')).toBeInTheDocument();
+    });
+
+    it('renders header with icon', () => {
+      const { container } = render(<Card icon="👥" title="Test Title">Content</Card>);
+      expect(container.querySelector('.card__header-icon')).toHaveTextContent('👥');
+    });
+
+    it('renders header with action element', () => {
+      render(
+        <Card title="Test Title" headerAction={<button>Action Button</button>}>
+          Content
+        </Card>
+      );
+      expect(screen.getByRole('button', { name: 'Action Button' })).toBeInTheDocument();
+    });
+
+    it('does not render header when no title or icon provided', () => {
+      const { container } = render(<Card>Content</Card>);
+      expect(container.querySelector('.card__header')).not.toBeInTheDocument();
+    });
+
+    it('renders icon without title', () => {
+      const { container } = render(<Card icon="👥">Content</Card>);
+      expect(container.querySelector('.card__header-icon')).toHaveTextContent('👥');
+    });
+
+    it('wraps children in card__body when header is present', () => {
+      const { container } = render(<Card title="Test Title">Content</Card>);
+      const body = container.querySelector('.card__body');
+      expect(body).toBeInTheDocument();
+      expect(body).toHaveTextContent('Content');
+    });
+  });
 });

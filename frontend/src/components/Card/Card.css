@@ -62,3 +62,51 @@
 .card--section:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+/* Card Header */
+.card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card__header-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.card__header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.card__header-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.card__header-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.card__header-action {
+  flex-shrink: 0;
+}
+
+/* Card Body */
+.card__body {
+  /* Body content wrapper */
+}
+
+/* When card has no header, body should not have extra spacing */
+.card:not(:has(.card__header)) .card__body {
+  /* No additional spacing */
+}

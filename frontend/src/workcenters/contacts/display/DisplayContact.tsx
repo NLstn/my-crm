@@ -118,8 +118,7 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
         <p className="display-contact__email">{contact.email}</p>
       </div>
 
-      <div className="display-contact__account-section">
-        <h2 className="display-contact__section-title">Associated Account</h2>
+      <Card variant="section" className="display-contact__account-section" title="Associated Account">
         {account ? (
           <Card 
             variant="clickable"
@@ -135,7 +134,7 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
             <p className="display-contact__empty-text">Account not found</p>
           </div>
         )}
-      </div>
+      </Card>
 
       <div className="display-contact__summary">
         <Card variant="summary" className="display-contact__summary-card">
@@ -149,8 +148,7 @@ export const DisplayContact: FC<DisplayContactProps> = () => {
       </div>
 
       <div className="display-contact__content">
-        <Card variant="section" className="display-contact__section">
-          <h2 className="display-contact__section-title">Account Tickets</h2>
+        <Card variant="section" className="display-contact__section" title="Account Tickets">
           {tickets.length > 0 ? (
             <ul className="display-contact__list">
               {tickets.map((ticket) => (
