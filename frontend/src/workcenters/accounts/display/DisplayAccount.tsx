@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Account, Contact, Ticket } from '../../../types';
 import { accountsApi, contactsApi, ticketsApi } from '../../../api';
+import { Button } from '../../../components';
 import './DisplayAccount.css';
 
 export type DisplayAccountProps = Record<string, never>;
@@ -110,7 +111,16 @@ export const DisplayAccount: FC<DisplayAccountProps> = () => {
 
       <div className="display-account__content">
         <section className="display-account__section">
-          <h2 className="display-account__section-title">Contacts</h2>
+          <div className="display-account__section-header">
+            <h2 className="display-account__section-title">Contacts</h2>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate(`/contacts/create?accountId=${id}`)}
+            >
+              Create Contact
+            </Button>
+          </div>
           {contacts.length > 0 ? (
             <ul className="display-account__list">
               {contacts.map((contact) => (

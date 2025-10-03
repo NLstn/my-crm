@@ -199,4 +199,14 @@ describe('DisplayAccount', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/ticket/tic-1');
   });
+
+  it('has a create contact button that navigates to create contact form with account pre-filled', async () => {
+    const user = userEvent.setup();
+    await renderDisplayAccount('acc-1');
+
+    const createContactButton = await screen.findByRole('button', { name: /Create Contact/i });
+    await user.click(createContactButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/contacts/create?accountId=acc-1');
+  });
 });
