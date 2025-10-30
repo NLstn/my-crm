@@ -1,0 +1,94 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/nlstn/go-odata"
+	"github.com/nlstn/my-crm/backend/database"
+	"github.com/nlstn/my-crm/backend/models"
+)
+
+func main() {
+	// Connect to database
+	db, err := database.Connect()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	// Run migrations
+	if err := database.AutoMigrate(db); err != nil {
+		log.Fatal("Failed to run migrations:", err)
+	}
+
+	// Seed database with sample data
+	if err := database.SeedData(db); err != nil {
+		log.Fatal("Failed to seed database:", err)
+	}
+
+	// Initialize OData service
+	service := odata.NewService(db)
+
+	// Set custom namespace
+	if err := service.SetNamespace("CRM"); err != nil {
+		log.Fatal("Failed to set namespace:", err)
+	}
+
+	// Register entities - must use go-odata for ALL APIs
+	if err := service.RegisterEntity(&models.Account{}); err != nil {
+		log.Fatal("Failed to register Account entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.Contact{}); err != nil {
+		log.Fatal("Failed to register Contact entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.Issue{}); err != nil {
+		log.Fatal("Failed to register Issue entity:", err)
+	}
+
+	// Create HTTP server with CORS middleware
+	mux := http.NewServeMux()
+	mux.Handle("/", corsMiddleware(service))
+
+	// Health check endpoint
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy"}`))
+	})
+
+	// Start server
+	port := "8080"
+	fmt.Println("🚀 CRM Backend Server Starting...")
+	fmt.Println("========================================")
+	fmt.Println("Service Document:  http://localhost:" + port + "/")
+	fmt.Println("Metadata:          http://localhost:" + port + "/$metadata")
+	fmt.Println("Accounts:          http://localhost:" + port + "/Accounts")
+	fmt.Println("Contacts:          http://localhost:" + port + "/Contacts")
+	fmt.Println("Issues:            http://localhost:" + port + "/Issues")
+	fmt.Println("========================================")
+	fmt.Println("All APIs are built using go-odata (OData v4 compliant)")
+	fmt.Println("Health Check:      http://localhost:" + port + "/health")
+	fmt.Println("")
+
+	log.Fatal(http.ListenAndServe(":"+port, mux))
+}
+
+// corsMiddleware adds CORS headers to allow frontend access
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, OData-Version, Prefer")
+		w.Header().Set("Access-Control-Expose-Headers", "OData-Version, OData-EntityId")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
