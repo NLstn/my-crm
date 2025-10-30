@@ -8,6 +8,7 @@ This is a custom CRM (Customer Relationship Management) system with:
 - **Frontend**: React + TypeScript + TailwindCSS
 - **Backend**: Go + GORM + PostgreSQL
 - **API Protocol**: OData v4 (using go-odata library)
+- **Testing**: Playwright MCP for browser automation
 
 ## 🚨 CRITICAL REQUIREMENTS - READ FIRST
 
@@ -394,6 +395,17 @@ Test in browser:
 - **GORM**: https://gorm.io/docs/
 - **React Query**: https://tanstack.com/query/latest
 - **TailwindCSS**: https://tailwindcss.com/docs
+- **Playwright MCP**: https://github.com/microsoft/playwright-mcp (see MCP_PLAYWRIGHT.md)
+
+## Testing with Playwright MCP
+
+This repository includes Playwright MCP server configuration for AI-driven browser automation:
+
+- **Configuration**: `.mcp/settings.json`
+- **Documentation**: `MCP_PLAYWRIGHT.md`
+- **Use cases**: Navigate pages, test functionality, take screenshots, verify UI
+
+When testing or verifying web functionality, AI agents can use the Playwright MCP tools to interact with the running application at `http://localhost:5173`.
 
 ## Questions?
 
