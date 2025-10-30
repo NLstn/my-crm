@@ -6,7 +6,6 @@ export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard' },
     { name: 'Accounts', href: '/accounts' },
     { name: 'Contacts', href: '/contacts' },
     { name: 'Issues', href: '/issues' },
@@ -48,39 +47,72 @@ export default function Layout() {
               )}
             </button>
 
-            {/* Logo */}
-            <div>
-              <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">
+            {/* Logo - now clickable */}
+            <Link to="/">
+              <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
                 CRM System
               </h1>
-            </div>
+            </Link>
           </div>
         </div>
-
-        {/* Mobile menu dropdown */}
-        {isMobileMenuOpen && (
-          <div className="border-t border-gray-200 dark:border-gray-800">
-            <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex flex-col space-y-2">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={closeMobileMenu}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive(item.href)
-                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-200'
-                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-          </div>
-        )}
       </header>
+
+      {/* Sidebar overlay - left side */}
+      {isMobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-gray-900/50 dark:bg-gray-950/70 z-40 transition-opacity"
+            onClick={closeMobileMenu}
+            aria-hidden="true"
+          />
+          
+          {/* Sidebar */}
+          <nav className="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 shadow-xl">
+            <div className="flex flex-col h-full">
+              {/* Sidebar header */}
+              <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-800">
+                <Link 
+                  to="/"
+                  onClick={closeMobileMenu}
+                  className="text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                >
+                  CRM System
+                </Link>
+                <button
+                  onClick={closeMobileMenu}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  aria-label="Close menu"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Navigation links */}
+              <div className="flex-1 px-4 py-4 overflow-y-auto">
+                <div className="flex flex-col space-y-2">
+                  {navigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={closeMobileMenu}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive(item.href)
+                          ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-200'
+                          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </nav>
+        </>
+      )}
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

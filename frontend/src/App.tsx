@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
@@ -18,8 +18,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route index element={<Dashboard />} />
             
             {/* Accounts routes */}
             <Route path="accounts" element={<AccountsList />} />
