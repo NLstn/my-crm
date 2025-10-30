@@ -97,12 +97,37 @@ GET /Accounts?$search=Acme
 
 ### Running the Server
 
+#### With Hot Reloading (Recommended for Development)
+
+The project uses [Air](https://github.com/air-verse/air) for automatic hot reloading during development:
+
+```bash
+cd /workspace/backend
+air
+```
+
+Air will automatically rebuild and restart the server whenever you make changes to `.go` files.
+
+**Using VS Code Tasks:**
+- Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+- Run "Tasks: Run Task" → "Start Backend"
+
+#### Manual Run (Without Hot Reloading)
+
 ```bash
 cd /workspace/backend
 go run cmd/server/main.go
 ```
 
 The server will start on `http://localhost:8080`
+
+#### Air Configuration
+
+Air is configured via `.air.toml` in the backend directory. Key settings:
+- Build output: `tmp/main`
+- Watches: All `.go` files (excluding tests)
+- Delay: 1 second after file changes
+- Temporary build files are stored in `tmp/` (gitignored)
 
 ### Database Connection
 

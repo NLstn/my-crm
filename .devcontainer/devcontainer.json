@@ -33,5 +33,5 @@
       "onAutoForward": "silent"
     }
   },
-  "postCreateCommand": "cd /workspace/backend && go mod download && cd /workspace/frontend && npm install"
+  "postCreateCommand": "cd /workspace/backend && go mod download && go install github.com/air-verse/air@v1.52.3 && cd /workspace/frontend && npm install"
 }

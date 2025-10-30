@@ -4,7 +4,7 @@
     {
       "label": "Start Backend",
       "type": "shell",
-      "command": "cd backend && go run cmd/server/main.go",
+      "command": "cd backend && air",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -17,7 +17,7 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": "^.*Starting server.*$",
+          "beginsPattern": "^.*building.*$",
           "endsPattern": "^.*Server listening.*$|^.*listening on.*$"
         }
       },

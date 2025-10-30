@@ -3,6 +3,7 @@
 /backend/*.db
 /backend/*.db-shm
 /backend/*.db-wal
+/backend/build-errors.log
 
 # Frontend
 /frontend/node_modules/
