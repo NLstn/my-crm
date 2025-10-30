@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/api'
@@ -20,18 +20,37 @@ export default function AccountForm() {
   })
 
   const [formData, setFormData] = useState<Partial<Account>>({
-    Name: account?.Name || '',
-    Industry: account?.Industry || '',
-    Website: account?.Website || '',
-    Phone: account?.Phone || '',
-    Email: account?.Email || '',
-    Address: account?.Address || '',
-    City: account?.City || '',
-    State: account?.State || '',
-    Country: account?.Country || '',
-    PostalCode: account?.PostalCode || '',
-    Description: account?.Description || '',
+    Name: '',
+    Industry: '',
+    Website: '',
+    Phone: '',
+    Email: '',
+    Address: '',
+    City: '',
+    State: '',
+    Country: '',
+    PostalCode: '',
+    Description: '',
   })
+
+  // Update form data when account loads
+  useEffect(() => {
+    if (account) {
+      setFormData({
+        Name: account.Name || '',
+        Industry: account.Industry || '',
+        Website: account.Website || '',
+        Phone: account.Phone || '',
+        Email: account.Email || '',
+        Address: account.Address || '',
+        City: account.City || '',
+        State: account.State || '',
+        Country: account.Country || '',
+        PostalCode: account.PostalCode || '',
+        Description: account.Description || '',
+      })
+    }
+  }, [account])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Account>) => {
