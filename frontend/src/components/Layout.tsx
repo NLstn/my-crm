@@ -29,14 +29,7 @@ export default function Layout() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center h-16 relative">
-            {/* Logo */}
-            <div className="absolute left-0">
-              <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">
-                CRM System
-              </h1>
-            </div>
-
+          <div className="flex items-center h-16 gap-4">
             {/* Hamburger menu button */}
             <button
               onClick={toggleMobileMenu}
@@ -54,6 +47,13 @@ export default function Layout() {
                 </svg>
               )}
             </button>
+
+            {/* Logo */}
+            <div>
+              <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                CRM System
+              </h1>
+            </div>
           </div>
         </div>
 
