@@ -23,7 +23,7 @@ func Connect() (*gorm.DB, error) {
 		host, user, password, dbname, port)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Error),
 	})
 
 	if err != nil {
