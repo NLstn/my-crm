@@ -1,4 +1,37 @@
+import { useQuery } from '@tanstack/react-query'
+import api from '../lib/api'
+
 export default function Dashboard() {
+  // Fetch total accounts count
+  const { data: accountsData, isLoading: accountsLoading, error: accountsError } = useQuery({
+    queryKey: ['accounts-count'],
+    queryFn: async () => {
+      const response = await api.get('/Accounts?$count=true&$top=0')
+      return response.data
+    },
+  })
+
+  // Fetch total contacts count
+  const { data: contactsData, isLoading: contactsLoading, error: contactsError } = useQuery({
+    queryKey: ['contacts-count'],
+    queryFn: async () => {
+      const response = await api.get('/Contacts?$count=true&$top=0')
+      return response.data
+    },
+  })
+
+  // Fetch open issues count (exclude Closed and Resolved)
+  const { data: issuesData, isLoading: issuesLoading, error: issuesError } = useQuery({
+    queryKey: ['open-issues-count'],
+    queryFn: async () => {
+      const response = await api.get("/Issues?$filter=Status ne 'Closed' and Status ne 'Resolved'&$count=true&$top=0")
+      return response.data
+    },
+  })
+
+  const isLoading = accountsLoading || contactsLoading || issuesLoading
+  const hasError = accountsError || contactsError || issuesError
+
   return (
     <div className="space-y-6">
       <div>
@@ -8,21 +41,35 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {hasError && (
+        <div className="card p-4 bg-error-50 dark:bg-error-900/20 border-error-200 dark:border-error-800">
+          <p className="text-error-600 dark:text-error-400">
+            Error loading dashboard data. Please try refreshing the page.
+          </p>
+        </div>
+      )}
+
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card p-6">
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Accounts</h3>
-          <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">-</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+            {isLoading ? '...' : accountsData?.count ?? 0}
+          </p>
         </div>
 
         <div className="card p-6">
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Contacts</h3>
-          <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">-</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+            {isLoading ? '...' : contactsData?.count ?? 0}
+          </p>
         </div>
 
         <div className="card p-6">
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Open Issues</h3>
-          <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">-</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+            {isLoading ? '...' : issuesData?.count ?? 0}
+          </p>
         </div>
       </div>
 
