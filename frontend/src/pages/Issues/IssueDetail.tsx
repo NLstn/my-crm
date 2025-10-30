@@ -1,16 +1,30 @@
-import { useQuery } from '@tanstack/react-query'
-import { useParams, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Issue } from '../../types'
 
 export default function IssueDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const { data: issue, isLoading, error } = useQuery({
     queryKey: ['issue', id],
     queryFn: async () => {
       const response = await api.get(`/Issues(${id})?$expand=Account,Contact`)
       return response.data as Issue
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/Issues(${id})`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['issues'] })
+      navigate('/issues')
     },
   })
 
@@ -24,6 +38,10 @@ export default function IssueDetail() {
         Error loading issue
       </div>
     )
+  }
+
+  const handleDelete = () => {
+    deleteMutation.mutate()
   }
 
   const getStatusBadgeClass = (status: string) => {
@@ -62,9 +80,17 @@ export default function IssueDetail() {
             </span>
           </div>
         </div>
-        <Link to={`/issues/${id}/edit`} className="btn btn-primary">
-          Edit Issue
-        </Link>
+        <div className="flex gap-3">
+          <Link to={`/issues/${id}/edit`} className="btn btn-primary">
+            Edit Issue
+          </Link>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="btn btn-danger"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       {/* Issue details */}
@@ -141,6 +167,41 @@ export default function IssueDetail() {
           )}
         </dl>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
+          <div className="card p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Delete Issue
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete "{issue.Title}"? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="btn btn-secondary"
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="btn btn-danger"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete Issue'}
+              </button>
+            </div>
+            {deleteMutation.isError && (
+              <p className="text-error-600 dark:text-error-400 text-sm mt-4">
+                Error: {(deleteMutation.error as Error).message}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

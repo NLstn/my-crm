@@ -1,16 +1,30 @@
-import { useQuery } from '@tanstack/react-query'
-import { useParams, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Contact } from '../../types'
 
 export default function ContactDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const { data: contact, isLoading, error } = useQuery({
     queryKey: ['contact', id],
     queryFn: async () => {
       const response = await api.get(`/Contacts(${id})?$expand=Account`)
       return response.data as Contact
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/Contacts(${id})`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+      navigate('/contacts')
     },
   })
 
@@ -24,6 +38,10 @@ export default function ContactDetail() {
         Error loading contact
       </div>
     )
+  }
+
+  const handleDelete = () => {
+    deleteMutation.mutate()
   }
 
   return (
@@ -40,9 +58,17 @@ export default function ContactDetail() {
             <span className="badge badge-primary mt-2">Primary Contact</span>
           )}
         </div>
-        <Link to={`/contacts/${id}/edit`} className="btn btn-primary">
-          Edit Contact
-        </Link>
+        <div className="flex gap-3">
+          <Link to={`/contacts/${id}/edit`} className="btn btn-primary">
+            Edit Contact
+          </Link>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="btn btn-danger"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       {/* Contact details */}
@@ -91,6 +117,41 @@ export default function ContactDetail() {
           )}
         </dl>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
+          <div className="card p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Delete Contact
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete "{contact.FirstName} {contact.LastName}"? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="btn btn-secondary"
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="btn btn-danger"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete Contact'}
+              </button>
+            </div>
+            {deleteMutation.isError && (
+              <p className="text-error-600 dark:text-error-400 text-sm mt-4">
+                Error: {(deleteMutation.error as Error).message}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
