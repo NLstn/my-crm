@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/nlstn/go-odata"
 	"github.com/nlstn/my-crm/backend/database"
@@ -48,16 +49,16 @@ func main() {
 		log.Fatal("Failed to register Issue entity:", err)
 	}
 
-	// Create HTTP server with CORS middleware
+	// Create HTTP server with logging and CORS middleware
 	mux := http.NewServeMux()
-	mux.Handle("/", corsMiddleware(service))
+	mux.Handle("/", loggingMiddleware(corsMiddleware(service)))
 
 	// Health check endpoint
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", loggingMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"healthy"}`))
-	})
+	})).ServeHTTP)
 
 	// Start server
 	port := "8080"
@@ -74,6 +75,39 @@ func main() {
 	fmt.Println("")
 
 	log.Fatal(http.ListenAndServe(":"+port, mux))
+}
+
+// responseWriter wraps http.ResponseWriter to capture the status code
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+// loggingMiddleware logs every request with its response code and time taken
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Wrap the ResponseWriter to capture the status code
+		wrapped := &responseWriter{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK, // Default status code
+		}
+
+		// Call the next handler
+		next.ServeHTTP(wrapped, r)
+
+		// Calculate duration
+		duration := time.Since(start)
+
+		// Log the request
+		log.Printf("%s %s - %d - %v", r.Method, r.URL.Path, wrapped.statusCode, duration)
+	})
 }
 
 // corsMiddleware adds CORS headers to allow frontend access
