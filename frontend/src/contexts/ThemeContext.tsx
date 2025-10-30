@@ -17,14 +17,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
 
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
+  const getStoredThemePreference = (): ThemePreference => {
     const stored = localStorage.getItem('theme') as ThemePreference | null
     return stored || 'system'
-  })
+  }
+
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(getStoredThemePreference)
 
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    const stored = localStorage.getItem('theme') as ThemePreference | null
-    const preference = stored || 'system'
+    const preference = getStoredThemePreference()
     if (preference === 'system') {
       return getSystemTheme()
     }
