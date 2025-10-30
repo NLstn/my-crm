@@ -11,6 +11,7 @@ import ContactForm from './pages/Contacts/ContactForm'
 import IssuesList from './pages/Issues/IssuesList'
 import IssueDetail from './pages/Issues/IssueDetail'
 import IssueForm from './pages/Issues/IssueForm'
+import UserSettings from './pages/UserSettings'
 
 function App() {
   return (
@@ -37,6 +38,9 @@ function App() {
             <Route path="issues/new" element={<IssueForm />} />
             <Route path="issues/:id" element={<IssueDetail />} />
             <Route path="issues/:id/edit" element={<IssueForm />} />
+            
+            {/* User Settings */}
+            <Route path="user-settings" element={<UserSettings />} />
           </Route>
         </Routes>
       </Router>

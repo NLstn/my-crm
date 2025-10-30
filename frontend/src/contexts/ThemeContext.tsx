@@ -1,44 +1,69 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 
-type Theme = 'light' | 'dark'
+type ThemePreference = 'light' | 'dark' | 'system'
+type ResolvedTheme = 'light' | 'dark'
 
 interface ThemeContextType {
-  theme: Theme
+  themePreference: ThemePreference
+  resolvedTheme: ResolvedTheme
+  setThemePreference: (theme: ThemePreference) => void
   toggleTheme: () => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Check localStorage first
-    const stored = localStorage.getItem('theme') as Theme | null
-    if (stored) return stored
-    
-    // Check system preference
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark'
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
+    const stored = localStorage.getItem('theme') as ThemePreference | null
+    return stored || 'system'
+  })
+
+  const getSystemTheme = (): ResolvedTheme => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
+    if (themePreference === 'system') {
+      return getSystemTheme()
     }
-    
-    return 'light'
+    return themePreference
   })
 
   useEffect(() => {
-    const root = document.documentElement
-    if (theme === 'dark') {
-      root.classList.add('dark')
-    } else {
-      root.classList.remove('dark')
+    const updateResolvedTheme = () => {
+      const newResolvedTheme = themePreference === 'system' ? getSystemTheme() : themePreference
+      setResolvedTheme(newResolvedTheme)
+      
+      const root = document.documentElement
+      if (newResolvedTheme === 'dark') {
+        root.classList.add('dark')
+      } else {
+        root.classList.remove('dark')
+      }
     }
-    localStorage.setItem('theme', theme)
-  }, [theme])
+
+    updateResolvedTheme()
+    localStorage.setItem('theme', themePreference)
+
+    // Listen for system theme changes when in system mode
+    if (themePreference === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const handler = () => updateResolvedTheme()
+      mediaQuery.addEventListener('change', handler)
+      return () => mediaQuery.removeEventListener('change', handler)
+    }
+  }, [themePreference])
+
+  const setThemePreference = (theme: ThemePreference) => {
+    setThemePreferenceState(theme)
+  }
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+    setThemePreferenceState(prev => prev === 'light' ? 'dark' : 'light')
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ themePreference, resolvedTheme, setThemePreference, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   )
