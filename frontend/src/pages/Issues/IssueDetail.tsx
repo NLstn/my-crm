@@ -196,7 +196,7 @@ export default function IssueDetail() {
             </div>
             {deleteMutation.isError && (
               <p className="text-error-600 dark:text-error-400 text-sm mt-4">
-                Error: {(deleteMutation.error as Error).message}
+                Failed to delete issue. Please try again.
               </p>
             )}
           </div>
