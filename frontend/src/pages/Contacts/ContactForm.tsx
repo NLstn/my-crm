@@ -30,21 +30,9 @@ export default function ContactForm() {
     },
   })
 
-  const [formData, setFormData] = useState<Partial<Contact>>({
-    AccountID: contact?.AccountID || (accountIdFromQuery ? parseInt(accountIdFromQuery) : 0),
-    FirstName: contact?.FirstName || '',
-    LastName: contact?.LastName || '',
-    Title: contact?.Title || '',
-    Email: contact?.Email || '',
-    Phone: contact?.Phone || '',
-    Mobile: contact?.Mobile || '',
-    IsPrimary: contact?.IsPrimary || false,
-    Notes: contact?.Notes || '',
-  })
-
-  useEffect(() => {
+  const getInitialFormData = (): Partial<Contact> => {
     if (contact) {
-      setFormData({
+      return {
         AccountID: contact.AccountID,
         FirstName: contact.FirstName,
         LastName: contact.LastName,
@@ -54,9 +42,28 @@ export default function ContactForm() {
         Mobile: contact.Mobile || '',
         IsPrimary: contact.IsPrimary,
         Notes: contact.Notes || '',
-      })
+      }
     }
-  }, [contact])
+    return {
+      AccountID: accountIdFromQuery ? parseInt(accountIdFromQuery) : 0,
+      FirstName: '',
+      LastName: '',
+      Title: '',
+      Email: '',
+      Phone: '',
+      Mobile: '',
+      IsPrimary: false,
+      Notes: '',
+    }
+  }
+
+  const [formData, setFormData] = useState<Partial<Contact>>(getInitialFormData())
+
+  // Reset form data when contact ID changes
+  useEffect(() => {
+    setFormData(getInitialFormData())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Contact>) => {

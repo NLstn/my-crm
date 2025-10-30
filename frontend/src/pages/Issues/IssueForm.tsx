@@ -38,21 +38,9 @@ export default function IssueForm() {
     },
   })
 
-  const [formData, setFormData] = useState<Partial<Issue>>({
-    AccountID: issue?.AccountID || (accountIdFromQuery ? parseInt(accountIdFromQuery) : 0),
-    ContactID: issue?.ContactID || undefined,
-    Title: issue?.Title || '',
-    Description: issue?.Description || '',
-    Status: issue?.Status || 'New',
-    Priority: issue?.Priority || 'Medium',
-    AssignedTo: issue?.AssignedTo || '',
-    Resolution: issue?.Resolution || '',
-    DueDate: issue?.DueDate || undefined,
-  })
-
-  useEffect(() => {
+  const getInitialFormData = (): Partial<Issue> => {
     if (issue) {
-      setFormData({
+      return {
         AccountID: issue.AccountID,
         ContactID: issue.ContactID || undefined,
         Title: issue.Title,
@@ -62,9 +50,28 @@ export default function IssueForm() {
         AssignedTo: issue.AssignedTo || '',
         Resolution: issue.Resolution || '',
         DueDate: issue.DueDate || undefined,
-      })
+      }
     }
-  }, [issue])
+    return {
+      AccountID: accountIdFromQuery ? parseInt(accountIdFromQuery) : 0,
+      ContactID: undefined,
+      Title: '',
+      Description: '',
+      Status: 'New',
+      Priority: 'Medium',
+      AssignedTo: '',
+      Resolution: '',
+      DueDate: undefined,
+    }
+  }
+
+  const [formData, setFormData] = useState<Partial<Issue>>(getInitialFormData())
+
+  // Reset form data when issue ID changes
+  useEffect(() => {
+    setFormData(getInitialFormData())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Issue>) => {

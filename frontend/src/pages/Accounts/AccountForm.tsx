@@ -19,24 +19,9 @@ export default function AccountForm() {
     enabled: isEdit,
   })
 
-  const [formData, setFormData] = useState<Partial<Account>>({
-    Name: '',
-    Industry: '',
-    Website: '',
-    Phone: '',
-    Email: '',
-    Address: '',
-    City: '',
-    State: '',
-    Country: '',
-    PostalCode: '',
-    Description: '',
-  })
-
-  // Update form data when account loads
-  useEffect(() => {
+  const getInitialFormData = (): Partial<Account> => {
     if (account) {
-      setFormData({
+      return {
         Name: account.Name || '',
         Industry: account.Industry || '',
         Website: account.Website || '',
@@ -48,9 +33,30 @@ export default function AccountForm() {
         Country: account.Country || '',
         PostalCode: account.PostalCode || '',
         Description: account.Description || '',
-      })
+      }
     }
-  }, [account])
+    return {
+      Name: '',
+      Industry: '',
+      Website: '',
+      Phone: '',
+      Email: '',
+      Address: '',
+      City: '',
+      State: '',
+      Country: '',
+      PostalCode: '',
+      Description: '',
+    }
+  }
+
+  const [formData, setFormData] = useState<Partial<Account>>(getInitialFormData())
+
+  // Reset form data when account ID changes
+  useEffect(() => {
+    setFormData(getInitialFormData())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Account>) => {
