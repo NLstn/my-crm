@@ -13,20 +13,22 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const getSystemTheme = (): ResolvedTheme => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
     const stored = localStorage.getItem('theme') as ThemePreference | null
     return stored || 'system'
   })
 
-  const getSystemTheme = (): ResolvedTheme => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    if (themePreference === 'system') {
+    const stored = localStorage.getItem('theme') as ThemePreference | null
+    const preference = stored || 'system'
+    if (preference === 'system') {
       return getSystemTheme()
     }
-    return themePreference
+    return preference
   })
 
   useEffect(() => {
@@ -59,7 +61,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   const toggleTheme = () => {
-    setThemePreferenceState(prev => prev === 'light' ? 'dark' : 'light')
+    setThemePreferenceState(prev => {
+      // Only toggle between light and dark, not system
+      if (prev === 'light') return 'dark'
+      if (prev === 'dark') return 'light'
+      // If currently 'system', toggle to opposite of current resolved theme
+      return resolvedTheme === 'light' ? 'dark' : 'light'
+    })
   }
 
   return (
