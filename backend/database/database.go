@@ -43,6 +43,7 @@ func AutoMigrate(db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&models.Account{},
 		&models.Contact{},
+		&models.Lead{},
 		&models.Issue{},
 		&models.IssueUpdate{},
 		&models.Activity{},
@@ -587,6 +588,99 @@ func SeedData(db *gorm.DB) error {
 	if len(tasks) > 0 {
 		if err := db.Create(&tasks).Error; err != nil {
 			return fmt.Errorf("failed to create tasks: %w", err)
+		}
+	}
+
+	// Create sample leads representing prospects awaiting conversion
+	leads := []models.Lead{
+		{
+			Name:    "Megan Rivers",
+			Email:   "megan.rivers@greenretail.io",
+			Phone:   "+1-555-3401",
+			Company: "Green Retail Co",
+			Title:   "Operations Director",
+			Website: "https://www.greenretail.io",
+			Source:  "Website",
+			Status:  models.LeadStatusNew,
+			Notes:   "Interested in centralizing customer activity tracking across new store locations.",
+		},
+		{
+			Name:    "Adrian Cole",
+			Email:   "adrian.cole@skyship.ai",
+			Phone:   "+1-555-7821",
+			Company: "Skyship AI",
+			Title:   "Head of Revenue",
+			Website: "https://skyship.ai",
+			Source:  "Referral",
+			Status:  models.LeadStatusContacted,
+			Notes:   "Requested a follow-up demo highlighting AI-powered forecasting.",
+		},
+		{
+			Name:    "Priya Desai",
+			Email:   "priya.desai@orbitlogistics.com",
+			Phone:   "+1-555-2294",
+			Company: "Orbit Logistics",
+			Title:   "IT Program Manager",
+			Website: "https://orbitlogistics.com",
+			Source:  "Conference",
+			Status:  models.LeadStatusQualified,
+			Notes:   "Budget approved for Q3 rollout if integrations look feasible.",
+		},
+		{
+			Name:    "Marcus Lee",
+			Email:   "marcus.lee@apexlabs.org",
+			Phone:   "+1-555-9152",
+			Company: "Apex Research Labs",
+			Title:   "Innovation Lead",
+			Source:  "Inbound Call",
+			Status:  models.LeadStatusContacted,
+			Notes:   "Evaluating CRM platforms that support strict compliance auditing.",
+		},
+		{
+			Name:    "Sofia Hernandez",
+			Email:   "sofia.hernandez@lumenenergy.co",
+			Phone:   "+1-555-6638",
+			Company: "Lumen Energy Cooperative",
+			Title:   "Customer Programs Manager",
+			Source:  "Webinar",
+			Status:  models.LeadStatusNew,
+			Notes:   "Needs better segmentation tools to drive renewable adoption campaigns.",
+		},
+		{
+			Name:    "Jonah Patel",
+			Email:   "jonah.patel@urbanwellness.studio",
+			Phone:   "+1-555-4459",
+			Company: "Urban Wellness Studio",
+			Title:   "Founder",
+			Source:  "Social Media",
+			Status:  models.LeadStatusQualified,
+			Notes:   "Expanding locations and seeking automated nurture journeys.",
+		},
+		{
+			Name:    "Helena Griggs",
+			Email:   "helena.griggs@northwindmarine.com",
+			Phone:   "+1-555-7810",
+			Company: "Northwind Marine",
+			Title:   "Sales Enablement Director",
+			Source:  "Partner",
+			Status:  models.LeadStatusContacted,
+			Notes:   "Comparing vendors; wants integrated quoting workflow demo.",
+		},
+		{
+			Name:    "Damien Cho",
+			Email:   "damien.cho@terrafoods.co",
+			Phone:   "+1-555-2744",
+			Company: "Terra Foods Cooperative",
+			Title:   "Business Development",
+			Source:  "Website",
+			Status:  models.LeadStatusNew,
+			Notes:   "Requested sample dashboards; heavy emphasis on analytics.",
+		},
+	}
+
+	for i := range leads {
+		if err := db.Create(&leads[i]).Error; err != nil {
+			return fmt.Errorf("failed to create lead: %w", err)
 		}
 	}
 

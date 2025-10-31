@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -96,6 +97,10 @@ func main() {
 		log.Fatal("Failed to register Contact entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.Lead{}); err != nil {
+		log.Fatal("Failed to register Lead entity:", err)
+	}
+
 	if err := service.RegisterEntity(&models.Issue{}); err != nil {
 		log.Fatal("Failed to register Issue entity:", err)
 	}
@@ -128,6 +133,10 @@ func main() {
 		log.Fatal("Failed to register OpportunityLineItem entity:", err)
 	}
 
+	if err := registerLeadConversionAction(service, db); err != nil {
+		log.Fatal("Failed to register lead conversion action:", err)
+	}
+
 	// Register fake authentication action (DEVELOPMENT ONLY)
 	// TODO: Replace with proper authentication provider integration in production
 	if err := registerDevAuthAction(service, db); err != nil {
@@ -153,6 +162,7 @@ func main() {
 	fmt.Println("Metadata:          http://localhost:" + port + "/$metadata")
 	fmt.Println("Accounts:          http://localhost:" + port + "/Accounts")
 	fmt.Println("Contacts:          http://localhost:" + port + "/Contacts")
+	fmt.Println("Leads:             http://localhost:" + port + "/Leads")
 	fmt.Println("Issues:            http://localhost:" + port + "/Issues")
 	fmt.Println("Activities:        http://localhost:" + port + "/Activities")
 	fmt.Println("Tasks:             http://localhost:" + port + "/Tasks")
@@ -216,6 +226,131 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// registerLeadConversionAction exposes a bound OData action that converts a lead into an account and contact
+func registerLeadConversionAction(service *odata.Service, db *gorm.DB) error {
+	return service.RegisterAction(odata.ActionDefinition{
+		Name:      "ConvertLead",
+		IsBound:   true,
+		EntitySet: "Leads",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "AccountName", Type: reflect.TypeOf(""), Required: false},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			lead, ok := ctx.(*models.Lead)
+			if !ok || lead == nil {
+				return fmt.Errorf("invalid lead context for conversion")
+			}
+
+			var currentLead models.Lead
+			if err := db.First(&currentLead, lead.ID).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusNotFound)
+					return json.NewEncoder(w).Encode(map[string]string{
+						"error": "Lead not found",
+					})
+				}
+				return err
+			}
+
+			if currentLead.Status == models.LeadStatusConverted || currentLead.ConvertedAccountID != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				return json.NewEncoder(w).Encode(map[string]string{
+					"error": "Lead has already been converted",
+				})
+			}
+
+			accountName := strings.TrimSpace(currentLead.Company)
+			if overrideName, ok := params["AccountName"].(string); ok {
+				if trimmed := strings.TrimSpace(overrideName); trimmed != "" {
+					accountName = trimmed
+				}
+			}
+			if accountName == "" {
+				accountName = currentLead.Name
+			}
+
+			firstName, lastName := splitLeadName(currentLead.Name)
+
+			var account models.Account
+			var contact models.Contact
+
+			err := db.Transaction(func(tx *gorm.DB) error {
+				account = models.Account{
+					Name:        accountName,
+					Email:       currentLead.Email,
+					Phone:       currentLead.Phone,
+					Website:     currentLead.Website,
+					Description: currentLead.Notes,
+				}
+				if err := tx.Create(&account).Error; err != nil {
+					return err
+				}
+
+				contact = models.Contact{
+					AccountID: account.ID,
+					FirstName: firstName,
+					LastName:  lastName,
+					Title:     currentLead.Title,
+					Email:     currentLead.Email,
+					Phone:     currentLead.Phone,
+					IsPrimary: true,
+					Notes:     currentLead.Notes,
+				}
+				if err := tx.Create(&contact).Error; err != nil {
+					return err
+				}
+
+				now := time.Now().UTC()
+				currentLead.Status = models.LeadStatusConverted
+				currentLead.ConvertedAt = &now
+				currentLead.ConvertedAccountID = &account.ID
+				currentLead.ConvertedContactID = &contact.ID
+
+				if err := tx.Model(&models.Lead{}).
+					Where("id = ?", currentLead.ID).
+					Updates(map[string]interface{}{
+						"status":               currentLead.Status,
+						"converted_at":         currentLead.ConvertedAt,
+						"converted_account_id": currentLead.ConvertedAccountID,
+						"converted_contact_id": currentLead.ConvertedContactID,
+					}).Error; err != nil {
+					return err
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"LeadID":    currentLead.ID,
+				"AccountID": account.ID,
+				"ContactID": contact.ID,
+			})
+		},
+	})
+}
+
+func splitLeadName(fullName string) (string, string) {
+	trimmed := strings.TrimSpace(fullName)
+	if trimmed == "" {
+		return "Lead", "Prospect"
+	}
+
+	parts := strings.Fields(trimmed)
+	if len(parts) == 1 {
+		return parts[0], "Lead"
+	}
+
+	return parts[0], strings.Join(parts[1:], " ")
 }
 
 // registerDevAuthAction registers a fake authentication action for development purposes

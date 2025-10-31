@@ -48,6 +48,14 @@ export default function Dashboard() {
     },
   })
 
+  const { data: leadsData, isLoading: leadsLoading, error: leadsError } = useQuery({
+    queryKey: ['leads-active-count'],
+    queryFn: async () => {
+      const response = await api.get("/Leads?$filter=Status ne 'Converted' and Status ne 'Disqualified'&$count=true&$top=0")
+      return response.data
+    },
+  })
+
   // Fetch open issues count (exclude Closed and Resolved)
   // Status values: 1=New, 2=InProgress, 3=Pending, 4=Resolved, 5=Closed
   const { data: issuesData, isLoading: issuesLoading, error: issuesError } = useQuery({
@@ -95,8 +103,8 @@ export default function Dashboard() {
     .sort((a, b) => new Date(a.ExpectedCloseDate || '').getTime() - new Date(b.ExpectedCloseDate || '').getTime())
     .slice(0, 5)
 
-  const isLoading = accountsLoading || contactsLoading || issuesLoading || opportunitiesLoading
-  const hasError = accountsError || contactsError || issuesError || opportunitiesError
+  const isLoading = accountsLoading || contactsLoading || leadsLoading || issuesLoading || opportunitiesLoading
+  const hasError = accountsError || contactsError || leadsError || issuesError || opportunitiesError
 
   return (
     <div className="space-y-6">
@@ -116,7 +124,17 @@ export default function Dashboard() {
       )}
 
       {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+        <div className="card p-6">
+          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Leads</h3>
+          <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+            {isLoading ? '...' : leadsData?.count ?? 0}
+          </p>
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+            Excluding converted or disqualified records
+          </p>
+        </div>
+
         <div className="card p-6">
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Accounts</h3>
           <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -154,7 +172,19 @@ export default function Dashboard() {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
+          <Link
+            to="/leads/new"
+            className="btn btn-primary text-center"
+          >
+            Capture Lead
+          </Link>
+          <Link
+            to="/leads"
+            className="btn btn-secondary text-center"
+          >
+            Manage Leads
+          </Link>
           <Link
             to="/accounts/new"
             className="btn btn-primary text-center"

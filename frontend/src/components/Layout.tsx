@@ -11,6 +11,7 @@ export default function Layout() {
 
   const navigation = [
     { name: 'Accounts', href: '/accounts' },
+    { name: 'Leads', href: '/leads' },
     { name: 'Contacts', href: '/contacts' },
     { name: 'Activities', href: '/activities' },
     { name: 'Issues', href: '/issues' },
