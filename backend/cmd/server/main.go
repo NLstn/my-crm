@@ -36,6 +36,26 @@ func main() {
 		log.Fatal("Failed to set namespace:", err)
 	}
 
+	// Register enums for Issue Status and Priority
+	if err := odata.RegisterEnumType(models.IssueStatus(""), map[string]int64{
+		"New":        0,
+		"InProgress": 1,
+		"Pending":    2,
+		"Resolved":   3,
+		"Closed":     4,
+	}); err != nil {
+		log.Fatal("Failed to register IssueStatus enum:", err)
+	}
+
+	if err := odata.RegisterEnumType(models.IssuePriority(""), map[string]int64{
+		"Low":      0,
+		"Medium":   1,
+		"High":     2,
+		"Critical": 3,
+	}); err != nil {
+		log.Fatal("Failed to register IssuePriority enum:", err)
+	}
+
 	// Register entities - must use go-odata for ALL APIs
 	if err := service.RegisterEntity(&models.Account{}); err != nil {
 		log.Fatal("Failed to register Account entity:", err)
