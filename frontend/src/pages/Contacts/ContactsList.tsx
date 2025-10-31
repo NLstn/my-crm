@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import api from '../../lib/api'
 import { mergeODataQuery } from '../../lib/odataUtils'
 import { Contact } from '../../types'
-import EntitySearch from '../../components/EntitySearch'
+import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
 
 export default function ContactsList() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -53,14 +53,9 @@ export default function ContactsList() {
           },
         ]}
         onQueryChange={setSearchQuery}
-        totalCount={data?.count || 0}
         currentPage={currentPage}
         pageSize={pageSize}
         onPageChange={setCurrentPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size)
-          setCurrentPage(1)
-        }}
       />
 
       {isLoading && (
@@ -118,6 +113,18 @@ export default function ContactsList() {
               </Link>
             </div>
           )}
+
+          {/* Pagination Controls Below Results */}
+          <PaginationControls
+            totalCount={data?.count || 0}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setCurrentPage(1)
+            }}
+          />
         </>
       )}
     </div>
