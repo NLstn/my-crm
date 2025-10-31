@@ -22,10 +22,11 @@ export default function Dashboard() {
   })
 
   // Fetch open issues count (exclude Closed and Resolved)
+  // Status values: 1=New, 2=InProgress, 3=Pending, 4=Resolved, 5=Closed
   const { data: issuesData, isLoading: issuesLoading, error: issuesError } = useQuery({
     queryKey: ['open-issues-count'],
     queryFn: async () => {
-      const response = await api.get("/Issues?$filter=Status ne 'Closed' and Status ne 'Resolved'&$count=true&$top=0")
+      const response = await api.get("/Issues?$filter=Status ne 4 and Status ne 5&$count=true&$top=0")
       return response.data
     },
   })

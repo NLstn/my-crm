@@ -71,7 +71,18 @@ export default function EmployeeForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    mutation.mutate(formData)
+    
+    // Convert date-only string to RFC3339 datetime format for the backend
+    const submitData = { ...formData }
+    if (submitData.HireDate && typeof submitData.HireDate === 'string' && submitData.HireDate !== '') {
+      // Convert YYYY-MM-DD to YYYY-MM-DDT00:00:00Z
+      submitData.HireDate = `${submitData.HireDate}T00:00:00Z`
+    } else if (submitData.HireDate === '') {
+      // Remove empty string to send null/undefined
+      delete submitData.HireDate
+    }
+    
+    mutation.mutate(submitData)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
