@@ -67,6 +67,50 @@ func SeedData(db *gorm.DB) error {
 
 	log.Println("Seeding database with sample data...")
 
+	// Create sample employees first
+	hireDate1 := time.Date(2020, 5, 15, 0, 0, 0, 0, time.UTC)
+	hireDate2 := time.Date(2019, 3, 10, 0, 0, 0, 0, time.UTC)
+	hireDate3 := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
+
+	employees := []models.Employee{
+		{
+			FirstName:  "Alice",
+			LastName:   "Johnson",
+			Email:      "alice.johnson@company.com",
+			Phone:      "+1-555-1001",
+			Department: "Sales",
+			Position:   "Sales Manager",
+			HireDate:   &hireDate1,
+			Notes:      "Leads the sales team",
+		},
+		{
+			FirstName:  "Bob",
+			LastName:   "Williams",
+			Email:      "bob.williams@company.com",
+			Phone:      "+1-555-1002",
+			Department: "Engineering",
+			Position:   "Senior Developer",
+			HireDate:   &hireDate2,
+			Notes:      "Full-stack developer",
+		},
+		{
+			FirstName:  "Carol",
+			LastName:   "Martinez",
+			Email:      "carol.martinez@company.com",
+			Phone:      "+1-555-1003",
+			Department: "Support",
+			Position:   "Support Specialist",
+			HireDate:   &hireDate3,
+			Notes:      "Handles customer support",
+		},
+	}
+
+	for i := range employees {
+		if err := db.Create(&employees[i]).Error; err != nil {
+			return fmt.Errorf("failed to create employee: %w", err)
+		}
+	}
+
 	// Create sample accounts
 	accounts := []models.Account{
 		{
@@ -81,6 +125,7 @@ func SeedData(db *gorm.DB) error {
 			Country:     "USA",
 			PostalCode:  "94105",
 			Description: "Leading technology solutions provider",
+			EmployeeID:  &employees[0].ID,
 		},
 		{
 			Name:        "Global Industries Inc",
@@ -94,6 +139,7 @@ func SeedData(db *gorm.DB) error {
 			Country:     "USA",
 			PostalCode:  "48201",
 			Description: "International manufacturing company",
+			EmployeeID:  &employees[1].ID,
 		},
 		{
 			Name:        "Retail Masters Ltd",
@@ -107,6 +153,7 @@ func SeedData(db *gorm.DB) error {
 			Country:     "USA",
 			PostalCode:  "10001",
 			Description: "Premier retail solutions company",
+			EmployeeID:  &employees[2].ID,
 		},
 	}
 
@@ -175,6 +222,7 @@ func SeedData(db *gorm.DB) error {
 			Status:      models.IssueStatusInProgress,
 			Priority:    models.IssuePriorityHigh,
 			AssignedTo:  "Tech Support Team",
+			EmployeeID:  &employees[1].ID,
 		},
 		{
 			AccountID:   accounts[0].ID,
@@ -182,6 +230,7 @@ func SeedData(db *gorm.DB) error {
 			Description: "Would like to see custom reporting capabilities",
 			Status:      models.IssueStatusNew,
 			Priority:    models.IssuePriorityMedium,
+			EmployeeID:  &employees[1].ID,
 		},
 		{
 			AccountID:   accounts[1].ID,
@@ -191,6 +240,7 @@ func SeedData(db *gorm.DB) error {
 			Status:      models.IssueStatusInProgress,
 			Priority:    models.IssuePriorityCritical,
 			AssignedTo:  "Engineering Team",
+			EmployeeID:  &employees[1].ID,
 		},
 		{
 			AccountID:   accounts[2].ID,
@@ -199,56 +249,13 @@ func SeedData(db *gorm.DB) error {
 			Description: "Need training session for new team members",
 			Status:      models.IssueStatusNew,
 			Priority:    models.IssuePriorityLow,
+			EmployeeID:  &employees[2].ID,
 		},
 	}
 
 	for i := range issues {
 		if err := db.Create(&issues[i]).Error; err != nil {
 			return fmt.Errorf("failed to create issue: %w", err)
-		}
-	}
-
-	// Create sample employees
-	hireDate1 := time.Date(2020, 5, 15, 0, 0, 0, 0, time.UTC)
-	hireDate2 := time.Date(2019, 3, 10, 0, 0, 0, 0, time.UTC)
-	hireDate3 := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
-
-	employees := []models.Employee{
-		{
-			FirstName:  "Alice",
-			LastName:   "Johnson",
-			Email:      "alice.johnson@company.com",
-			Phone:      "+1-555-1001",
-			Department: "Sales",
-			Position:   "Sales Manager",
-			HireDate:   &hireDate1,
-			Notes:      "Leads the sales team",
-		},
-		{
-			FirstName:  "Bob",
-			LastName:   "Williams",
-			Email:      "bob.williams@company.com",
-			Phone:      "+1-555-1002",
-			Department: "Engineering",
-			Position:   "Senior Developer",
-			HireDate:   &hireDate2,
-			Notes:      "Full-stack developer",
-		},
-		{
-			FirstName:  "Carol",
-			LastName:   "Martinez",
-			Email:      "carol.martinez@company.com",
-			Phone:      "+1-555-1003",
-			Department: "Support",
-			Position:   "Support Specialist",
-			HireDate:   &hireDate3,
-			Notes:      "Handles customer support",
-		},
-	}
-
-	for i := range employees {
-		if err := db.Create(&employees[i]).Error; err != nil {
-			return fmt.Errorf("failed to create employee: %w", err)
 		}
 	}
 
