@@ -18,12 +18,14 @@ type Account struct {
 	Country     string    `json:"Country" gorm:"type:varchar(100)" odata:"maxlength(100)"`
 	PostalCode  string    `json:"PostalCode" gorm:"type:varchar(20)" odata:"maxlength(20)"`
 	Description string    `json:"Description" gorm:"type:text"`
+	EmployeeID  *uint     `json:"EmployeeID" gorm:"index"`
 	CreatedAt   time.Time `json:"CreatedAt" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Contacts []Contact `json:"Contacts" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Issues   []Issue   `json:"Issues" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Contacts []Contact  `json:"Contacts" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Issues   []Issue    `json:"Issues" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Employee *Employee  `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM

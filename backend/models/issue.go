@@ -74,14 +74,16 @@ type Issue struct {
 	Priority    IssuePriority `json:"Priority" gorm:"not null;type:integer;default:2" odata:"required,enum=IssuePriority"`
 	AssignedTo  string        `json:"AssignedTo" gorm:"type:varchar(255)" odata:"maxlength(255)"`
 	Resolution  string        `json:"Resolution" gorm:"type:text"`
+	EmployeeID  *uint         `json:"EmployeeID" gorm:"index"`
 	DueDate     *time.Time    `json:"DueDate"`
 	ResolvedAt  *time.Time    `json:"ResolvedAt"`
 	CreatedAt   time.Time     `json:"CreatedAt" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time     `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Account *Account `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Contact *Contact `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
+	Account  *Account  `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Contact  *Contact  `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
+	Employee *Employee `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM
