@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"time"
 
@@ -49,6 +50,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Employee{},
 		&models.Product{},
 		&models.Opportunity{},
+		&models.OpportunityLineItem{},
 	)
 
 	if err != nil {
@@ -412,6 +414,83 @@ func SeedData(db *gorm.DB) error {
 	for i := range products {
 		if err := db.Create(&products[i]).Error; err != nil {
 			return fmt.Errorf("failed to create product: %w", err)
+		}
+	}
+
+	// Create opportunity line items for detailed deal composition
+	computeLineTotal := func(quantity int, unitPrice, discountAmount, discountPercent float64) float64 {
+		if quantity <= 0 {
+			quantity = 1
+		}
+
+		subtotal := float64(quantity) * unitPrice
+		percentDiscount := subtotal * (discountPercent / 100)
+		totalDiscount := math.Min(subtotal, math.Max(0, discountAmount+percentDiscount))
+		total := subtotal - totalDiscount
+		if total < 0 {
+			total = 0
+		}
+
+		return math.Round(total*100) / 100
+	}
+
+	if len(opportunities) > 0 && len(products) > 0 {
+		lineItems := make([]models.OpportunityLineItem, 0, len(opportunities)*2)
+		amountByOpportunity := make(map[uint]float64)
+		maxOpportunities := len(opportunities)
+		if maxOpportunities > 12 {
+			maxOpportunities = 12
+		}
+
+		for i := 0; i < maxOpportunities; i++ {
+			opportunity := opportunities[i]
+			primaryProduct := products[i%len(products)]
+			secondaryProduct := products[(i*3+5)%len(products)]
+
+			quantityA := 1 + (i % 3)
+			quantityB := 2 + (i % 2)
+			discountAmountA := 0.0
+			if i%4 == 0 {
+				discountAmountA = 75.0
+			}
+			discountPercentB := float64((i % 3) * 5)
+
+			itemA := models.OpportunityLineItem{
+				OpportunityID:  opportunity.ID,
+				ProductID:      primaryProduct.ID,
+				Quantity:       quantityA,
+				UnitPrice:      primaryProduct.Price,
+				DiscountAmount: discountAmountA,
+			}
+
+			itemB := models.OpportunityLineItem{
+				OpportunityID:   opportunity.ID,
+				ProductID:       secondaryProduct.ID,
+				Quantity:        quantityB,
+				UnitPrice:       secondaryProduct.Price,
+				DiscountPercent: discountPercentB,
+			}
+
+			amountByOpportunity[opportunity.ID] += computeLineTotal(itemA.Quantity, itemA.UnitPrice, itemA.DiscountAmount, itemA.DiscountPercent)
+			amountByOpportunity[opportunity.ID] += computeLineTotal(itemB.Quantity, itemB.UnitPrice, itemB.DiscountAmount, itemB.DiscountPercent)
+
+			lineItems = append(lineItems, itemA, itemB)
+		}
+
+		if len(lineItems) > 0 {
+			if err := db.Create(&lineItems).Error; err != nil {
+				return fmt.Errorf("failed to create opportunity line items: %w", err)
+			}
+
+			for i := range opportunities {
+				if total, ok := amountByOpportunity[opportunities[i].ID]; ok {
+					total = math.Round(total*100) / 100
+					opportunities[i].Amount = total
+					if err := db.Model(&models.Opportunity{}).Where("id = ?", opportunities[i].ID).Update("amount", total).Error; err != nil {
+						return fmt.Errorf("failed to update opportunity amount: %w", err)
+					}
+				}
+			}
 		}
 	}
 

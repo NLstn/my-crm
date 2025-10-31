@@ -125,6 +125,22 @@ export interface Opportunity {
   Contact?: Contact
   Owner?: Employee
   ClosedBy?: Employee
+  LineItems?: OpportunityLineItem[]
+}
+
+export interface OpportunityLineItem {
+  ID: number
+  OpportunityID: number
+  ProductID: number
+  Quantity: number
+  UnitPrice: number
+  DiscountAmount: number
+  DiscountPercent: number
+  Subtotal: number
+  Total: number
+  CreatedAt: string
+  UpdatedAt: string
+  Product?: Product
 }
 
 // Re-export enum utilities from lib/enums

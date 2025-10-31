@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -64,10 +65,11 @@ type Opportunity struct {
 	UpdatedAt          time.Time        `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Account  *Account  `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Contact  *Contact  `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
-	Owner    *Employee `json:"Owner" gorm:"foreignKey:OwnerEmployeeID" odata:"navigation"`
-	ClosedBy *Employee `json:"ClosedBy" gorm:"foreignKey:ClosedByEmployeeID" odata:"navigation"`
+	Account   *Account              `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Contact   *Contact              `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
+	Owner     *Employee             `json:"Owner" gorm:"foreignKey:OwnerEmployeeID" odata:"navigation"`
+	ClosedBy  *Employee             `json:"ClosedBy" gorm:"foreignKey:ClosedByEmployeeID" odata:"navigation"`
+	LineItems []OpportunityLineItem `json:"LineItems,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:OpportunityID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM
@@ -88,6 +90,7 @@ func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
+	// Handle closed stage logic
 	previousWasClosed := false
 
 	if opportunity.ID != 0 {
@@ -127,6 +130,15 @@ func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
 		if opportunity.CloseReason == "" {
 			return fmt.Errorf("close reason is required when opportunity is Closed Lost")
 		}
+	}
+
+	// Calculate total from line items if present
+	if len(opportunity.LineItems) > 0 {
+		total := 0.0
+		for i := range opportunity.LineItems {
+			total += opportunity.LineItems[i].Total
+		}
+		opportunity.Amount = math.Round(total*100) / 100
 	}
 
 	return nil

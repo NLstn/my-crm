@@ -1,8 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../lib/api'
-import { Opportunity, Account, Contact, Employee, OPPORTUNITY_STAGES } from '../../types'
+import {
+  Opportunity,
+  OpportunityLineItem,
+  Account,
+  Contact,
+  Employee,
+  Product,
+  OPPORTUNITY_STAGES,
+} from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
 
 const CLOSED_WON_STAGE = 6
@@ -18,6 +26,57 @@ const formatDateForInput = (value?: string) => {
   }
   return date.toISOString().split('T')[0]
 }
+
+type LineItemFormState = {
+  tempId: string
+  ID?: number
+  ProductID?: number
+  ProductName?: string
+  Quantity: number
+  UnitPrice: number
+  DiscountAmount: number
+  DiscountPercent: number
+}
+
+const createTempId = () => `li-${Math.random().toString(36).slice(2)}-${Date.now()}`
+
+const createEmptyLineItem = (): LineItemFormState => ({
+  tempId: createTempId(),
+  Quantity: 1,
+  UnitPrice: 0,
+  DiscountAmount: 0,
+  DiscountPercent: 0,
+})
+
+const mapOpportunityLineItemToFormState = (item: OpportunityLineItem): LineItemFormState => ({
+  tempId: createTempId(),
+  ID: item.ID,
+  ProductID: item.ProductID,
+  ProductName: item.Product?.Name,
+  Quantity: item.Quantity,
+  UnitPrice: item.UnitPrice,
+  DiscountAmount: item.DiscountAmount,
+  DiscountPercent: item.DiscountPercent,
+})
+
+const calculateLineItemTotals = (item: LineItemFormState) => {
+  const quantity = item.Quantity > 0 ? item.Quantity : 1
+  const subtotal = quantity * item.UnitPrice
+  const percentDiscount = subtotal * (item.DiscountPercent / 100)
+  const totalDiscount = Math.min(subtotal, Math.max(0, item.DiscountAmount + percentDiscount))
+  const total = Math.max(0, subtotal - totalDiscount)
+
+  return {
+    subtotal: Math.round(subtotal * 100) / 100,
+    total: Math.round(total * 100) / 100,
+  }
+}
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 0,
+})
 
 export default function OpportunityForm() {
   const { id } = useParams<{ id: string }>()
@@ -35,7 +94,7 @@ export default function OpportunityForm() {
   const { data: opportunity } = useQuery({
     queryKey: ['opportunity', id],
     queryFn: async () => {
-      const response = await api.get(`/Opportunities(${id})`)
+      const response = await api.get(`/Opportunities(${id})?$expand=LineItems($expand=Product)`)
       return response.data as Opportunity
     },
     enabled: isEdit,
@@ -53,6 +112,14 @@ export default function OpportunityForm() {
     queryKey: ['employees'],
     queryFn: async () => {
       const response = await api.get('/Employees')
+      return response.data
+    },
+  })
+
+  const { data: productsData } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const response = await api.get('/Products')
       return response.data
     },
   })
@@ -92,8 +159,27 @@ export default function OpportunityForm() {
   }
 
   const [formData, setFormData] = useState<Partial<Opportunity>>(getInitialFormData())
+  const [lineItems, setLineItems] = useState<LineItemFormState[]>(() =>
+    isEdit ? [] : [createEmptyLineItem()],
+  )
+  const [lineItemError, setLineItemError] = useState<string | null>(null)
 
   const selectedAccountId = formData.AccountID
+
+  const { subtotal: lineItemsSubtotal, total: lineItemsTotal } = useMemo(() => {
+    return lineItems.reduce(
+      (acc, item) => {
+        const { subtotal, total } = calculateLineItemTotals(item)
+        return {
+          subtotal: acc.subtotal + subtotal,
+          total: acc.total + total,
+        }
+      },
+      { subtotal: 0, total: 0 },
+    )
+  }, [lineItems])
+
+  const totalDiscount = Math.max(0, lineItemsSubtotal - lineItemsTotal)
 
   const { data: contactsData } = useQuery({
     queryKey: ['contacts', selectedAccountId],
@@ -112,6 +198,21 @@ export default function OpportunityForm() {
     setFormData(getInitialFormData())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, opportunity?.ID])
+
+  useEffect(() => {
+    if (isEdit && opportunity) {
+      if (opportunity.LineItems && opportunity.LineItems.length > 0) {
+        setLineItems(opportunity.LineItems.map(mapOpportunityLineItemToFormState))
+      } else {
+        setLineItems([createEmptyLineItem()])
+      }
+    } else if (!isEdit) {
+      setLineItems([createEmptyLineItem()])
+    }
+
+    setLineItemError(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, opportunity?.ID, opportunity?.UpdatedAt])
 
   useEffect(() => {
     if (!selectedAccountId && formData.ContactID) {
@@ -138,6 +239,7 @@ export default function OpportunityForm() {
     }
   }, [contactsData, formData.ContactID])
 
+  // Handle closed stage logic
   useEffect(() => {
     if (!isClosedStageValue(formData.Stage)) {
       if (formData.ClosedAt || (formData.CloseReason && formData.CloseReason.trim() !== '') || formData.ClosedByEmployeeID) {
@@ -158,6 +260,21 @@ export default function OpportunityForm() {
       }))
     }
   }, [formData.Stage, formData.ClosedAt, formData.CloseReason, formData.ClosedByEmployeeID, formData.OwnerEmployeeID])
+
+  // Update amount from line items total
+  useEffect(() => {
+    const roundedTotal = Number(lineItemsTotal.toFixed(2))
+    setFormData(prev => {
+      const currentAmount = prev.Amount ?? 0
+      if (Math.abs(currentAmount - roundedTotal) < 0.005) {
+        return prev
+      }
+      return {
+        ...prev,
+        Amount: roundedTotal,
+      }
+    })
+  }, [lineItemsTotal])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Opportunity>) => {
@@ -216,11 +333,56 @@ export default function OpportunityForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    mutation.mutate(formData)
+    const opportunityId = opportunity?.ID
+
+    const sanitizedLineItems = lineItems
+      .filter(item => item.ProductID)
+      .map(item => {
+        const { subtotal, total } = calculateLineItemTotals(item)
+        const quantity = item.Quantity > 0 ? item.Quantity : 1
+
+        const payload: Partial<OpportunityLineItem> = {
+          ProductID: item.ProductID!,
+          Quantity: quantity,
+          UnitPrice: item.UnitPrice,
+          DiscountAmount: item.DiscountAmount,
+          DiscountPercent: item.DiscountPercent,
+          Subtotal: subtotal,
+          Total: total,
+        }
+
+        if (opportunityId) {
+          payload.OpportunityID = opportunityId
+        }
+
+        if (item.ID) {
+          payload.ID = item.ID
+        }
+
+        return payload
+      })
+
+    if (sanitizedLineItems.length === 0) {
+      setLineItemError('Add at least one line item with a selected product before saving.')
+      return
+    }
+
+    setLineItemError(null)
+
+    const payload: Partial<Opportunity> = {
+      ...formData,
+      Amount: Number(lineItemsTotal.toFixed(2)),
+      LineItems: sanitizedLineItems as OpportunityLineItem[],
+    }
+
+    mutation.mutate(payload)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+    if (name === 'Amount') {
+      return
+    }
     let parsedValue: string | number | undefined = value
 
     if (['AccountID', 'ContactID', 'OwnerEmployeeID', 'Stage', 'ClosedByEmployeeID'].includes(name)) {
@@ -231,19 +393,88 @@ export default function OpportunityForm() {
       parsedValue = value ? parseInt(value, 10) : undefined
     }
 
-    if (name === 'Amount') {
-      parsedValue = value ? parseFloat(value) : undefined
-    }
-
     setFormData(prev => ({
       ...prev,
       [name]: parsedValue,
     }))
   }
 
+  const handleProductChange = (tempId: string) => (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const productValue = event.target.value
+    const productId = productValue ? parseInt(productValue, 10) : undefined
+    const selectedProduct = products.find(product => product.ID === productId)
+
+    setLineItems(prev =>
+      prev.map(item => {
+        if (item.tempId !== tempId) {
+          return item
+        }
+
+        return {
+          ...item,
+          ProductID: productId,
+          ProductName: selectedProduct?.Name ?? item.ProductName,
+          UnitPrice: selectedProduct ? selectedProduct.Price : item.UnitPrice,
+        }
+      }),
+    )
+
+    setLineItemError(null)
+  }
+
+  const handleLineItemValueChange = (
+    tempId: string,
+    field: 'Quantity' | 'UnitPrice' | 'DiscountAmount' | 'DiscountPercent',
+  ) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      setLineItems(prev =>
+        prev.map(item => {
+          if (item.tempId !== tempId) {
+            return item
+          }
+
+          const updated = { ...item }
+
+          if (field === 'Quantity') {
+            const parsed = Number.parseInt(value, 10)
+            updated.Quantity = Number.isNaN(parsed) || parsed <= 0 ? 1 : parsed
+          } else {
+            const parsed = Number.parseFloat(value)
+            if (field === 'DiscountPercent') {
+              updated.DiscountPercent = Number.isNaN(parsed)
+                ? 0
+                : Math.min(100, Math.max(0, parsed))
+            } else if (field === 'UnitPrice' || field === 'DiscountAmount') {
+              updated[field] = Number.isNaN(parsed) ? 0 : Math.max(0, parsed)
+            }
+          }
+
+          return updated
+        }),
+      )
+
+      setLineItemError(null)
+    }
+
+  const handleAddLineItem = () => {
+    setLineItems(prev => [...prev, createEmptyLineItem()])
+    setLineItemError(null)
+  }
+
+  const handleRemoveLineItem = (tempId: string) => {
+    setLineItems(prev => {
+      const filtered = prev.filter(item => item.tempId !== tempId)
+      return filtered.length > 0 ? filtered : [createEmptyLineItem()]
+    })
+    setLineItemError(null)
+  }
+
   const accounts = (accountsData?.items as Account[]) || []
   const contacts = selectedAccountId ? ((contactsData?.items as Contact[]) || []) : []
   const employees = (employeesData?.items as Employee[]) || []
+  const products = (productsData?.items as Product[]) || []
   const isClosedStageSelected = isClosedStageValue(formData.Stage)
   const isClosedLostSelected = formData.Stage === CLOSED_LOST_STAGE
 
@@ -320,9 +551,8 @@ export default function OpportunityForm() {
               name="Amount"
               min="0"
               step="0.01"
-              value={formData.Amount ?? ''}
-              onChange={handleChange}
-              required
+              value={formData.Amount ?? 0}
+              readOnly
             />
           </div>
 
@@ -445,6 +675,155 @@ export default function OpportunityForm() {
             rows={4}
             placeholder="Provide context, next steps, or key stakeholders for this opportunity."
           />
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Line Items</h2>
+            <Button type="button" variant="secondary" onClick={handleAddLineItem}>
+              Add Line Item
+            </Button>
+          </div>
+
+          {lineItems.map((item, index) => {
+            const { subtotal, total } = calculateLineItemTotals(item)
+            const selectedProduct = products.find(product => product.ID === item.ProductID)
+            const productLabel = selectedProduct?.Name ?? item.ProductName ?? 'Select a product'
+
+            return (
+              <div
+                key={item.tempId}
+                className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Line Item {index + 1}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{productLabel}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => handleRemoveLineItem(item.tempId)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
+                  <div className="lg:col-span-2">
+                    <label htmlFor={`product-${item.tempId}`} className="label">
+                      Product *
+                    </label>
+                    <select
+                      id={`product-${item.tempId}`}
+                      name="ProductID"
+                      className="input"
+                      value={item.ProductID ?? ''}
+                      onChange={handleProductChange(item.tempId)}
+                      required
+                    >
+                      <option value="">Select a product</option>
+                      {products.map(product => (
+                        <option key={product.ID} value={product.ID}>
+                          {product.Name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Quantity *"
+                      type="number"
+                      min={1}
+                      name={`Quantity-${item.tempId}`}
+                      value={item.Quantity}
+                      onChange={handleLineItemValueChange(item.tempId, 'Quantity')}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Unit Price *"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name={`UnitPrice-${item.tempId}`}
+                      value={item.UnitPrice}
+                      onChange={handleLineItemValueChange(item.tempId, 'UnitPrice')}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Discount Amount"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      name={`DiscountAmount-${item.tempId}`}
+                      value={item.DiscountAmount}
+                      onChange={handleLineItemValueChange(item.tempId, 'DiscountAmount')}
+                    />
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Discount %"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.1"
+                      name={`DiscountPercent-${item.tempId}`}
+                      value={item.DiscountPercent}
+                      onChange={handleLineItemValueChange(item.tempId, 'DiscountPercent')}
+                    />
+                  </div>
+
+                  <div className="space-y-2 lg:col-span-2">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Subtotal</p>
+                      <p className="text-base font-medium text-gray-900 dark:text-gray-100">
+                        {currencyFormatter.format(subtotal)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Line Total</p>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        {currencyFormatter.format(total)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+
+          {lineItemError && (
+            <p className="text-sm text-error-600 dark:text-error-400">{lineItemError}</p>
+          )}
+
+          <div className="flex flex-col items-end gap-1 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex gap-2">
+              <span>Subtotal:</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {currencyFormatter.format(lineItemsSubtotal)}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <span>Discounts:</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                -{currencyFormatter.format(totalDiscount)}
+              </span>
+            </div>
+            <div className="flex gap-2 text-base font-semibold text-gray-900 dark:text-gray-100">
+              <span>Deal Total:</span>
+              <span>{currencyFormatter.format(lineItemsTotal)}</span>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end gap-3">

@@ -124,6 +124,10 @@ func main() {
 		log.Fatal("Failed to register Opportunity entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.OpportunityLineItem{}); err != nil {
+		log.Fatal("Failed to register OpportunityLineItem entity:", err)
+	}
+
 	// Register fake authentication action (DEVELOPMENT ONLY)
 	// TODO: Replace with proper authentication provider integration in production
 	if err := registerDevAuthAction(service, db); err != nil {
@@ -153,6 +157,7 @@ func main() {
 	fmt.Println("Activities:        http://localhost:" + port + "/Activities")
 	fmt.Println("Tasks:             http://localhost:" + port + "/Tasks")
 	fmt.Println("Opportunities:     http://localhost:" + port + "/Opportunities")
+	fmt.Println("Opportunity Items: http://localhost:" + port + "/OpportunityLineItems")
 	fmt.Println("Employees:         http://localhost:" + port + "/Employees")
 	fmt.Println("Products:          http://localhost:" + port + "/Products")
 	fmt.Println("========================================")
