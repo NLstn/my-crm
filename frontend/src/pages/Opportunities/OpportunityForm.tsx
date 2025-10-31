@@ -5,6 +5,20 @@ import api from '../../lib/api'
 import { Opportunity, Account, Contact, Employee, OPPORTUNITY_STAGES } from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
 
+const CLOSED_WON_STAGE = 6
+const CLOSED_LOST_STAGE = 7
+
+const isClosedStageValue = (value?: number) => value === CLOSED_WON_STAGE || value === CLOSED_LOST_STAGE
+
+const formatDateForInput = (value?: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  return date.toISOString().split('T')[0]
+}
+
 export default function OpportunityForm() {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
@@ -55,6 +69,9 @@ export default function OpportunityForm() {
         ExpectedCloseDate: opportunity.ExpectedCloseDate,
         Stage: opportunity.Stage,
         Description: opportunity.Description || '',
+        CloseReason: opportunity.CloseReason || '',
+        ClosedAt: opportunity.ClosedAt,
+        ClosedByEmployeeID: opportunity.ClosedByEmployeeID,
       }
     }
 
@@ -68,6 +85,9 @@ export default function OpportunityForm() {
       ExpectedCloseDate: undefined,
       Stage: defaultStage,
       Description: '',
+      ClosedAt: undefined,
+      CloseReason: '',
+      ClosedByEmployeeID: undefined,
     }
   }
 
@@ -118,6 +138,27 @@ export default function OpportunityForm() {
     }
   }, [contactsData, formData.ContactID])
 
+  useEffect(() => {
+    if (!isClosedStageValue(formData.Stage)) {
+      if (formData.ClosedAt || (formData.CloseReason && formData.CloseReason.trim() !== '') || formData.ClosedByEmployeeID) {
+        setFormData(prev => ({
+          ...prev,
+          ClosedAt: undefined,
+          CloseReason: '',
+          ClosedByEmployeeID: undefined,
+        }))
+      }
+      return
+    }
+
+    if (!formData.ClosedByEmployeeID && formData.OwnerEmployeeID) {
+      setFormData(prev => ({
+        ...prev,
+        ClosedByEmployeeID: prev.ClosedByEmployeeID ?? prev.OwnerEmployeeID,
+      }))
+    }
+  }, [formData.Stage, formData.ClosedAt, formData.CloseReason, formData.ClosedByEmployeeID, formData.OwnerEmployeeID])
+
   const mutation = useMutation({
     mutationFn: async (data: Partial<Opportunity>) => {
       const cleanData: Partial<Opportunity> = { ...data }
@@ -130,6 +171,30 @@ export default function OpportunityForm() {
       }
       if (!cleanData.ExpectedCloseDate) {
         delete cleanData.ExpectedCloseDate
+      }
+
+      const stageValue = cleanData.Stage ?? opportunity?.Stage ?? defaultStage
+      const isClosedStage = isClosedStageValue(stageValue)
+
+      if (!isClosedStage) {
+        delete cleanData.ClosedAt
+        delete cleanData.CloseReason
+        delete cleanData.ClosedByEmployeeID
+      } else {
+        if (!cleanData.ClosedAt) {
+          delete cleanData.ClosedAt
+        }
+
+        if (typeof cleanData.CloseReason === 'string') {
+          cleanData.CloseReason = cleanData.CloseReason.trim()
+          if (cleanData.CloseReason === '') {
+            delete cleanData.CloseReason
+          }
+        }
+
+        if (!cleanData.ClosedByEmployeeID) {
+          delete cleanData.ClosedByEmployeeID
+        }
       }
 
       if (isEdit) {
@@ -158,7 +223,7 @@ export default function OpportunityForm() {
     const { name, value } = e.target
     let parsedValue: string | number | undefined = value
 
-    if (['AccountID', 'ContactID', 'OwnerEmployeeID', 'Stage'].includes(name)) {
+    if (['AccountID', 'ContactID', 'OwnerEmployeeID', 'Stage', 'ClosedByEmployeeID'].includes(name)) {
       parsedValue = value ? parseInt(value, 10) : undefined
     }
 
@@ -179,6 +244,8 @@ export default function OpportunityForm() {
   const accounts = (accountsData?.items as Account[]) || []
   const contacts = selectedAccountId ? ((contactsData?.items as Contact[]) || []) : []
   const employees = (employeesData?.items as Employee[]) || []
+  const isClosedStageSelected = isClosedStageValue(formData.Stage)
+  const isClosedLostSelected = formData.Stage === CLOSED_LOST_STAGE
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -291,6 +358,52 @@ export default function OpportunityForm() {
               ))}
             </select>
           </div>
+
+          {isClosedStageSelected && (
+            <>
+              <div>
+                <Input
+                  label="Actual Close Date"
+                  type="date"
+                  name="ClosedAt"
+                  value={formatDateForInput(formData.ClosedAt)}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Textarea
+                  label="Close Reason"
+                  name="CloseReason"
+                  value={formData.CloseReason || ''}
+                  onChange={handleChange}
+                  rows={3}
+                  required={isClosedLostSelected}
+                  placeholder={isClosedLostSelected ? 'Provide the reason this opportunity was lost.' : 'Capture the reason this opportunity was closed.'}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="ClosedByEmployeeID" className="label">
+                  Closed By
+                </label>
+                <select
+                  id="ClosedByEmployeeID"
+                  name="ClosedByEmployeeID"
+                  value={formData.ClosedByEmployeeID || ''}
+                  onChange={handleChange}
+                  className="input"
+                >
+                  <option value="">Select employee</option>
+                  {employees.map((employee: Employee) => (
+                    <option key={employee.ID} value={employee.ID}>
+                      {employee.FirstName} {employee.LastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           <div>
             <label htmlFor="OwnerEmployeeID" className="label">

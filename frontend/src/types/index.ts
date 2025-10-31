@@ -105,11 +105,15 @@ export interface Opportunity {
   ExpectedCloseDate?: string
   Stage: number
   Description?: string
+  ClosedAt?: string
+  CloseReason?: string
+  ClosedByEmployeeID?: number
   CreatedAt: string
   UpdatedAt: string
   Account?: Account
   Contact?: Contact
   Owner?: Employee
+  ClosedBy?: Employee
 }
 
 // Re-export enum utilities from lib/enums

@@ -90,7 +90,7 @@ func SeedData(db *gorm.DB) error {
 			Notes:      fmt.Sprintf("Employee %d", i+1),
 		}
 	}
-	
+
 	// Add Lonny Lohnsteich as employee #21
 	lonnyHireDate := time.Date(2024, time.October, 1, 0, 0, 0, 0, time.UTC)
 	employees[20] = models.Employee{
@@ -216,6 +216,20 @@ func SeedData(db *gorm.DB) error {
 		models.OpportunityStageClosedLost,
 	}
 
+	closeWonReasons := []string{
+		"Signed multi-year agreement",
+		"Expanded footprint after pilot",
+		"Customer upgraded to enterprise tier",
+		"Bundled services sealed the deal",
+	}
+
+	closeLostReasons := []string{
+		"Chose incumbent vendor",
+		"Budget was reallocated",
+		"Scope delayed until next fiscal year",
+		"Lost to lower-cost competitor",
+	}
+
 	opportunities := make([]models.Opportunity, len(opportunityNames))
 	for i := range opportunityNames {
 		account := accounts[i%len(accounts)]
@@ -243,7 +257,7 @@ func SeedData(db *gorm.DB) error {
 
 		description := fmt.Sprintf("%s opportunity for %s with focus on solution alignment and value realization.", opportunityNames[i], account.Name)
 
-		opportunities[i] = models.Opportunity{
+		opportunity := models.Opportunity{
 			Name:              fmt.Sprintf("%s - %s", account.Name, opportunityNames[i]),
 			AccountID:         account.ID,
 			ContactID:         contactID,
@@ -254,6 +268,20 @@ func SeedData(db *gorm.DB) error {
 			Stage:             stage,
 			Description:       description,
 		}
+
+		if stage == models.OpportunityStageClosedWon || stage == models.OpportunityStageClosedLost {
+			closedAt := expectedClose.AddDate(0, 0, -2+(i%5))
+			opportunity.ClosedAt = &closedAt
+			opportunity.ClosedByEmployeeID = &owner.ID
+
+			if stage == models.OpportunityStageClosedWon {
+				opportunity.CloseReason = closeWonReasons[i%len(closeWonReasons)]
+			} else {
+				opportunity.CloseReason = closeLostReasons[i%len(closeLostReasons)]
+			}
+		}
+
+		opportunities[i] = opportunity
 	}
 
 	for i := range opportunities {

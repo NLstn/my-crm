@@ -11,11 +11,14 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 0,
 })
 
+const CLOSED_WON_STAGE = 6
+const CLOSED_LOST_STAGE = 7
+
 const getStageBadgeClass = (stage: number) => {
   switch (stage) {
-    case 6:
+    case CLOSED_WON_STAGE:
       return 'badge-success'
-    case 7:
+    case CLOSED_LOST_STAGE:
       return 'badge-error'
     case 5:
       return 'badge-warning'
@@ -40,7 +43,7 @@ export default function OpportunityDetail() {
   const { data: opportunity, isLoading, error } = useQuery({
     queryKey: ['opportunity', id],
     queryFn: async () => {
-      const response = await api.get(`/Opportunities(${id})?$expand=Account,Contact,Owner`)
+      const response = await api.get(`/Opportunities(${id})?$expand=Account,Contact,Owner,ClosedBy`)
       return response.data as Opportunity
     },
   })
@@ -93,6 +96,11 @@ export default function OpportunityDetail() {
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Expected close: {formatDate(opportunity.ExpectedCloseDate)}
             </span>
+            {(opportunity.Stage === CLOSED_WON_STAGE || opportunity.Stage === CLOSED_LOST_STAGE) && (
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Closed on: {formatDate(opportunity.ClosedAt)}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex gap-3">
@@ -153,6 +161,38 @@ export default function OpportunityDetail() {
                 {opportunityStageToString(opportunity.Stage)}
               </dd>
             </div>
+            {(opportunity.Stage === CLOSED_WON_STAGE || opportunity.Stage === CLOSED_LOST_STAGE) && (
+              <>
+                <div>
+                  <dt className="text-gray-600 dark:text-gray-400">Closed On</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">
+                    {formatDate(opportunity.ClosedAt)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-600 dark:text-gray-400">Close Reason</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">
+                    {opportunity.CloseReason && opportunity.CloseReason.trim() !== ''
+                      ? opportunity.CloseReason
+                      : 'Not provided'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-600 dark:text-gray-400">Closed By</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">
+                    {opportunity.ClosedBy ? (
+                      <Link to={`/employees/${opportunity.ClosedBy.ID}`} className="text-primary-600 hover:underline">
+                        {opportunity.ClosedBy.FirstName} {opportunity.ClosedBy.LastName}
+                      </Link>
+                    ) : opportunity.ClosedByEmployeeID ? (
+                      `Employee #${opportunity.ClosedByEmployeeID}`
+                    ) : (
+                      'Not recorded'
+                    )}
+                  </dd>
+                </div>
+              </>
+            )}
             <div>
               <dt className="text-gray-600 dark:text-gray-400">Amount</dt>
               <dd className="text-gray-900 dark:text-gray-100">
