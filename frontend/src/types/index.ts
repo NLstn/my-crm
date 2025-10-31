@@ -56,3 +56,17 @@ export type IssuePriority = 'Low' | 'Medium' | 'High' | 'Critical'
 
 export const ISSUE_STATUSES: IssueStatus[] = ['New', 'InProgress', 'Pending', 'Resolved', 'Closed']
 export const ISSUE_PRIORITIES: IssuePriority[] = ['Low', 'Medium', 'High', 'Critical']
+
+export interface Employee {
+  ID: number
+  FirstName: string
+  LastName: string
+  Email?: string
+  Phone?: string
+  Department?: string
+  Position?: string
+  HireDate?: string
+  Notes?: string
+  CreatedAt: string
+  UpdatedAt: string
+}

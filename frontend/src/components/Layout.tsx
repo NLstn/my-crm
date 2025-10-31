@@ -9,6 +9,7 @@ export default function Layout() {
     { name: 'Accounts', href: '/accounts' },
     { name: 'Contacts', href: '/contacts' },
     { name: 'Issues', href: '/issues' },
+    { name: 'Employees', href: '/employees' },
   ]
 
   const isActive = (path: string) => {
