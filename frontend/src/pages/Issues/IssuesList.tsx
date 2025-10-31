@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
+import { mergeODataQuery } from '../../lib/odataUtils'
 import { Issue, issueStatusToString, issuePriorityToString } from '../../types'
 import EntitySearch from '../../components/EntitySearch'
 
 export default function IssuesList() {
-  const [odataQuery, setOdataQuery] = useState('?$expand=Account,Contact&$count=true&$orderby=CreatedAt desc&$top=10&$skip=0')
+  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+
+  // Merge search query with expand parameter
+  const odataQuery = mergeODataQuery(searchQuery, { '$expand': 'Account,Contact' })
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['issues', odataQuery],
@@ -50,25 +54,6 @@ export default function IssuesList() {
       case 1: return 'badge-primary' // Low
       default: return 'badge-primary'
     }
-  }
-
-  const handleQueryChange = (query: string) => {
-    // Merge the query with expand parameter
-    const expandParam = '$expand=Account,Contact'
-    if (query.includes('?')) {
-      setOdataQuery(`${query}&${expandParam}`)
-    } else {
-      setOdataQuery(`?${expandParam}`)
-    }
-  }
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size)
-    setCurrentPage(1) // Reset to first page when changing page size
   }
 
   return (
@@ -117,12 +102,15 @@ export default function IssuesList() {
             ],
           },
         ]}
-        onQueryChange={handleQueryChange}
+        onQueryChange={setSearchQuery}
         totalCount={data?.count || 0}
         currentPage={currentPage}
         pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          setCurrentPage(1)
+        }}
       />
 
       <div className="grid grid-cols-1 gap-4">

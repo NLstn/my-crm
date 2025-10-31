@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
+import { mergeODataQuery } from '../../lib/odataUtils'
 import { Contact } from '../../types'
 import EntitySearch from '../../components/EntitySearch'
 
 export default function ContactsList() {
-  const [odataQuery, setOdataQuery] = useState('?$expand=Account&$count=true&$top=10&$skip=0')
+  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+
+  // Merge search query with expand parameter
+  const odataQuery = mergeODataQuery(searchQuery, { '$expand': 'Account' })
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['contacts', odataQuery],
@@ -31,25 +35,6 @@ export default function ContactsList() {
   }
 
   const contacts = data?.items || []
-
-  const handleQueryChange = (query: string) => {
-    // Merge the query with expand parameter
-    const expandParam = '$expand=Account'
-    if (query.includes('?')) {
-      setOdataQuery(`${query}&${expandParam}`)
-    } else {
-      setOdataQuery(`?${expandParam}`)
-    }
-  }
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size)
-    setCurrentPage(1) // Reset to first page when changing page size
-  }
 
   return (
     <div className="space-y-6">
@@ -79,12 +64,15 @@ export default function ContactsList() {
             type: 'text',
           },
         ]}
-        onQueryChange={handleQueryChange}
+        onQueryChange={setSearchQuery}
         totalCount={data?.count || 0}
         currentPage={currentPage}
         pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          setCurrentPage(1)
+        }}
       />
 
       <div className="grid grid-cols-1 gap-4">
