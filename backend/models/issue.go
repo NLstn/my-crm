@@ -32,8 +32,8 @@ type Issue struct {
 	ContactID   *uint         `json:"ContactID" gorm:"index"`
 	Title       string        `json:"Title" gorm:"not null;type:varchar(255)" odata:"required,maxlength(255)"`
 	Description string        `json:"Description" gorm:"type:text"`
-	Status      IssueStatus   `json:"Status" gorm:"not null;type:varchar(50);default:'New'" odata:"required"`
-	Priority    IssuePriority `json:"Priority" gorm:"not null;type:varchar(50);default:'Medium'" odata:"required"`
+	Status      IssueStatus   `json:"Status" gorm:"not null;type:varchar(50);default:'New'" odata:"required,enum=IssueStatus"`
+	Priority    IssuePriority `json:"Priority" gorm:"not null;type:varchar(50);default:'Medium'" odata:"required,enum=IssuePriority"`
 	AssignedTo  string        `json:"AssignedTo" gorm:"type:varchar(255)" odata:"maxlength(255)"`
 	Resolution  string        `json:"Resolution" gorm:"type:text"`
 	DueDate     *time.Time    `json:"DueDate"`

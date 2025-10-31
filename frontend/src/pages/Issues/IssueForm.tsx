@@ -175,6 +175,7 @@ export default function IssueForm() {
               name="ContactID"
               value={formData.ContactID || ''}
               onChange={handleChange}
+              disabled={!formData.AccountID}
               className="input"
             >
               <option value="">None</option>
