@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Issue } from '../../types'
+import { Button } from '../../components/ui'
 
 export default function IssueDetail() {
   const { id } = useParams<{ id: string }>()
@@ -84,12 +85,12 @@ export default function IssueDetail() {
           <Link to={`/issues/${id}/edit`} className="btn btn-primary">
             Edit Issue
           </Link>
-          <button
+          <Button
+            variant="danger"
             onClick={() => setShowDeleteConfirm(true)}
-            className="btn btn-danger"
           >
             Delete
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -179,20 +180,20 @@ export default function IssueDetail() {
               Are you sure you want to delete "{issue.Title}"? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="btn btn-secondary"
                 disabled={deleteMutation.isPending}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={handleDelete}
-                className="btn btn-danger"
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete Issue'}
-              </button>
+              </Button>
             </div>
             {deleteMutation.isError && (
               <p className="text-error-600 dark:text-error-400 text-sm mt-4">

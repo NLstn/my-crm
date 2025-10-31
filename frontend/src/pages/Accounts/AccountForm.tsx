@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/api'
 import { Account } from '../../types'
+import { Button, Input, Textarea } from '../../components/ui'
 
 export default function AccountForm() {
   const { id } = useParams<{ id: string }>()
@@ -98,176 +99,132 @@ export default function AccountForm() {
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
-            <label htmlFor="Name" className="label">
-              Account Name *
-            </label>
-            <input
+            <Input
+              label="Account Name"
               type="text"
-              id="Name"
               name="Name"
               value={formData.Name}
               onChange={handleChange}
               required
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="Industry" className="label">
-              Industry
-            </label>
-            <input
+            <Input
+              label="Industry"
               type="text"
-              id="Industry"
               name="Industry"
               value={formData.Industry}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="Website" className="label">
-              Website
-            </label>
-            <input
+            <Input
+              label="Website"
               type="url"
-              id="Website"
               name="Website"
               value={formData.Website}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="Email" className="label">
-              Email
-            </label>
-            <input
+            <Input
+              label="Email"
               type="email"
-              id="Email"
               name="Email"
               value={formData.Email}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="Phone" className="label">
-              Phone
-            </label>
-            <input
+            <Input
+              label="Phone"
               type="tel"
-              id="Phone"
               name="Phone"
               value={formData.Phone}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="Address" className="label">
-              Address
-            </label>
-            <input
+            <Input
+              label="Address"
               type="text"
-              id="Address"
               name="Address"
               value={formData.Address}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="City" className="label">
-              City
-            </label>
-            <input
+            <Input
+              label="City"
               type="text"
-              id="City"
               name="City"
               value={formData.City}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="State" className="label">
-              State/Province
-            </label>
-            <input
+            <Input
+              label="State/Province"
               type="text"
-              id="State"
               name="State"
               value={formData.State}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="Country" className="label">
-              Country
-            </label>
-            <input
+            <Input
+              label="Country"
               type="text"
-              id="Country"
               name="Country"
               value={formData.Country}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="PostalCode" className="label">
-              Postal Code
-            </label>
-            <input
+            <Input
+              label="Postal Code"
               type="text"
-              id="PostalCode"
               name="PostalCode"
               value={formData.PostalCode}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="Description" className="label">
-              Description
-            </label>
-            <textarea
-              id="Description"
+            <Textarea
+              label="Description"
               name="Description"
               value={formData.Description}
               onChange={handleChange}
               rows={4}
-              className="input"
             />
           </div>
         </div>
 
         <div className="flex gap-4 justify-end">
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => navigate(-1)}
-            className="btn btn-secondary"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="primary"
             disabled={mutation.isPending}
-            className="btn btn-primary"
           >
             {mutation.isPending ? 'Saving...' : isEdit ? 'Update Account' : 'Create Account'}
-          </button>
+          </Button>
         </div>
 
         {mutation.isError && (
