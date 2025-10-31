@@ -9,11 +9,16 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 0,
 })
 
+const CLOSED_WON_STAGE = 6
+const CLOSED_LOST_STAGE = 7
+
+const isClosedStage = (stage: number) => stage === CLOSED_WON_STAGE || stage === CLOSED_LOST_STAGE
+
 const getStageBadgeClass = (stage: number) => {
   switch (stage) {
-    case 6:
+    case CLOSED_WON_STAGE:
       return 'badge-success'
-    case 7:
+    case CLOSED_LOST_STAGE:
       return 'badge-error'
     case 5:
       return 'badge-warning'
@@ -63,7 +68,7 @@ export default function Dashboard() {
   })
 
   const opportunities = (opportunitiesData?.items as Opportunity[]) || []
-  const openOpportunities = opportunities.filter(opportunity => opportunity.Stage !== 7)
+  const openOpportunities = opportunities.filter(opportunity => !isClosedStage(opportunity.Stage))
   const totalOpenPipeline = openOpportunities.reduce((sum, opportunity) => sum + opportunity.Amount, 0)
 
   const stageOptions = OPPORTUNITY_STAGES()
@@ -71,7 +76,7 @@ export default function Dashboard() {
     .map(stage => ({
       stage,
       total: opportunities
-        .filter(opportunity => opportunity.Stage === stage.value && stage.value !== 7)
+        .filter(opportunity => opportunity.Stage === stage.value && !isClosedStage(stage.value))
         .reduce((sum, opportunity) => sum + opportunity.Amount, 0),
     }))
     .filter(item => item.total > 0)
@@ -85,7 +90,7 @@ export default function Dashboard() {
         return false
       }
       const closeDate = new Date(opportunity.ExpectedCloseDate)
-      return closeDate >= now && closeDate <= horizon && opportunity.Stage < 6
+      return closeDate >= now && closeDate <= horizon && !isClosedStage(opportunity.Stage)
     })
     .sort((a, b) => new Date(a.ExpectedCloseDate || '').getTime() - new Date(b.ExpectedCloseDate || '').getTime())
     .slice(0, 5)
