@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../lib/api'
 import { Contact, Account } from '../../types'
+import { Button, Input, Textarea } from '../../components/ui'
 
 export default function ContactForm() {
   const { id } = useParams<{ id: string }>()
@@ -132,88 +133,64 @@ export default function ContactForm() {
           </div>
 
           <div>
-            <label htmlFor="FirstName" className="label">
-              First Name *
-            </label>
-            <input
+            <Input
+              label="First Name"
               type="text"
-              id="FirstName"
               name="FirstName"
               value={formData.FirstName}
               onChange={handleChange}
               required
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="LastName" className="label">
-              Last Name *
-            </label>
-            <input
+            <Input
+              label="Last Name"
               type="text"
-              id="LastName"
               name="LastName"
               value={formData.LastName}
               onChange={handleChange}
               required
-              className="input"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="Title" className="label">
-              Title
-            </label>
-            <input
+            <Input
+              label="Title"
               type="text"
-              id="Title"
               name="Title"
               value={formData.Title}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="Email" className="label">
-              Email
-            </label>
-            <input
+            <Input
+              label="Email"
               type="email"
-              id="Email"
               name="Email"
               value={formData.Email}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div>
-            <label htmlFor="Phone" className="label">
-              Phone
-            </label>
-            <input
+            <Input
+              label="Phone"
               type="tel"
-              id="Phone"
               name="Phone"
               value={formData.Phone}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="Mobile" className="label">
-              Mobile
-            </label>
-            <input
+            <Input
+              label="Mobile"
               type="tel"
-              id="Mobile"
               name="Mobile"
               value={formData.Mobile}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
@@ -233,35 +210,31 @@ export default function ContactForm() {
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="Notes" className="label">
-              Notes
-            </label>
-            <textarea
-              id="Notes"
+            <Textarea
+              label="Notes"
               name="Notes"
               value={formData.Notes}
               onChange={handleChange}
               rows={4}
-              className="input"
             />
           </div>
         </div>
 
         <div className="flex gap-4 justify-end">
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => navigate(-1)}
-            className="btn btn-secondary"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="primary"
             disabled={mutation.isPending}
-            className="btn btn-primary"
           >
             {mutation.isPending ? 'Saving...' : isEdit ? 'Update Contact' : 'Add Contact'}
-          </button>
+          </Button>
         </div>
 
         {mutation.isError && (

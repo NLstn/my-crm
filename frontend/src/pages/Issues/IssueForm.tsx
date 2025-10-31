@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../lib/api'
 import { Issue, Account, Contact, ISSUE_STATUSES, ISSUE_PRIORITIES } from '../../types'
+import { Button, Input, Textarea } from '../../components/ui'
 
 export default function IssueForm() {
   const { id } = useParams<{ id: string }>()
@@ -131,17 +132,13 @@ export default function IssueForm() {
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
-            <label htmlFor="Title" className="label">
-              Title *
-            </label>
-            <input
+            <Input
+              label="Title"
               type="text"
-              id="Title"
               name="Title"
               value={formData.Title}
               onChange={handleChange}
               required
-              className="input"
             />
           </div>
 
@@ -241,63 +238,51 @@ export default function IssueForm() {
           </div>
 
           <div>
-            <label htmlFor="DueDate" className="label">
-              Due Date
-            </label>
-            <input
+            <Input
+              label="Due Date"
               type="date"
-              id="DueDate"
               name="DueDate"
               value={formData.DueDate ? new Date(formData.DueDate).toISOString().split('T')[0] : ''}
               onChange={handleChange}
-              className="input"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="Description" className="label">
-              Description
-            </label>
-            <textarea
-              id="Description"
+            <Textarea
+              label="Description"
               name="Description"
               value={formData.Description}
               onChange={handleChange}
               rows={4}
-              className="input"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="Resolution" className="label">
-              Resolution
-            </label>
-            <textarea
-              id="Resolution"
+            <Textarea
+              label="Resolution"
               name="Resolution"
               value={formData.Resolution}
               onChange={handleChange}
               rows={4}
-              className="input"
             />
           </div>
         </div>
 
         <div className="flex gap-4 justify-end">
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => navigate(-1)}
-            className="btn btn-secondary"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="primary"
             disabled={mutation.isPending}
-            className="btn btn-primary"
           >
             {mutation.isPending ? 'Saving...' : isEdit ? 'Update Issue' : 'Create Issue'}
-          </button>
+          </Button>
         </div>
 
         {mutation.isError && (
