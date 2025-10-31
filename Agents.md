@@ -44,6 +44,18 @@ This is a custom CRM (Customer Relationship Management) system with:
 - ❌ Bypass go-odata for "convenience"
 - ❌ Use gin/echo/chi routers for business logic
 
+### Frontend: Reusable UI Components are MANDATORY
+
+**⚠️ CRITICAL**: ALL UI elements MUST use components from `src/components/ui/` when available.
+
+**See `frontend/COMPONENTS.md` for complete documentation and examples.**
+
+**Quick Rules:**
+1. **Use `<Button>`** instead of `<button className="btn">`
+2. **Use `<Input>`** instead of `<input className="input">`
+3. **Use `<Textarea>`** instead of `<textarea className="input">`
+4. **Import from `@/components/ui`**: `import { Button, Input, Textarea } from '@/components/ui'`
+
 ### Frontend: Strict Color Scheme
 
 **⚠️ MANDATORY**: NO custom colors are allowed in the frontend.
@@ -64,10 +76,10 @@ This is a custom CRM (Customer Relationship Management) system with:
 
 **Examples:**
 ```tsx
-// ✅ GOOD
-<button className="bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500">
-  Save
-</button>
+// ✅ GOOD - Using UI components
+import { Button } from '@/components/ui'
+
+<Button variant="primary">Save</Button>
 
 <div className="text-gray-900 dark:text-gray-100">
   Content
@@ -77,6 +89,9 @@ This is a custom CRM (Customer Relationship Management) system with:
 <button style={{ backgroundColor: '#3b82f6' }}>Save</button>
 <div className="bg-[#1e40af]">Content</div>
 <span style={{ color: 'blue' }}>Text</span>
+
+// ❌ BAD - Not using UI components
+<button className="btn btn-primary">Save</button>
 ```
 
 **Dark mode is required:**
@@ -113,15 +128,44 @@ backend/
 ```
 frontend/
 ├── src/
-│   ├── components/    # Reusable components (Layout)
+│   ├── components/
+│   │   ├── ui/        # Reusable UI components (Button, Input, Textarea) - MANDATORY
+│   │   └── Layout.tsx # App layout with navigation
 │   ├── contexts/      # React contexts (ThemeContext)
 │   ├── lib/           # API client, utilities
 │   ├── pages/         # Page components (Accounts, Contacts, Issues)
 │   ├── types/         # TypeScript definitions
 │   └── App.tsx        # Main app with routing
+├── COMPONENTS.md      # Component library documentation (READ THIS!)
 ├── tailwind.config.js # Color scheme configuration
 └── package.json
 ```
+
+### Frontend: Reusable Component Library is MANDATORY
+
+**⚠️ CRITICAL**: All UI components in `src/components/ui/` MUST be used throughout the application.
+
+**Rules:**
+1. **Use Button component**: For all buttons, use `<Button>` from `@/components/ui`
+2. **Use Input component**: For all text inputs, use `<Input>` from `@/components/ui`
+3. **Use Textarea component**: For all multi-line inputs, use `<Textarea>` from `@/components/ui`
+4. **Read COMPONENTS.md**: Comprehensive documentation with examples: `frontend/COMPONENTS.md`
+5. **No raw HTML elements**: Do not create `<button>`, `<input>`, or `<textarea>` with btn/input classes
+
+**Why this matters:**
+- Ensures consistent styling and behavior
+- Simplifies maintenance and updates
+- Supports dark mode automatically
+- Provides TypeScript type safety
+- Centralizes accessibility features
+
+**Valid approaches:**
+- ✅ Import from `@/components/ui`: `import { Button, Input } from '@/components/ui'`
+- ✅ Use Button for actions: `<Button variant="primary" onClick={handleSave}>Save</Button>`
+- ✅ Use Input with label: `<Input label="Email" type="email" name="email" />`
+- ✅ Link styled as button: `<Link to="/path" className="btn btn-primary">Navigate</Link>`
+- ❌ Raw button: `<button className="btn btn-primary">Save</button>`
+- ❌ Raw input: `<input className="input" type="text" />`
 
 ## Common Tasks
 
@@ -268,25 +312,26 @@ const count = response.data.value
 
 ## Styling Guidelines
 
-### Component Classes
+### UI Components (MANDATORY)
 
-Use predefined utility classes from `src/index.css`:
+**Use the reusable components from `@/components/ui`. See `frontend/COMPONENTS.md` for full documentation.**
 
 ```tsx
-// Buttons
-<button className="btn btn-primary">Primary Action</button>
-<button className="btn btn-secondary">Secondary Action</button>
-<button className="btn btn-danger">Delete</button>
+import { Button, Input, Textarea } from '@/components/ui'
+
+// Buttons - Use Button component
+<Button variant="primary">Primary Action</Button>
+<Button variant="secondary">Secondary Action</Button>
+<Button variant="danger">Delete</Button>
 
 // Cards
 <div className="card p-6">
   Card content
 </div>
 
-// Forms
-<label className="label">Field Name</label>
-<input className="input" type="text" />
-<textarea className="input" rows={4} />
+// Forms - Use Input/Textarea components
+<Input label="Field Name" name="field" value={value} onChange={handleChange} />
+<Textarea label="Description" name="description" rows={4} value={value} onChange={handleChange} />
 
 // Badges
 <span className="badge badge-primary">New</span>
