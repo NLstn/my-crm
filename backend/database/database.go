@@ -45,6 +45,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Issue{},
 		&models.Employee{},
 		&models.Product{},
+		&models.Opportunity{},
+		&models.Activity{},
 	)
 
 	if err != nil {
@@ -93,13 +95,13 @@ func SeedData(db *gorm.DB) error {
 	}
 
 	// Create 30 accounts
-	accountNames := []string{"Acme Corporation", "Global Industries Inc", "Retail Masters Ltd", "Tech Innovations LLC", "Green Energy Solutions", 
+	accountNames := []string{"Acme Corporation", "Global Industries Inc", "Retail Masters Ltd", "Tech Innovations LLC", "Green Energy Solutions",
 		"Medical Services Group", "Financial Advisors Inc", "Education Systems", "Transport Logistics", "Food Services Co",
 		"Manufacturing Plus", "Software Systems", "Consulting Group", "Marketing Agency", "Real Estate Partners",
 		"Construction Corp", "Telecom Services", "Insurance Providers", "Legal Associates", "Entertainment Media",
 		"Fitness Centers", "Automotive Group", "Aerospace Technologies", "Pharmaceutical Labs", "Agriculture Corp",
 		"Hospitality Services", "Fashion Retail", "Publishing House", "Security Systems", "Environmental Solutions"}
-	accountDomains := []string{"acme", "globalindustries", "retailmasters", "techinnovations", "greenenergy", 
+	accountDomains := []string{"acme", "globalindustries", "retailmasters", "techinnovations", "greenenergy",
 		"medicalservices", "financialadvisors", "educationsystems", "transportlogistics", "foodservices",
 		"manufacturingplus", "softwaresystems", "consultinggroup", "marketingagency", "realestatepartners",
 		"constructioncorp", "telecomservices", "insuranceproviders", "legalassociates", "entertainmentmedia",
@@ -168,17 +170,17 @@ func SeedData(db *gorm.DB) error {
 	}
 
 	// Create 80 issues (tickets)
-	issueTitles := []string{"System integration issue", "Feature request", "Performance optimization needed", "Training request", 
+	issueTitles := []string{"System integration issue", "Feature request", "Performance optimization needed", "Training request",
 		"Bug report", "Data migration", "Security concern", "API documentation update", "UI improvement", "Database backup issue",
 		"Network connectivity", "Software update", "Hardware replacement", "User account setup", "Email configuration",
 		"Report generation", "Dashboard customization", "Mobile app issue", "Payment processing", "Invoice generation",
-		"Data export", "User permissions", "System backup", "Server maintenance", "Load balancing", 
+		"Data export", "User permissions", "System backup", "Server maintenance", "Load balancing",
 		"SSL certificate", "DNS configuration", "Firewall rule", "VPN access", "Cloud migration",
 		"Disaster recovery", "Performance tuning", "Code review", "Testing support", "Deployment issue",
 		"Monitoring setup", "Logging configuration", "Alert setup", "Backup verification", "Recovery test",
 		"Integration testing", "User acceptance", "Documentation update", "Knowledge base", "FAQ update",
 		"Video tutorial", "Training material", "User guide", "API reference", "Release notes"}
-	issueDescriptions := []string{"Need assistance with this issue", "Requesting this feature", "Performance needs improvement", 
+	issueDescriptions := []string{"Need assistance with this issue", "Requesting this feature", "Performance needs improvement",
 		"Training is required", "Bug needs to be fixed", "Data needs migration", "Security review needed", "Documentation needs update",
 		"UI needs enhancement", "Backup issue detected"}
 	statuses := []models.IssueStatus{models.IssueStatusNew, models.IssueStatusInProgress, models.IssueStatusPending, models.IssueStatusResolved, models.IssueStatusClosed}
@@ -199,15 +201,25 @@ func SeedData(db *gorm.DB) error {
 				break
 			}
 		}
+		dueDate := time.Now().AddDate(0, 0, (i%14)-7)
+		var resolvedAt *time.Time
+		status := statuses[i%len(statuses)]
+		if status == models.IssueStatusResolved || status == models.IssueStatusClosed {
+			resolved := dueDate.AddDate(0, 0, -1)
+			resolvedAt = &resolved
+		}
+
 		issues[i] = models.Issue{
 			AccountID:   accounts[accountIndex].ID,
 			ContactID:   contactID,
 			Title:       fmt.Sprintf("%s - #%d", issueTitles[i%len(issueTitles)], i+1),
 			Description: issueDescriptions[i%len(issueDescriptions)],
-			Status:      statuses[i%len(statuses)],
+			Status:      status,
 			Priority:    priorities[i%len(priorities)],
 			AssignedTo:  teams[i%len(teams)],
 			EmployeeID:  &employees[employeeIndex].ID,
+			DueDate:     &dueDate,
+			ResolvedAt:  resolvedAt,
 		}
 	}
 
@@ -223,7 +235,7 @@ func SeedData(db *gorm.DB) error {
 		"Cloud Storage", "Email Marketing", "Social Media Integration", "Payment Gateway", "Inventory Management",
 		"HR Management Module", "Project Management", "Time Tracking", "Document Management", "Customer Portal"}
 	categories := []string{"Software", "Service", "Module", "Customization", "Integration"}
-	
+
 	products := make([]models.Product, 20)
 	for i := 0; i < 20; i++ {
 		basePrice := float64(500 + i*500)
@@ -243,6 +255,117 @@ func SeedData(db *gorm.DB) error {
 		if err := db.Create(&products[i]).Error; err != nil {
 			return fmt.Errorf("failed to create product: %w", err)
 		}
+	}
+
+	// Create opportunities across pipeline stages
+	opportunityProbabilities := []float64{0.15, 0.3, 0.45, 0.6, 0.8, 0.95}
+	opportunityStages := []models.OpportunityStage{
+		models.OpportunityStageProspecting,
+		models.OpportunityStageQualification,
+		models.OpportunityStageProposal,
+		models.OpportunityStageNegotiation,
+		models.OpportunityStageClosedWon,
+		models.OpportunityStageClosedLost,
+	}
+
+	opportunities := make([]models.Opportunity, 60)
+	now := time.Now().UTC()
+	for i := 0; i < len(opportunities); i++ {
+		accountIndex := i % len(accounts)
+		employeeIndex := (i * 3) % len(employees)
+		productIndex := i % len(products)
+		stage := opportunityStages[i%len(opportunityStages)]
+		amount := 5000 + float64((i%12)*1500)
+		expectedClose := now.AddDate(0, 0, (i%90)-45)
+		var closedAt *time.Time
+		if stage == models.OpportunityStageClosedWon || stage == models.OpportunityStageClosedLost {
+			closed := expectedClose.AddDate(0, 0, (i%7)-3)
+			closedAt = &closed
+		}
+
+		var employeeID *uint
+		if employees[employeeIndex].ID != 0 {
+			employeeID = &employees[employeeIndex].ID
+		}
+
+		var productID *uint
+		if products[productIndex].ID != 0 {
+			productID = &products[productIndex].ID
+		}
+
+		opportunities[i] = models.Opportunity{
+			AccountID:         accounts[accountIndex].ID,
+			EmployeeID:        employeeID,
+			ProductID:         productID,
+			Name:              fmt.Sprintf("%s Opportunity %d", accounts[accountIndex].Name, i+1),
+			Stage:             stage,
+			Amount:            amount,
+			Probability:       opportunityProbabilities[i%len(opportunityProbabilities)],
+			ExpectedCloseDate: &expectedClose,
+			ClosedAt:          closedAt,
+		}
+	}
+
+	if err := db.Create(&opportunities).Error; err != nil {
+		return fmt.Errorf("failed to create opportunities: %w", err)
+	}
+
+	// Create completed CRM activities
+	activitySubjects := []string{"Intro Call", "Follow-up Email", "Quarterly Review", "Product Demo", "Implementation Check-in", "Renewal Discussion"}
+	activityTypes := []models.ActivityType{
+		models.ActivityTypeCall,
+		models.ActivityTypeEmail,
+		models.ActivityTypeMeeting,
+		models.ActivityTypeTask,
+		models.ActivityTypeNote,
+	}
+
+	activities := make([]models.Activity, 160)
+	for i := 0; i < len(activities); i++ {
+		accountIndex := i % len(accounts)
+		employeeIndex := (i * 5) % len(employees)
+
+		var contactID *uint
+		for j := range contacts {
+			if contacts[j].AccountID == accounts[accountIndex].ID {
+				contactID = &contacts[j].ID
+				break
+			}
+		}
+
+		baseDate := now.AddDate(0, 0, -((i % 75) + 5))
+		completed := i%6 != 0
+		// Force some accounts to have stale activities for at-risk highlighting
+		if accountIndex%7 == 0 {
+			baseDate = now.AddDate(0, 0, -90-(i%10))
+			completed = true
+		}
+
+		var completedAt *time.Time
+		var dueDate *time.Time
+		if completed {
+			completedCopy := baseDate
+			completedAt = &completedCopy
+		} else {
+			due := baseDate.AddDate(0, 0, 7)
+			dueDate = &due
+		}
+
+		activities[i] = models.Activity{
+			AccountID:   accounts[accountIndex].ID,
+			ContactID:   contactID,
+			EmployeeID:  &employees[employeeIndex].ID,
+			Type:        activityTypes[i%len(activityTypes)],
+			Subject:     fmt.Sprintf("%s with %s", activitySubjects[i%len(activitySubjects)], accounts[accountIndex].Name),
+			Notes:       fmt.Sprintf("Activity %d notes", i+1),
+			Completed:   completed,
+			CompletedAt: completedAt,
+			DueDate:     dueDate,
+		}
+	}
+
+	if err := db.Create(&activities).Error; err != nil {
+		return fmt.Errorf("failed to create activities: %w", err)
 	}
 
 	log.Println("Database seeding completed successfully")

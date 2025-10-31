@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nlstn/go-odata"
+	"github.com/nlstn/my-crm/backend/analytics"
 	"github.com/nlstn/my-crm/backend/database"
 	"github.com/nlstn/my-crm/backend/models"
 )
@@ -76,6 +77,18 @@ func main() {
 
 	if err := service.RegisterEntity(&models.Product{}); err != nil {
 		log.Fatal("Failed to register Product entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.Opportunity{}); err != nil {
+		log.Fatal("Failed to register Opportunity entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.Activity{}); err != nil {
+		log.Fatal("Failed to register Activity entity:", err)
+	}
+
+	if err := analytics.Register(service, db); err != nil {
+		log.Fatal("Failed to register analytics functions:", err)
 	}
 
 	// Create HTTP server with logging and CORS middleware

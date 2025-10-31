@@ -20,7 +20,8 @@ type Contact struct {
 	UpdatedAt time.Time `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Account *Account `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Account    *Account   `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Activities []Activity `json:"Activities" gorm:"foreignKey:ContactID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM

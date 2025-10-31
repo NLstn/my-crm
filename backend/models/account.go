@@ -23,9 +23,11 @@ type Account struct {
 	UpdatedAt   time.Time `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Contacts []Contact  `json:"Contacts" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Issues   []Issue    `json:"Issues" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Employee *Employee  `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
+	Contacts      []Contact     `json:"Contacts" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Issues        []Issue       `json:"Issues" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Opportunities []Opportunity `json:"Opportunities" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Activities    []Activity    `json:"Activities" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Employee      *Employee     `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM

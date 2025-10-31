@@ -91,3 +91,41 @@ export interface Product {
   CreatedAt: string
   UpdatedAt: string
 }
+
+export interface PipelineStageMetric {
+  Stage: string
+  TotalValue: number
+  OpportunityCount: number
+}
+
+export interface IssueSLABreachMetric {
+  Priority: string
+  Count: number
+}
+
+export interface ActivityCompletionMetric {
+  Type: string
+  Count: number
+}
+
+export interface ProductRevenueMetric {
+  ProductID: number
+  ProductName: string
+  DealCount: number
+  TotalRevenue: number
+}
+
+export interface AtRiskAccountMetric {
+  AccountID: number
+  AccountName: string
+  OpenIssueCount: number
+  DaysSinceLastActivity?: number
+  LastActivityAt?: string
+  RiskReasons: string
+}
+
+export interface DashboardFilters {
+  startDate?: string
+  endDate?: string
+  ownerId?: number
+}
