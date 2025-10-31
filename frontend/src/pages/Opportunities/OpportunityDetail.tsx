@@ -43,7 +43,9 @@ export default function OpportunityDetail() {
   const { data: opportunity, isLoading, error } = useQuery({
     queryKey: ['opportunity', id],
     queryFn: async () => {
-      const response = await api.get(`/Opportunities(${id})?$expand=Account,Contact,Owner,ClosedBy`)
+      const response = await api.get(
+        `/Opportunities(${id})?$expand=Account,Contact,Owner,ClosedBy,LineItems($expand=Product)`,
+      )
       return response.data as Opportunity
     },
   })
@@ -73,6 +75,9 @@ export default function OpportunityDetail() {
   const handleDelete = () => {
     deleteMutation.mutate()
   }
+
+  const lineItems = opportunity.LineItems ?? []
+  const dealTotal = lineItems.reduce((sum, item) => sum + (item.Total ?? 0), 0)
 
   return (
     <div className="space-y-6">
@@ -239,6 +244,67 @@ export default function OpportunityDetail() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="card p-6 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Line Items</h2>
+          {lineItems.length > 0 && (
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Deal total:{' '}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {currencyFormatter.format(dealTotal)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {lineItems.length === 0 ? (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            No line items have been added for this opportunity yet.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+              <thead>
+                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <th className="px-4 py-3">Product</th>
+                  <th className="px-4 py-3">Quantity</th>
+                  <th className="px-4 py-3">Unit Price</th>
+                  <th className="px-4 py-3">Discount</th>
+                  <th className="px-4 py-3 text-right">Line Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                {lineItems.map(item => {
+                  const discountParts: string[] = []
+                  if (item.DiscountAmount > 0) {
+                    discountParts.push(currencyFormatter.format(item.DiscountAmount))
+                  }
+                  if (item.DiscountPercent > 0) {
+                    discountParts.push(`${item.DiscountPercent}%`)
+                  }
+
+                  return (
+                    <tr key={item.ID} className="text-sm text-gray-900 dark:text-gray-100">
+                      <td className="px-4 py-3">
+                        {item.Product ? item.Product.Name : `Product #${item.ProductID}`}
+                      </td>
+                      <td className="px-4 py-3">{item.Quantity}</td>
+                      <td className="px-4 py-3">{currencyFormatter.format(item.UnitPrice)}</td>
+                      <td className="px-4 py-3">
+                        {discountParts.length > 0 ? discountParts.join(' + ') : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold">
+                        {currencyFormatter.format(item.Total)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {showDeleteConfirm && (
