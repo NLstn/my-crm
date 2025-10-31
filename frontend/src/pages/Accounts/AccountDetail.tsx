@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
-import { Account } from '../../types'
+import { Account, issueStatusToString, issuePriorityToString } from '../../types'
 import { Button } from '../../components/ui'
 
 export default function AccountDetail() {
@@ -184,18 +184,18 @@ export default function AccountDetail() {
                     <p className="font-medium text-gray-900 dark:text-gray-100">{issue.Title}</p>
                     <div className="flex gap-2 mt-2">
                       <span className={`badge ${
-                        issue.Status === 'New' ? 'badge-primary' :
-                        issue.Status === 'Resolved' ? 'badge-success' :
+                        issue.Status === 1 ? 'badge-primary' :
+                        issue.Status === 4 ? 'badge-success' :
                         'badge-warning'
                       }`}>
-                        {issue.Status}
+                        {issueStatusToString(issue.Status)}
                       </span>
                       <span className={`badge ${
-                        issue.Priority === 'Critical' ? 'badge-error' :
-                        issue.Priority === 'High' ? 'badge-warning' :
+                        issue.Priority === 4 ? 'badge-error' :
+                        issue.Priority === 3 ? 'badge-warning' :
                         'badge-primary'
                       }`}>
-                        {issue.Priority}
+                        {issuePriorityToString(issue.Priority)}
                       </span>
                     </div>
                   </div>
