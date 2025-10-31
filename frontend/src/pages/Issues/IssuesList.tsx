@@ -1,13 +1,19 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
 import { Issue, issueStatusToString, issuePriorityToString } from '../../types'
+import EntitySearch from '../../components/EntitySearch'
 
 export default function IssuesList() {
+  const [odataQuery, setOdataQuery] = useState('?$expand=Account,Contact&$count=true&$orderby=CreatedAt desc&$top=10&$skip=0')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['issues'],
+    queryKey: ['issues', odataQuery],
     queryFn: async () => {
-      const response = await api.get('/Issues?$expand=Account,Contact&$count=true&$orderby=CreatedAt desc')
+      const response = await api.get(`/Issues${odataQuery}`)
       return response.data
     },
   })
@@ -46,19 +52,78 @@ export default function IssuesList() {
     }
   }
 
+  const handleQueryChange = (query: string) => {
+    // Merge the query with expand parameter
+    const expandParam = '$expand=Account,Contact'
+    if (query.includes('?')) {
+      setOdataQuery(`${query}&${expandParam}`)
+    } else {
+      setOdataQuery(`?${expandParam}`)
+    }
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size)
+    setCurrentPage(1) // Reset to first page when changing page size
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Issues</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {data?.count || issues.length} total issues
-          </p>
         </div>
         <Link to="/issues/new" className="btn btn-primary">
           Create Issue
         </Link>
       </div>
+
+      <EntitySearch
+        searchPlaceholder="Search issues..."
+        sortOptions={[
+          { label: 'Newest First', value: 'CreatedAt desc' },
+          { label: 'Oldest First', value: 'CreatedAt asc' },
+          { label: 'Title (A-Z)', value: 'Title asc' },
+          { label: 'Title (Z-A)', value: 'Title desc' },
+          { label: 'Priority (High to Low)', value: 'Priority desc' },
+          { label: 'Priority (Low to High)', value: 'Priority asc' },
+        ]}
+        filterOptions={[
+          {
+            label: 'Status',
+            key: 'Status',
+            type: 'select',
+            options: [
+              { label: 'New', value: '1' },
+              { label: 'In Progress', value: '2' },
+              { label: 'Pending', value: '3' },
+              { label: 'Resolved', value: '4' },
+              { label: 'Closed', value: '5' },
+            ],
+          },
+          {
+            label: 'Priority',
+            key: 'Priority',
+            type: 'select',
+            options: [
+              { label: 'Low', value: '1' },
+              { label: 'Medium', value: '2' },
+              { label: 'High', value: '3' },
+              { label: 'Critical', value: '4' },
+            ],
+          },
+        ]}
+        onQueryChange={handleQueryChange}
+        totalCount={data?.count || 0}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+      />
 
       <div className="grid grid-cols-1 gap-4">
         {issues.map((issue: Issue) => (

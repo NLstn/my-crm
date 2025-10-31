@@ -1,13 +1,19 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
 import { Employee } from '../../types'
+import EntitySearch from '../../components/EntitySearch'
 
 export default function EmployeesList() {
+  const [odataQuery, setOdataQuery] = useState('?$count=true&$top=10&$skip=0')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', odataQuery],
     queryFn: async () => {
-      const response = await api.get('/Employees?$count=true')
+      const response = await api.get(`/Employees${odataQuery}`)
       return response.data
     },
   })
@@ -26,19 +32,59 @@ export default function EmployeesList() {
 
   const employees = data?.items || []
 
+  const handleQueryChange = (query: string) => {
+    setOdataQuery(query || '?$count=true')
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size)
+    setCurrentPage(1) // Reset to first page when changing page size
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Employees</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {data?.count || employees.length} total employees
-          </p>
         </div>
         <Link to="/employees/new" className="btn btn-primary">
           Create Employee
         </Link>
       </div>
+
+      <EntitySearch
+        searchPlaceholder="Search employees..."
+        sortOptions={[
+          { label: 'First Name (A-Z)', value: 'FirstName asc' },
+          { label: 'First Name (Z-A)', value: 'FirstName desc' },
+          { label: 'Last Name (A-Z)', value: 'LastName asc' },
+          { label: 'Last Name (Z-A)', value: 'LastName desc' },
+          { label: 'Newest First', value: 'CreatedAt desc' },
+          { label: 'Oldest First', value: 'CreatedAt asc' },
+        ]}
+        filterOptions={[
+          {
+            label: 'Department',
+            key: 'Department',
+            type: 'text',
+          },
+          {
+            label: 'Position',
+            key: 'Position',
+            type: 'text',
+          },
+        ]}
+        onQueryChange={handleQueryChange}
+        totalCount={data?.count || 0}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+      />
 
       <div className="grid grid-cols-1 gap-4">
         {employees.map((employee: Employee) => (
