@@ -18,6 +18,11 @@ export default function LeadDetail() {
   const [conversionMessage, setConversionMessage] = useState('')
   const [conversionResult, setConversionResult] = useState<ConversionResult | null>(null)
 
+  // Always call hooks before any conditional returns
+  const { data: lead, isLoading, error } = useLead(id, 'ConvertedAccount,ConvertedContact')
+  const deleteMutation = useDeleteLead(id || '')
+  const convertMutation = useConvertLead(id || '')
+
   if (!id) {
     return (
       <div className="text-center py-12 text-error-600 dark:text-error-400">
@@ -25,10 +30,6 @@ export default function LeadDetail() {
       </div>
     )
   }
-
-  const { data: lead, isLoading, error } = useLead(id, 'ConvertedAccount,ConvertedContact')
-  const deleteMutation = useDeleteLead(id)
-  const convertMutation = useConvertLead(id)
 
   if (isLoading) {
     return <div className="text-center py-12 text-gray-600 dark:text-gray-400">Loading lead...</div>
