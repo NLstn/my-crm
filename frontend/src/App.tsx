@@ -9,6 +9,9 @@ import Dashboard from './pages/Dashboard'
 import AccountsList from './pages/Accounts/AccountsList'
 import AccountDetail from './pages/Accounts/AccountDetail'
 import AccountForm from './pages/Accounts/AccountForm'
+import LeadsList from './pages/Leads/LeadsList'
+import LeadDetail from './pages/Leads/LeadDetail'
+import LeadForm from './pages/Leads/LeadForm'
 import ContactsList from './pages/Contacts/ContactsList'
 import ContactDetail from './pages/Contacts/ContactDetail'
 import ContactForm from './pages/Contacts/ContactForm'
@@ -54,6 +57,12 @@ function App() {
             <Route path="accounts/new" element={<AccountForm />} />
             <Route path="accounts/:id" element={<AccountDetail />} />
             <Route path="accounts/:id/edit" element={<AccountForm />} />
+
+            {/* Leads routes */}
+            <Route path="leads" element={<LeadsList />} />
+            <Route path="leads/new" element={<LeadForm />} />
+            <Route path="leads/:id" element={<LeadDetail />} />
+            <Route path="leads/:id/edit" element={<LeadForm />} />
 
             {/* Contacts routes */}
             <Route path="contacts" element={<ContactsList />} />

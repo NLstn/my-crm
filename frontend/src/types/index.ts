@@ -49,6 +49,28 @@ export interface IssueUpdate {
   Employee?: Employee
 }
 
+export type LeadStatus = 'New' | 'Contacted' | 'Qualified' | 'Converted' | 'Disqualified'
+
+export interface Lead {
+  ID: number
+  Name: string
+  Email?: string
+  Phone?: string
+  Company?: string
+  Title?: string
+  Website?: string
+  Source?: string
+  Status: LeadStatus
+  Notes?: string
+  ConvertedAccountID?: number
+  ConvertedContactID?: number
+  ConvertedAt?: string
+  CreatedAt: string
+  UpdatedAt: string
+  ConvertedAccount?: Account
+  ConvertedContact?: Contact
+}
+
 export interface Issue {
   ID: number
   AccountID: number
