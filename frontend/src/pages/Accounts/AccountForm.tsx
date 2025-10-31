@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/api'
-import { Account } from '../../types'
+import { Account, Employee } from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
 
 export default function AccountForm() {
@@ -20,6 +20,14 @@ export default function AccountForm() {
     enabled: isEdit,
   })
 
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const response = await api.get('/Employees')
+      return response.data
+    },
+  })
+
   const getInitialFormData = (): Partial<Account> => {
     if (account) {
       return {
@@ -34,6 +42,7 @@ export default function AccountForm() {
         Country: account.Country || '',
         PostalCode: account.PostalCode || '',
         Description: account.Description || '',
+        EmployeeID: account.EmployeeID || undefined,
       }
     }
     return {
@@ -48,6 +57,7 @@ export default function AccountForm() {
       Country: '',
       PostalCode: '',
       Description: '',
+      EmployeeID: undefined,
     }
   }
 
@@ -61,10 +71,16 @@ export default function AccountForm() {
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Account>) => {
+      // Clean up the data before sending
+      const cleanData = { ...data }
+      if (!cleanData.EmployeeID) {
+        delete cleanData.EmployeeID
+      }
+
       if (isEdit) {
-        return api.patch(`/Accounts(${id})`, data)
+        return api.patch(`/Accounts(${id})`, cleanData)
       } else {
-        return api.post('/Accounts', data)
+        return api.post('/Accounts', cleanData)
       }
     },
     onSuccess: () => {
@@ -81,10 +97,16 @@ export default function AccountForm() {
     mutation.mutate(formData)
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    let value: string | number | undefined = e.target.value
+    
+    if (e.target.name === 'EmployeeID') {
+      value = value ? parseInt(value) : undefined
+    }
+
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     }))
   }
 
@@ -197,6 +219,26 @@ export default function AccountForm() {
               value={formData.PostalCode}
               onChange={handleChange}
             />
+          </div>
+
+          <div>
+            <label htmlFor="EmployeeID" className="label">
+              Responsible Employee
+            </label>
+            <select
+              id="EmployeeID"
+              name="EmployeeID"
+              value={formData.EmployeeID || ''}
+              onChange={handleChange}
+              className="input"
+            >
+              <option value="">None</option>
+              {(employeesData?.items || []).map((employee: Employee) => (
+                <option key={employee.ID} value={employee.ID}>
+                  {employee.FirstName} {employee.LastName}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="md:col-span-2">

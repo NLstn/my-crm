@@ -11,10 +11,12 @@ export interface Account {
   Country?: string
   PostalCode?: string
   Description?: string
+  EmployeeID?: number
   CreatedAt: string
   UpdatedAt: string
   Contacts?: Contact[]
   Issues?: Issue[]
+  Employee?: Employee
 }
 
 export interface Contact {
@@ -43,12 +45,14 @@ export interface Issue {
   Priority: number // IssuePriority enum value from backend
   AssignedTo?: string
   Resolution?: string
+  EmployeeID?: number
   DueDate?: string
   ResolvedAt?: string
   CreatedAt: string
   UpdatedAt: string
   Account?: Account
   Contact?: Contact
+  Employee?: Employee
 }
 
 // Re-export enum utilities from lib/enums
