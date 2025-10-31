@@ -81,9 +81,10 @@ type Issue struct {
 	UpdatedAt   time.Time     `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Account  *Account  `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Contact  *Contact  `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
-	Employee *Employee `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
+	Account  *Account      `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Contact  *Contact      `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
+	Employee *Employee     `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
+	Updates  []IssueUpdate `json:"Updates" gorm:"foreignKey:IssueID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM

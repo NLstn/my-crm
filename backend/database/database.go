@@ -43,6 +43,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Account{},
 		&models.Contact{},
 		&models.Issue{},
+		&models.IssueUpdate{},
 		&models.Activity{},
 		&models.Task{},
 		&models.Employee{},
@@ -345,6 +346,47 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
+	currentTime := time.Now()
+
+	updateMessages := []string{
+		"Initial triage completed and logs captured",
+		"Shared progress update with the customer",
+		"Coordinated with engineering for deeper analysis",
+		"Implemented fix and awaiting customer confirmation",
+		"Scheduled follow-up to ensure resolution holds",
+	}
+
+	issueUpdates := make([]models.IssueUpdate, 0, len(issues)*3)
+	for i, issue := range issues {
+		updatesToCreate := 3
+		for j := 0; j < updatesToCreate; j++ {
+			var employeeID *uint
+			if issue.EmployeeID != nil && j == 0 {
+				employeeID = issue.EmployeeID
+			} else {
+				id := employees[(i+j)%len(employees)].ID
+				employeeID = &id
+			}
+
+			createdAt := currentTime.Add(-time.Duration((i%6*48)+(j*12)) * time.Hour)
+			body := fmt.Sprintf("%s - %s", updateMessages[(i+j)%len(updateMessages)], issue.Title)
+
+			issueUpdates = append(issueUpdates, models.IssueUpdate{
+				IssueID:    issue.ID,
+				EmployeeID: employeeID,
+				Body:       body,
+				CreatedAt:  createdAt,
+				UpdatedAt:  createdAt,
+			})
+		}
+	}
+
+	if len(issueUpdates) > 0 {
+		if err := db.Create(&issueUpdates).Error; err != nil {
+			return fmt.Errorf("failed to create issue updates: %w", err)
+		}
+	}
+
 	// Create 20 products
 	productNames := []string{"CRM Enterprise License", "Support Package - Premium", "Training Session - Basic", "API Integration Module", "Custom Dashboard",
 		"Mobile App License", "Analytics Module", "Reporting Tools", "Security Package", "Backup Service",
@@ -379,7 +421,6 @@ func SeedData(db *gorm.DB) error {
 	activityOutcomes := []string{"Connected", "Left Voicemail", "Meeting Scheduled", "Awaiting Response", "Completed"}
 
 	activities := make([]models.Activity, 0, len(accounts)*3)
-	now := time.Now()
 	for i, account := range accounts {
 		for j := 0; j < 3; j++ {
 			activityIndex := i*3 + j
@@ -401,7 +442,7 @@ func SeedData(db *gorm.DB) error {
 				Subject:      activitySubjects[activityIndex%len(activitySubjects)],
 				Outcome:      activityOutcomes[activityIndex%len(activityOutcomes)],
 				Notes:        fmt.Sprintf("Interaction #%d with %s", activityIndex+1, account.Name),
-				ActivityTime: now.Add(-time.Duration(activityIndex*12) * time.Hour),
+				ActivityTime: currentTime.Add(-time.Duration(activityIndex*12) * time.Hour),
 			})
 		}
 	}
@@ -442,7 +483,7 @@ func SeedData(db *gorm.DB) error {
 
 			employee := employees[(taskIndex*2)%len(employees)]
 			employeeID := employee.ID
-			dueDate := now.Add(time.Duration((taskIndex%7)+3) * 24 * time.Hour)
+			dueDate := currentTime.Add(time.Duration((taskIndex%7)+3) * 24 * time.Hour)
 
 			task := models.Task{
 				AccountID:   account.ID,

@@ -1,21 +1,51 @@
-import { useState } from 'react'
+import { FormEvent, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
-import { Issue, issueStatusToString, issuePriorityToString } from '../../types'
-import { Button } from '../../components/ui'
+import { Employee, Issue, IssueUpdate, issueStatusToString, issuePriorityToString } from '../../types'
+import { Button, Textarea } from '../../components/ui'
 
 export default function IssueDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [newUpdateBody, setNewUpdateBody] = useState('')
+  const [newUpdateEmployeeID, setNewUpdateEmployeeID] = useState('')
 
   const { data: issue, isLoading, error } = useQuery({
     queryKey: ['issue', id],
     queryFn: async () => {
-      const response = await api.get(`/Issues(${id})?$expand=Account,Contact,Employee`)
+      const response = await api.get(`/Issues(${id})?$expand=Account,Contact,Employee,Updates($expand=Employee)`)
       return response.data as Issue
+    },
+  })
+
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const response = await api.get('/Employees')
+      return response.data
+    },
+  })
+
+  const createUpdateMutation = useMutation({
+    mutationFn: async (payload: { issueID: number; body: string; employeeID?: number }) => {
+      const requestPayload: Record<string, unknown> = {
+        IssueID: payload.issueID,
+        Body: payload.body,
+      }
+
+      if (payload.employeeID) {
+        requestPayload.EmployeeID = payload.employeeID
+      }
+
+      await api.post('/IssueUpdates', requestPayload)
+    },
+    onSuccess: () => {
+      setNewUpdateBody('')
+      setNewUpdateEmployeeID('')
+      queryClient.invalidateQueries({ queryKey: ['issue', id] })
     },
   })
 
@@ -29,6 +59,14 @@ export default function IssueDetail() {
     },
   })
 
+  const sortedUpdates = useMemo<IssueUpdate[]>(() => {
+    const updates = issue?.Updates ?? []
+
+    return [...updates].sort((a, b) => (
+      new Date(a.CreatedAt).getTime() - new Date(b.CreatedAt).getTime()
+    ))
+  }, [issue?.Updates])
+
   if (isLoading) {
     return <div className="text-center py-8">Loading issue...</div>
   }
@@ -41,9 +79,34 @@ export default function IssueDetail() {
     )
   }
 
+  const employees = (employeesData?.items as Employee[] | undefined) ?? []
+
   const handleDelete = () => {
     deleteMutation.mutate()
   }
+
+  const handleCreateUpdate = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!issue) {
+      return
+    }
+
+    const trimmedBody = newUpdateBody.trim()
+    if (!trimmedBody) {
+      return
+    }
+
+    const employeeID = newUpdateEmployeeID ? parseInt(newUpdateEmployeeID, 10) : undefined
+
+    createUpdateMutation.mutate({
+      issueID: issue.ID,
+      body: trimmedBody,
+      employeeID,
+    })
+  }
+
+  const isUpdateSubmitDisabled = createUpdateMutation.isPending || !newUpdateBody.trim()
 
   const getStatusBadgeClass = (status: number) => {
     switch (status) {
@@ -202,6 +265,87 @@ export default function IssueDetail() {
             </>
           )}
         </dl>
+      </div>
+
+      <div className="card p-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Issue Timeline</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Track updates to keep the team aligned on progress.
+          </p>
+        </div>
+
+        {sortedUpdates.length === 0 ? (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            No updates recorded yet. Share the latest status below.
+          </p>
+        ) : (
+          <ol className="relative border-l border-gray-200 dark:border-gray-700">
+            {sortedUpdates.map(update => (
+              <li key={update.ID} className="relative pl-6 pb-6 last:pb-0">
+                <span className="absolute left-0 top-2 h-3 w-3 -translate-x-1/2 rounded-full bg-primary-500 dark:bg-primary-400" />
+                <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {update.Employee ? `${update.Employee.FirstName} ${update.Employee.LastName}` : 'Unknown author'}
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      {new Date(update.CreatedAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {update.Body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        <form onSubmit={handleCreateUpdate} className="space-y-4">
+          <Textarea
+            label="Add a new update"
+            name="issue-update"
+            value={newUpdateBody}
+            onChange={event => setNewUpdateBody(event.target.value)}
+            rows={4}
+            placeholder="Share progress, notes, or next steps..."
+            required
+          />
+          <div>
+            <label htmlFor="update-employee" className="label">
+              Author (Optional)
+            </label>
+            <select
+              id="update-employee"
+              name="update-employee"
+              value={newUpdateEmployeeID}
+              onChange={event => setNewUpdateEmployeeID(event.target.value)}
+              className="input"
+            >
+              <option value="">Select an employee</option>
+              {employees.map(employee => (
+                <option key={employee.ID} value={employee.ID}>
+                  {employee.FirstName} {employee.LastName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isUpdateSubmitDisabled}
+            >
+              {createUpdateMutation.isPending ? 'Saving...' : 'Post Update'}
+            </Button>
+            {createUpdateMutation.isError && (
+              <span className="text-sm text-error-600 dark:text-error-400">
+                Failed to save update. Please try again.
+              </span>
+            )}
+          </div>
+        </form>
       </div>
 
       {/* Delete Confirmation Dialog */}

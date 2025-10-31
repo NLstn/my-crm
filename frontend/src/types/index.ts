@@ -39,6 +39,16 @@ export interface Contact {
   Opportunities?: Opportunity[]
 }
 
+export interface IssueUpdate {
+  ID: number
+  IssueID: number
+  EmployeeID?: number
+  Body: string
+  CreatedAt: string
+  UpdatedAt: string
+  Employee?: Employee
+}
+
 export interface Issue {
   ID: number
   AccountID: number
@@ -57,6 +67,7 @@ export interface Issue {
   Account?: Account
   Contact?: Contact
   Employee?: Employee
+  Updates?: IssueUpdate[]
 }
 
 export interface Activity {
