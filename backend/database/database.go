@@ -182,11 +182,20 @@ func SeedData(db *gorm.DB) error {
 	issues := make([]models.Issue, 80)
 	for i := 0; i < 80; i++ {
 		accountIndex := i % 30
-		contactIndex := i % 40
 		employeeIndex := i % 20
+		// Find a contact that belongs to this account
+		// Since we have 40 contacts and first 30 are primary contacts for the 30 accounts,
+		// we can safely use contacts that match the account index
+		var contactID *uint
+		for j := 0; j < len(contacts); j++ {
+			if contacts[j].AccountID == accounts[accountIndex].ID {
+				contactID = &contacts[j].ID
+				break
+			}
+		}
 		issues[i] = models.Issue{
 			AccountID:   accounts[accountIndex].ID,
-			ContactID:   &contacts[contactIndex].ID,
+			ContactID:   contactID,
 			Title:       fmt.Sprintf("%s - #%d", issueTitles[i%len(issueTitles)], i+1),
 			Description: issueDescriptions[i%len(issueDescriptions)],
 			Status:      statuses[i%len(statuses)],
