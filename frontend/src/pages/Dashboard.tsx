@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import api from '../lib/api'
 
 export default function Dashboard() {
@@ -79,24 +80,24 @@ export default function Dashboard() {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a
-            href="/accounts/new"
+          <Link
+            to="/accounts/new"
             className="btn btn-primary text-center"
           >
             Create Account
-          </a>
-          <a
-            href="/contacts/new"
+          </Link>
+          <Link
+            to="/contacts/new"
             className="btn btn-primary text-center"
           >
             Add Contact
-          </a>
-          <a
-            href="/issues/new"
+          </Link>
+          <Link
+            to="/issues/new"
             className="btn btn-primary text-center"
           >
             Create Issue
-          </a>
+          </Link>
         </div>
       </div>
     </div>
