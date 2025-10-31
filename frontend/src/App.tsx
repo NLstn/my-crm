@@ -11,6 +11,9 @@ import ContactForm from './pages/Contacts/ContactForm'
 import IssuesList from './pages/Issues/IssuesList'
 import IssueDetail from './pages/Issues/IssueDetail'
 import IssueForm from './pages/Issues/IssueForm'
+import EmployeesList from './pages/Employees/EmployeesList'
+import EmployeeDetail from './pages/Employees/EmployeeDetail'
+import EmployeeForm from './pages/Employees/EmployeeForm'
 
 function App() {
   return (
@@ -37,6 +40,12 @@ function App() {
             <Route path="issues/new" element={<IssueForm />} />
             <Route path="issues/:id" element={<IssueDetail />} />
             <Route path="issues/:id/edit" element={<IssueForm />} />
+            
+            {/* Employees routes */}
+            <Route path="employees" element={<EmployeesList />} />
+            <Route path="employees/new" element={<EmployeeForm />} />
+            <Route path="employees/:id" element={<EmployeeDetail />} />
+            <Route path="employees/:id/edit" element={<EmployeeForm />} />
           </Route>
         </Routes>
       </Router>

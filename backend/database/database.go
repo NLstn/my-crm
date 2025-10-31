@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/nlstn/my-crm/backend/models"
 	"gorm.io/driver/postgres"
@@ -42,6 +43,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Account{},
 		&models.Contact{},
 		&models.Issue{},
+		&models.Employee{},
 	)
 
 	if err != nil {
@@ -202,6 +204,50 @@ func SeedData(db *gorm.DB) error {
 	for i := range issues {
 		if err := db.Create(&issues[i]).Error; err != nil {
 			return fmt.Errorf("failed to create issue: %w", err)
+		}
+	}
+
+	// Create sample employees
+	hireDate1 := time.Date(2020, 5, 15, 0, 0, 0, 0, time.UTC)
+	hireDate2 := time.Date(2019, 3, 10, 0, 0, 0, 0, time.UTC)
+	hireDate3 := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
+
+	employees := []models.Employee{
+		{
+			FirstName:  "Alice",
+			LastName:   "Johnson",
+			Email:      "alice.johnson@company.com",
+			Phone:      "+1-555-1001",
+			Department: "Sales",
+			Position:   "Sales Manager",
+			HireDate:   &hireDate1,
+			Notes:      "Leads the sales team",
+		},
+		{
+			FirstName:  "Bob",
+			LastName:   "Williams",
+			Email:      "bob.williams@company.com",
+			Phone:      "+1-555-1002",
+			Department: "Engineering",
+			Position:   "Senior Developer",
+			HireDate:   &hireDate2,
+			Notes:      "Full-stack developer",
+		},
+		{
+			FirstName:  "Carol",
+			LastName:   "Martinez",
+			Email:      "carol.martinez@company.com",
+			Phone:      "+1-555-1003",
+			Department: "Support",
+			Position:   "Support Specialist",
+			HireDate:   &hireDate3,
+			Notes:      "Handles customer support",
+		},
+	}
+
+	for i := range employees {
+		if err := db.Create(&employees[i]).Error; err != nil {
+			return fmt.Errorf("failed to create employee: %w", err)
 		}
 	}
 
