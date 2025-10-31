@@ -1,8 +1,12 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { Button } from './ui'
 
 export default function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const navigation = [
@@ -58,6 +62,23 @@ export default function Layout() {
                 CRM System
               </h1>
             </Link>
+
+            {/* User info and logout - right side */}
+            <div className="ml-auto flex items-center gap-4">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="font-medium">{user?.firstName} {user?.lastName}</span>
+                <span className="text-gray-500 dark:text-gray-400 ml-2">({user?.email})</span>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  logout()
+                  navigate('/login')
+                }}
+              >
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>

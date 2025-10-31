@@ -8,6 +8,20 @@ const api = axios.create({
   },
 })
 
+// Add request interceptor to include JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 // Add response interceptor to handle OData responses
 api.interceptors.response.use(
   (response) => {
@@ -24,6 +38,13 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    // If we get a 401 (Unauthorized), the token might be invalid
+    // Redirect to login page
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('authUser')
+      window.location.href = '/login'
+    }
     return Promise.reject(error)
   }
 )

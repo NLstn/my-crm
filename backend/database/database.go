@@ -70,13 +70,13 @@ func SeedData(db *gorm.DB) error {
 
 	log.Println("Seeding database with sample data...")
 
-	// Create 20 employees
-	firstNames := []string{"Alice", "Bob", "Carol", "David", "Emma", "Frank", "Grace", "Henry", "Iris", "Jack", "Kate", "Liam", "Maya", "Noah", "Olivia", "Paul", "Quinn", "Rachel", "Sam", "Tina"}
-	lastNames := []string{"Johnson", "Williams", "Martinez", "Brown", "Davis", "Miller", "Wilson", "Moore", "Taylor", "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Garcia", "Robinson", "Clark", "Rodriguez"}
+	// Create 21 employees (including Lonny Lohnsteich)
+	firstNames := []string{"Alice", "Bob", "Carol", "David", "Emma", "Frank", "Grace", "Henry", "Iris", "Jack", "Kate", "Liam", "Maya", "Noah", "Olivia", "Paul", "Quinn", "Rachel", "Sam", "Tina", "Lonny"}
+	lastNames := []string{"Johnson", "Williams", "Martinez", "Brown", "Davis", "Miller", "Wilson", "Moore", "Taylor", "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Garcia", "Robinson", "Clark", "Rodriguez", "Lohnsteich"}
 	departments := []string{"Sales", "Engineering", "Support", "Marketing", "Finance", "HR", "Operations", "Product", "Legal", "IT"}
 	positions := []string{"Manager", "Senior Developer", "Specialist", "Director", "Analyst", "Coordinator", "Lead", "Associate", "Consultant", "Engineer"}
 
-	employees := make([]models.Employee, 20)
+	employees := make([]models.Employee, 21)
 	for i := 0; i < 20; i++ {
 		hireDate := time.Date(2018+i%5, time.Month(1+(i%12)), 1+(i%28), 0, 0, 0, 0, time.UTC)
 		employees[i] = models.Employee{
@@ -89,6 +89,19 @@ func SeedData(db *gorm.DB) error {
 			HireDate:   &hireDate,
 			Notes:      fmt.Sprintf("Employee %d", i+1),
 		}
+	}
+	
+	// Add Lonny Lohnsteich as employee #21
+	lonnyHireDate := time.Date(2024, time.October, 1, 0, 0, 0, 0, time.UTC)
+	employees[20] = models.Employee{
+		FirstName:  "Lonny",
+		LastName:   "Lohnsteich",
+		Email:      "lonny.lohnsteich@outlook.com",
+		Phone:      "+1-555-1021",
+		Department: "Engineering",
+		Position:   "Developer",
+		HireDate:   &lonnyHireDate,
+		Notes:      "Test employee account",
 	}
 
 	if err := db.Create(&employees).Error; err != nil {
@@ -275,7 +288,7 @@ func SeedData(db *gorm.DB) error {
 	issues := make([]models.Issue, 80)
 	for i := 0; i < 80; i++ {
 		accountIndex := i % 30
-		employeeIndex := i % 20
+		employeeIndex := i % 21 // Updated to 21 employees
 		// Find a contact that belongs to this account
 		// Since we have 40 contacts and first 30 are primary contacts for the 30 accounts,
 		// we can safely use contacts that match the account index
