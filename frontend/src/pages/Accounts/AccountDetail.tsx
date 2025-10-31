@@ -14,7 +14,7 @@ export default function AccountDetail() {
   const { data: account, isLoading, error } = useQuery({
     queryKey: ['account', id],
     queryFn: async () => {
-      const response = await api.get(`/Accounts(${id})?$expand=Contacts,Issues`)
+      const response = await api.get(`/Accounts(${id})?$expand=Contacts,Issues,Employee`)
       return response.data as Account
     },
   })
@@ -106,6 +106,14 @@ export default function AccountDetail() {
                 {account.State && `, ${account.State}`}
                 {account.PostalCode && ` ${account.PostalCode}`}
                 {account.Country && `, ${account.Country}`}
+              </dd>
+            </>
+          )}
+          {account.Employee && (
+            <>
+              <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Responsible Employee</dt>
+              <dd className="text-sm text-gray-900 dark:text-gray-100">
+                {account.Employee.FirstName} {account.Employee.LastName}
               </dd>
             </>
           )}

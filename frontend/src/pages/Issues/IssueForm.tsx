@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../lib/api'
-import { Issue, Account, Contact, ISSUE_STATUSES, ISSUE_PRIORITIES } from '../../types'
+import { Issue, Account, Contact, Employee, ISSUE_STATUSES, ISSUE_PRIORITIES } from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
 
 export default function IssueForm() {
@@ -31,6 +31,14 @@ export default function IssueForm() {
     },
   })
 
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const response = await api.get('/Employees')
+      return response.data
+    },
+  })
+
   const getInitialFormData = (): Partial<Issue> => {
     if (issue) {
       return {
@@ -42,6 +50,7 @@ export default function IssueForm() {
         Priority: issue.Priority,
         AssignedTo: issue.AssignedTo || '',
         Resolution: issue.Resolution || '',
+        EmployeeID: issue.EmployeeID || undefined,
         DueDate: issue.DueDate || undefined,
       }
     }
@@ -54,6 +63,7 @@ export default function IssueForm() {
       Priority: 2, // Medium
       AssignedTo: '',
       Resolution: '',
+      EmployeeID: undefined,
       DueDate: undefined,
     }
   }
@@ -124,6 +134,9 @@ export default function IssueForm() {
       if (!cleanData.DueDate) {
         delete cleanData.DueDate
       }
+      if (!cleanData.EmployeeID) {
+        delete cleanData.EmployeeID
+      }
 
       if (isEdit) {
         return api.patch(`/Issues(${id})`, cleanData)
@@ -148,7 +161,7 @@ export default function IssueForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     let value: string | number | undefined = e.target.value
 
-    if (e.target.name === 'AccountID' || e.target.name === 'ContactID' || e.target.name === 'Status' || e.target.name === 'Priority') {
+    if (e.target.name === 'AccountID' || e.target.name === 'ContactID' || e.target.name === 'Status' || e.target.name === 'Priority' || e.target.name === 'EmployeeID') {
       value = value ? parseInt(value) : undefined
     }
 
@@ -276,6 +289,26 @@ export default function IssueForm() {
               onChange={handleChange}
               className="input"
             />
+          </div>
+
+          <div>
+            <label htmlFor="EmployeeID" className="label">
+              Responsible Employee
+            </label>
+            <select
+              id="EmployeeID"
+              name="EmployeeID"
+              value={formData.EmployeeID || ''}
+              onChange={handleChange}
+              className="input"
+            >
+              <option value="">None</option>
+              {(employeesData?.items || []).map((employee: Employee) => (
+                <option key={employee.ID} value={employee.ID}>
+                  {employee.FirstName} {employee.LastName}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

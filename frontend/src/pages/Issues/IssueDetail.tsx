@@ -14,7 +14,7 @@ export default function IssueDetail() {
   const { data: issue, isLoading, error } = useQuery({
     queryKey: ['issue', id],
     queryFn: async () => {
-      const response = await api.get(`/Issues(${id})?$expand=Account,Contact`)
+      const response = await api.get(`/Issues(${id})?$expand=Account,Contact,Employee`)
       return response.data as Issue
     },
   })
@@ -124,6 +124,14 @@ export default function IssueDetail() {
             <>
               <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Assigned To</dt>
               <dd className="text-sm text-gray-900 dark:text-gray-100">{issue.AssignedTo}</dd>
+            </>
+          )}
+          {issue.Employee && (
+            <>
+              <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Responsible Employee</dt>
+              <dd className="text-sm text-gray-900 dark:text-gray-100">
+                {issue.Employee.FirstName} {issue.Employee.LastName}
+              </dd>
             </>
           )}
           <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Created</dt>
