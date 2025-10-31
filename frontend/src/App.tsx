@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Layout from './components/Layout'
@@ -14,8 +15,13 @@ import IssueForm from './pages/Issues/IssueForm'
 import EmployeesList from './pages/Employees/EmployeesList'
 import EmployeeDetail from './pages/Employees/EmployeeDetail'
 import EmployeeForm from './pages/Employees/EmployeeForm'
+import { fetchEnums } from './lib/enums'
 
 function App() {
+  // Fetch enum definitions from backend on app initialization
+  useEffect(() => {
+    fetchEnums()
+  }, [])
   return (
     <ThemeProvider>
       <Router>

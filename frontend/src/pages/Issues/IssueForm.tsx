@@ -58,8 +58,8 @@ export default function IssueForm() {
       ContactID: undefined,
       Title: '',
       Description: '',
-      Status: 'New',
-      Priority: 'Medium',
+      Status: 1, // New
+      Priority: 2, // Medium
       AssignedTo: '',
       Resolution: '',
       DueDate: undefined,
@@ -108,7 +108,7 @@ export default function IssueForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     let value: string | number | undefined = e.target.value
 
-    if (e.target.name === 'AccountID' || e.target.name === 'ContactID') {
+    if (e.target.name === 'AccountID' || e.target.name === 'ContactID' || e.target.name === 'Status' || e.target.name === 'Priority') {
       value = value ? parseInt(value) : undefined
     }
 
@@ -196,9 +196,9 @@ export default function IssueForm() {
               required
               className="input"
             >
-              {ISSUE_STATUSES.map(status => (
-                <option key={status} value={status}>
-                  {status}
+              {ISSUE_STATUSES().map(status => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
                 </option>
               ))}
             </select>
@@ -216,9 +216,9 @@ export default function IssueForm() {
               required
               className="input"
             >
-              {ISSUE_PRIORITIES.map(priority => (
-                <option key={priority} value={priority}>
-                  {priority}
+              {ISSUE_PRIORITIES().map(priority => (
+                <option key={priority.value} value={priority.value}>
+                  {priority.label}
                 </option>
               ))}
             </select>
