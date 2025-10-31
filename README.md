@@ -48,7 +48,7 @@ All APIs support standard OData v4 query options:
 ## Technology Stack
 
 ### Backend
-- **Go 1.23**: Programming language
+- **Go 1.25**: Programming language
 - **go-odata**: OData v4 library (MANDATORY for all APIs)
 - **GORM**: ORM for database operations
 - **PostgreSQL**: Relational database

@@ -4,7 +4,7 @@ This is the backend service for the CRM system, built with Go and using the `go-
 
 ## Technology Stack
 
-- **Go 1.23**: Programming language
+- **Go 1.25**: Programming language
 - **GORM**: ORM for database operations
 - **PostgreSQL**: Database
 - **go-odata**: OData v4 API framework (MANDATORY for all APIs)
