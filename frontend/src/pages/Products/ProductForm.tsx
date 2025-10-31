@@ -47,11 +47,11 @@ export default function ProductForm() {
 
   const [formData, setFormData] = useState<Partial<Product>>(getInitialFormData())
 
-  // Reset form data when product ID changes
+  // Reset form data when product data changes
   useEffect(() => {
     setFormData(getInitialFormData())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [product, id])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Product>) => {
