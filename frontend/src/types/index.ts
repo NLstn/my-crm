@@ -39,8 +39,8 @@ export interface Issue {
   ContactID?: number
   Title: string
   Description?: string
-  Status: IssueStatus
-  Priority: IssuePriority
+  Status: number // IssueStatus enum value from backend
+  Priority: number // IssuePriority enum value from backend
   AssignedTo?: string
   Resolution?: string
   DueDate?: string
@@ -51,11 +51,14 @@ export interface Issue {
   Contact?: Contact
 }
 
-export type IssueStatus = 'New' | 'InProgress' | 'Pending' | 'Resolved' | 'Closed'
-export type IssuePriority = 'Low' | 'Medium' | 'High' | 'Critical'
-
-export const ISSUE_STATUSES: IssueStatus[] = ['New', 'InProgress', 'Pending', 'Resolved', 'Closed']
-export const ISSUE_PRIORITIES: IssuePriority[] = ['Low', 'Medium', 'High', 'Critical']
+// Re-export enum utilities from lib/enums
+// These are now dynamically loaded from the backend OData metadata
+export {
+  issueStatusToString,
+  issuePriorityToString,
+  getIssueStatuses as ISSUE_STATUSES,
+  getIssuePriorities as ISSUE_PRIORITIES,
+} from '../lib/enums'
 
 export interface Employee {
   ID: number

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
-import { Issue } from '../../types'
+import { Issue, issueStatusToString, issuePriorityToString } from '../../types'
 
 export default function IssuesList() {
   const { data, isLoading, error } = useQuery({
@@ -26,22 +26,22 @@ export default function IssuesList() {
 
   const issues = data?.items || []
 
-  const getStatusBadgeClass = (status: string) => {
+  const getStatusBadgeClass = (status: number) => {
     switch (status) {
-      case 'New': return 'badge-primary'
-      case 'InProgress': return 'badge-warning'
-      case 'Resolved': return 'badge-success'
-      case 'Closed': return 'badge-success'
+      case 1: return 'badge-primary' // New
+      case 2: return 'badge-warning' // InProgress
+      case 4: return 'badge-success' // Resolved
+      case 5: return 'badge-success' // Closed
       default: return 'badge-primary'
     }
   }
 
-  const getPriorityBadgeClass = (priority: string) => {
+  const getPriorityBadgeClass = (priority: number) => {
     switch (priority) {
-      case 'Critical': return 'badge-error'
-      case 'High': return 'badge-warning'
-      case 'Medium': return 'badge-primary'
-      case 'Low': return 'badge-primary'
+      case 4: return 'badge-error' // Critical
+      case 3: return 'badge-warning' // High
+      case 2: return 'badge-primary' // Medium
+      case 1: return 'badge-primary' // Low
       default: return 'badge-primary'
     }
   }
@@ -74,10 +74,10 @@ export default function IssuesList() {
                 </h3>
                 <div className="flex gap-2 mt-2">
                   <span className={`badge ${getStatusBadgeClass(issue.Status)}`}>
-                    {issue.Status}
+                    {issueStatusToString(issue.Status)}
                   </span>
                   <span className={`badge ${getPriorityBadgeClass(issue.Priority)}`}>
-                    {issue.Priority}
+                    {issuePriorityToString(issue.Priority)}
                   </span>
                 </div>
                 {issue.Account && (

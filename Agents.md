@@ -87,7 +87,7 @@ import { Button } from '@/components/ui'
 
 // ❌ BAD - Custom colors
 <button style={{ backgroundColor: '#3b82f6' }}>Save</button>
-<div className="bg-[#1e40af]">Content</div>
+<div className="bg-primary-800">Content</div>
 <span style={{ color: 'blue' }}>Text</span>
 
 // ❌ BAD - Not using UI components
