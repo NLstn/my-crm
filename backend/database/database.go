@@ -43,6 +43,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Account{},
 		&models.Contact{},
 		&models.Issue{},
+		&models.Activity{},
+		&models.Task{},
 		&models.Employee{},
 		&models.Product{},
 		&models.Opportunity{},
@@ -247,6 +249,11 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
+	accountContactIDs := make(map[uint][]uint)
+	for _, contact := range contacts {
+		accountContactIDs[contact.AccountID] = append(accountContactIDs[contact.AccountID], contact.ID)
+	}
+
 	// Create 80 issues (tickets)
 	issueTitles := []string{"System integration issue", "Feature request", "Performance optimization needed", "Training request",
 		"Bug report", "Data migration", "Security concern", "API documentation update", "UI improvement", "Database backup issue",
@@ -322,6 +329,103 @@ func SeedData(db *gorm.DB) error {
 	for i := range products {
 		if err := db.Create(&products[i]).Error; err != nil {
 			return fmt.Errorf("failed to create product: %w", err)
+		}
+	}
+
+	// Create activities for accounts
+	activityTypes := []string{"Call", "Email", "Meeting", "Note"}
+	activitySubjects := []string{"Quarterly Check-in", "Product Demo", "Support Follow-up", "Contract Renewal", "Training Session"}
+	activityOutcomes := []string{"Connected", "Left Voicemail", "Meeting Scheduled", "Awaiting Response", "Completed"}
+
+	activities := make([]models.Activity, 0, len(accounts)*3)
+	now := time.Now()
+	for i, account := range accounts {
+		for j := 0; j < 3; j++ {
+			activityIndex := i*3 + j
+			contactIDs := accountContactIDs[account.ID]
+			var contactID *uint
+			if len(contactIDs) > 0 {
+				id := contactIDs[activityIndex%len(contactIDs)]
+				contactID = &id
+			}
+
+			employee := employees[(activityIndex)%len(employees)]
+			employeeID := employee.ID
+
+			activities = append(activities, models.Activity{
+				AccountID:    account.ID,
+				ContactID:    contactID,
+				EmployeeID:   &employeeID,
+				ActivityType: activityTypes[activityIndex%len(activityTypes)],
+				Subject:      activitySubjects[activityIndex%len(activitySubjects)],
+				Outcome:      activityOutcomes[activityIndex%len(activityOutcomes)],
+				Notes:        fmt.Sprintf("Interaction #%d with %s", activityIndex+1, account.Name),
+				ActivityTime: now.Add(-time.Duration(activityIndex*12) * time.Hour),
+			})
+		}
+	}
+
+	if len(activities) > 0 {
+		if err := db.Create(&activities).Error; err != nil {
+			return fmt.Errorf("failed to create activities: %w", err)
+		}
+	}
+
+	// Create tasks for accounts
+	taskTitles := []string{"Follow-up Call", "Prepare Proposal", "Schedule Demo", "Send Documentation", "Review Contract"}
+	taskDescriptions := []string{
+		"Follow up on the latest discussion and capture feedback.",
+		"Prepare the requested proposal and send to stakeholders.",
+		"Coordinate a demo session with the account team.",
+		"Share the latest documentation package with the customer.",
+		"Review the contract details and provide recommendations.",
+	}
+	taskStatuses := []models.TaskStatus{
+		models.TaskStatusNotStarted,
+		models.TaskStatusInProgress,
+		models.TaskStatusCompleted,
+		models.TaskStatusDeferred,
+		models.TaskStatusInProgress,
+	}
+
+	tasks := make([]models.Task, 0, len(accounts)*2)
+	for i, account := range accounts {
+		for j := 0; j < 2; j++ {
+			taskIndex := i*2 + j
+			contactIDs := accountContactIDs[account.ID]
+			var contactID *uint
+			if len(contactIDs) > 0 {
+				id := contactIDs[taskIndex%len(contactIDs)]
+				contactID = &id
+			}
+
+			employee := employees[(taskIndex*2)%len(employees)]
+			employeeID := employee.ID
+			dueDate := now.Add(time.Duration((taskIndex%7)+3) * 24 * time.Hour)
+
+			task := models.Task{
+				AccountID:   account.ID,
+				ContactID:   contactID,
+				EmployeeID:  &employeeID,
+				Title:       taskTitles[taskIndex%len(taskTitles)],
+				Description: taskDescriptions[taskIndex%len(taskDescriptions)],
+				Owner:       fmt.Sprintf("%s %s", employee.FirstName, employee.LastName),
+				Status:      taskStatuses[taskIndex%len(taskStatuses)],
+				DueDate:     dueDate,
+			}
+
+			if task.Status == models.TaskStatusCompleted {
+				completedAt := dueDate.Add(-12 * time.Hour)
+				task.CompletedAt = &completedAt
+			}
+
+			tasks = append(tasks, task)
+		}
+	}
+
+	if len(tasks) > 0 {
+		if err := db.Create(&tasks).Error; err != nil {
+			return fmt.Errorf("failed to create tasks: %w", err)
 		}
 	}
 

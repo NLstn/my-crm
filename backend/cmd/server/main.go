@@ -69,6 +69,16 @@ func main() {
 		log.Fatal("Failed to register OpportunityStage enum:", err)
 	}
 
+	if err := odata.RegisterEnumType(models.TaskStatus(1), map[string]int64{
+		"NotStarted": 1,
+		"InProgress": 2,
+		"Completed":  3,
+		"Deferred":   4,
+		"Cancelled":  5,
+	}); err != nil {
+		log.Fatal("Failed to register TaskStatus enum:", err)
+	}
+
 	// Register entities - must use go-odata for ALL APIs
 	if err := service.RegisterEntity(&models.Account{}); err != nil {
 		log.Fatal("Failed to register Account entity:", err)
@@ -80,6 +90,14 @@ func main() {
 
 	if err := service.RegisterEntity(&models.Issue{}); err != nil {
 		log.Fatal("Failed to register Issue entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.Activity{}); err != nil {
+		log.Fatal("Failed to register Activity entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.Task{}); err != nil {
+		log.Fatal("Failed to register Task entity:", err)
 	}
 
 	if err := service.RegisterEntity(&models.Employee{}); err != nil {
@@ -114,9 +132,11 @@ func main() {
 	fmt.Println("Accounts:          http://localhost:" + port + "/Accounts")
 	fmt.Println("Contacts:          http://localhost:" + port + "/Contacts")
 	fmt.Println("Issues:            http://localhost:" + port + "/Issues")
+	fmt.Println("Activities:        http://localhost:" + port + "/Activities")
+	fmt.Println("Tasks:             http://localhost:" + port + "/Tasks")
+	fmt.Println("Opportunities:     http://localhost:" + port + "/Opportunities")
 	fmt.Println("Employees:         http://localhost:" + port + "/Employees")
 	fmt.Println("Products:          http://localhost:" + port + "/Products")
-	fmt.Println("Opportunities:     http://localhost:" + port + "/Opportunities")
 	fmt.Println("========================================")
 	fmt.Println("All APIs are built using go-odata (OData v4 compliant)")
 	fmt.Println("Health Check:      http://localhost:" + port + "/health")

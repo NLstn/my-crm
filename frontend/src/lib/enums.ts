@@ -25,15 +25,25 @@ const fallbackOpportunityStages = [
   { value: 7, label: 'Closed Lost' },
 ]
 
+const fallbackTaskStatuses = [
+  { value: 1, label: 'Not Started' },
+  { value: 2, label: 'In Progress' },
+  { value: 3, label: 'Completed' },
+  { value: 4, label: 'Deferred' },
+  { value: 5, label: 'Cancelled' },
+]
+
 // Cache for enum values to avoid repeated API calls
 const enumCache: {
   issueStatuses: Array<{ value: number; label: string }>
   issuePriorities: Array<{ value: number; label: string }>
   opportunityStages: Array<{ value: number; label: string }>
+  taskStatuses: Array<{ value: number; label: string }>
 } = {
   issueStatuses: fallbackIssueStatuses,
   issuePriorities: fallbackIssuePriorities,
   opportunityStages: fallbackOpportunityStages,
+  taskStatuses: fallbackTaskStatuses,
 }
 
 interface ODataMetadata {
@@ -123,12 +133,22 @@ export const fetchEnums = async (): Promise<void> => {
         label: formatEnumLabel(name),
       }))
     }
+
+    // Parse TaskStatus
+    const taskStatusEnum = enums.get('TaskStatus')
+    if (taskStatusEnum) {
+      enumCache.taskStatuses = Object.entries(taskStatusEnum).map(([name, value]) => ({
+        value,
+        label: name === 'NotStarted' ? 'Not Started' : name === 'InProgress' ? 'In Progress' : name,
+      }))
+    }
   } catch (error) {
     console.error('Failed to fetch enums from backend:', error)
     // Fallback to hardcoded values if fetch fails
     enumCache.issueStatuses = fallbackIssueStatuses
     enumCache.issuePriorities = fallbackIssuePriorities
     enumCache.opportunityStages = fallbackOpportunityStages
+    enumCache.taskStatuses = fallbackTaskStatuses
   }
 }
 
@@ -151,6 +171,13 @@ export const getIssuePriorities = (): Array<{ value: number; label: string }> =>
  */
 export const getOpportunityStages = (): Array<{ value: number; label: string }> => {
   return enumCache.opportunityStages || fallbackOpportunityStages
+}
+
+/**
+ * Get task status options for dropdowns
+ */
+export const getTaskStatuses = (): Array<{ value: number; label: string }> => {
+  return enumCache.taskStatuses || fallbackTaskStatuses
 }
 
 /**
@@ -177,5 +204,14 @@ export const issuePriorityToString = (priority: number): string => {
 export const opportunityStageToString = (stage: number): string => {
   const stages = getOpportunityStages()
   const found = stages.find((s) => s.value === stage)
+  return found ? found.label : 'Unknown'
+}
+
+/**
+ * Convert task status value to display string
+ */
+export const taskStatusToString = (status: number): string => {
+  const statuses = getTaskStatuses()
+  const found = statuses.find((s) => s.value === status)
   return found ? found.label : 'Unknown'
 }

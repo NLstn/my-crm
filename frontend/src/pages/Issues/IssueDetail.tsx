@@ -65,6 +65,19 @@ export default function IssueDetail() {
     }
   }
 
+  const activityParams = new URLSearchParams({ accountId: issue.AccountID.toString() })
+  const taskParams = new URLSearchParams({
+    accountId: issue.AccountID.toString(),
+    title: `Follow up on ${issue.Title}`,
+  })
+  if (issue.ContactID) {
+    activityParams.append('contactId', issue.ContactID.toString())
+    taskParams.append('contactId', issue.ContactID.toString())
+  }
+
+  const quickActivityUrl = `/activities/new?${activityParams.toString()}`
+  const quickTaskUrl = `/tasks/new?${taskParams.toString()}`
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
@@ -91,6 +104,20 @@ export default function IssueDetail() {
           >
             Delete
           </Button>
+        </div>
+      </div>
+
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h2>
+          <div className="flex flex-wrap gap-3">
+            <Link to={quickActivityUrl} className="btn btn-secondary text-sm">
+              Log Related Activity
+            </Link>
+            <Link to={quickTaskUrl} className="btn btn-primary text-sm">
+              Create Follow-up Task
+            </Link>
+          </div>
         </div>
       </div>
 

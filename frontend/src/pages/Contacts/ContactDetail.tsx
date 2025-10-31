@@ -66,6 +66,9 @@ export default function ContactDetail() {
     deleteMutation.mutate()
   }
 
+  const quickActivityUrl = `/activities/new?accountId=${contact.AccountID}&contactId=${contact.ID}`
+  const quickTaskUrl = `/tasks/new?accountId=${contact.AccountID}&contactId=${contact.ID}&title=${encodeURIComponent(`Follow up with ${contact.FirstName}`)}`
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
@@ -90,6 +93,20 @@ export default function ContactDetail() {
           >
             Delete
           </Button>
+        </div>
+      </div>
+
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h2>
+          <div className="flex flex-wrap gap-3">
+            <Link to={quickActivityUrl} className="btn btn-secondary text-sm">
+              Log Activity
+            </Link>
+            <Link to={quickTaskUrl} className="btn btn-primary text-sm">
+              Create Follow-up Task
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -9,9 +9,15 @@ import AccountForm from './pages/Accounts/AccountForm'
 import ContactsList from './pages/Contacts/ContactsList'
 import ContactDetail from './pages/Contacts/ContactDetail'
 import ContactForm from './pages/Contacts/ContactForm'
+import ActivitiesList from './pages/Activities/ActivitiesList'
+import ActivityDetail from './pages/Activities/ActivityDetail'
+import ActivityForm from './pages/Activities/ActivityForm'
 import IssuesList from './pages/Issues/IssuesList'
 import IssueDetail from './pages/Issues/IssueDetail'
 import IssueForm from './pages/Issues/IssueForm'
+import TasksList from './pages/Tasks/TasksList'
+import TaskDetail from './pages/Tasks/TaskDetail'
+import TaskForm from './pages/Tasks/TaskForm'
 import OpportunitiesList from './pages/Opportunities/OpportunitiesList'
 import OpportunityDetail from './pages/Opportunities/OpportunityDetail'
 import OpportunityForm from './pages/Opportunities/OpportunityForm'
@@ -40,18 +46,30 @@ function App() {
             <Route path="accounts/new" element={<AccountForm />} />
             <Route path="accounts/:id" element={<AccountDetail />} />
             <Route path="accounts/:id/edit" element={<AccountForm />} />
-            
+
             {/* Contacts routes */}
             <Route path="contacts" element={<ContactsList />} />
             <Route path="contacts/new" element={<ContactForm />} />
             <Route path="contacts/:id" element={<ContactDetail />} />
             <Route path="contacts/:id/edit" element={<ContactForm />} />
-            
+
+            {/* Activities routes */}
+            <Route path="activities" element={<ActivitiesList />} />
+            <Route path="activities/new" element={<ActivityForm />} />
+            <Route path="activities/:id" element={<ActivityDetail />} />
+            <Route path="activities/:id/edit" element={<ActivityForm />} />
+
             {/* Issues routes */}
             <Route path="issues" element={<IssuesList />} />
             <Route path="issues/new" element={<IssueForm />} />
             <Route path="issues/:id" element={<IssueDetail />} />
             <Route path="issues/:id/edit" element={<IssueForm />} />
+
+            {/* Tasks routes */}
+            <Route path="tasks" element={<TasksList />} />
+            <Route path="tasks/new" element={<TaskForm />} />
+            <Route path="tasks/:id" element={<TaskDetail />} />
+            <Route path="tasks/:id/edit" element={<TaskForm />} />
 
             {/* Opportunities routes */}
             <Route path="opportunities" element={<OpportunitiesList />} />

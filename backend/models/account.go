@@ -25,6 +25,8 @@ type Account struct {
 	// Navigation properties
 	Contacts      []Contact     `json:"Contacts" gorm:"foreignKey:AccountID" odata:"navigation"`
 	Issues        []Issue       `json:"Issues" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Activities    []Activity    `json:"Activities" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Tasks         []Task        `json:"Tasks" gorm:"foreignKey:AccountID" odata:"navigation"`
 	Opportunities []Opportunity `json:"Opportunities" gorm:"foreignKey:AccountID" odata:"navigation"`
 	Employee      *Employee     `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 }

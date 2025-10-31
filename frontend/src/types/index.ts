@@ -16,6 +16,8 @@ export interface Account {
   UpdatedAt: string
   Contacts?: Contact[]
   Issues?: Issue[]
+  Activities?: Activity[]
+  Tasks?: Task[]
   Opportunities?: Opportunity[]
   Employee?: Employee
 }
@@ -57,6 +59,41 @@ export interface Issue {
   Employee?: Employee
 }
 
+export interface Activity {
+  ID: number
+  AccountID: number
+  ContactID?: number
+  EmployeeID?: number
+  ActivityType: string
+  Subject: string
+  Outcome?: string
+  Notes?: string
+  ActivityTime: string
+  CreatedAt: string
+  UpdatedAt: string
+  Account?: Account
+  Contact?: Contact
+  Employee?: Employee
+}
+
+export interface Task {
+  ID: number
+  AccountID: number
+  ContactID?: number
+  EmployeeID?: number
+  Title: string
+  Description?: string
+  Owner: string
+  Status: number
+  DueDate: string
+  CompletedAt?: string
+  CreatedAt: string
+  UpdatedAt: string
+  Account?: Account
+  Contact?: Contact
+  Employee?: Employee
+}
+
 export interface Opportunity {
   ID: number
   AccountID: number
@@ -82,6 +119,8 @@ export {
   issuePriorityToString,
   getIssueStatuses as ISSUE_STATUSES,
   getIssuePriorities as ISSUE_PRIORITIES,
+  taskStatusToString,
+  getTaskStatuses as TASK_STATUSES,
   getOpportunityStages as OPPORTUNITY_STAGES,
   opportunityStageToString,
 } from '../lib/enums'

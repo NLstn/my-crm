@@ -4,6 +4,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Account, issueStatusToString, issuePriorityToString, opportunityStageToString } from '../../types'
 import { Button } from '../../components/ui'
+import Timeline from '../../components/Timeline'
+import TaskList from '../../components/TaskList'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -35,7 +37,7 @@ export default function AccountDetail() {
   const { data: account, isLoading, error } = useQuery({
     queryKey: ['account', id],
     queryFn: async () => {
-      const response = await api.get(`/Accounts(${id})?$expand=Contacts,Issues,Employee,Opportunities($expand=Contact,Owner)`)
+      const response = await api.get(`/Accounts(${id})?$expand=Contacts,Issues,Employee,Activities($expand=Contact,Employee),Tasks($expand=Contact,Employee),Opportunities($expand=Contact,Owner)`)
       return response.data as Account
     },
   })
@@ -188,6 +190,32 @@ export default function AccountDetail() {
         ) : (
           <p className="text-gray-600 dark:text-gray-400 text-center py-4">No contacts yet</p>
         )}
+      </div>
+
+      {/* Activity Timeline */}
+      <div className="card p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Activity Timeline
+          </h2>
+          <Link to={`/activities/new?accountId=${id}`} className="btn btn-secondary text-sm">
+            Log Activity
+          </Link>
+        </div>
+        <Timeline activities={account.Activities || []} emptyMessage="No interactions logged" />
+      </div>
+
+      {/* Tasks */}
+      <div className="card p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Tasks ({account.Tasks?.length || 0})
+          </h2>
+          <Link to={`/tasks/new?accountId=${id}`} className="btn btn-secondary text-sm">
+            Add Task
+          </Link>
+        </div>
+        <TaskList tasks={account.Tasks || []} emptyMessage="No tasks yet" />
       </div>
 
       {/* Issues */}
