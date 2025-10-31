@@ -8,8 +8,10 @@ export default function Layout() {
   const navigation = [
     { name: 'Accounts', href: '/accounts' },
     { name: 'Contacts', href: '/contacts' },
-    { name: 'Opportunities', href: '/opportunities' },
+    { name: 'Activities', href: '/activities' },
     { name: 'Issues', href: '/issues' },
+    { name: 'Tasks', href: '/tasks' },
+    { name: 'Opportunities', href: '/opportunities' },
     { name: 'Employees', href: '/employees' },
     { name: 'Products', href: '/products' },
   ]
