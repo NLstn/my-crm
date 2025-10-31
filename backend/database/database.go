@@ -99,18 +99,24 @@ func SeedData(db *gorm.DB) error {
 		"Construction Corp", "Telecom Services", "Insurance Providers", "Legal Associates", "Entertainment Media",
 		"Fitness Centers", "Automotive Group", "Aerospace Technologies", "Pharmaceutical Labs", "Agriculture Corp",
 		"Hospitality Services", "Fashion Retail", "Publishing House", "Security Systems", "Environmental Solutions"}
+	accountDomains := []string{"acme", "globalindustries", "retailmasters", "techinnovations", "greenenergy", 
+		"medicalservices", "financialadvisors", "educationsystems", "transportlogistics", "foodservices",
+		"manufacturingplus", "softwaresystems", "consultinggroup", "marketingagency", "realestatepartners",
+		"constructioncorp", "telecomservices", "insuranceproviders", "legalassociates", "entertainmentmedia",
+		"fitnesscenters", "automotivegroup", "aerospacetechnologies", "pharmalabs", "agriculturecorp",
+		"hospitalityservices", "fashionretail", "publishinghouse", "securitysystems", "environmentalsolutions"}
 	industries := []string{"Technology", "Manufacturing", "Retail", "Healthcare", "Finance", "Education", "Logistics", "Food & Beverage", "Consulting", "Marketing"}
 	cities := []string{"San Francisco", "Detroit", "New York", "Austin", "Seattle", "Boston", "Chicago", "Denver", "Atlanta", "Los Angeles"}
-	states := []string{"CA", "MI", "NY", "TX", "WA", "MA", "IL", "CO", "GA", "CA"}
+	states := []string{"CA", "MI", "NY", "TX", "WA", "MA", "IL", "CO", "GA", "FL"}
 
 	accounts := make([]models.Account, 30)
 	for i := 0; i < 30; i++ {
 		accounts[i] = models.Account{
 			Name:        accountNames[i],
 			Industry:    industries[i%len(industries)],
-			Website:     fmt.Sprintf("https://%s.example.com", accountNames[i]),
+			Website:     fmt.Sprintf("https://%s.example.com", accountDomains[i]),
 			Phone:       fmt.Sprintf("+1-555-%04d", 100+i*10),
-			Email:       fmt.Sprintf("contact@%s.example.com", accountNames[i]),
+			Email:       fmt.Sprintf("contact@%s.example.com", accountDomains[i]),
 			Address:     fmt.Sprintf("%d Business Street", 100+i*10),
 			City:        cities[i%len(cities)],
 			State:       states[i%len(states)],
@@ -147,7 +153,7 @@ func SeedData(db *gorm.DB) error {
 			FirstName: contactFirstNames[i],
 			LastName:  contactLastNames[i],
 			Title:     titles[i%len(titles)],
-			Email:     fmt.Sprintf("%s.%s@%s.example.com", contactFirstNames[i], contactLastNames[i], accountNames[accountIndex]),
+			Email:     fmt.Sprintf("%s.%s@%s.example.com", contactFirstNames[i], contactLastNames[i], accountDomains[accountIndex]),
 			Phone:     fmt.Sprintf("+1-555-%04d", 2000+i),
 			Mobile:    fmt.Sprintf("+1-555-%04d", 3000+i),
 			IsPrimary: isPrimary,
