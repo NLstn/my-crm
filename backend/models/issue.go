@@ -1,7 +1,10 @@
 package models
 
 import (
+	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // IssueStatus represents the status of an issue/ticket
@@ -84,4 +87,22 @@ type Issue struct {
 // TableName specifies the table name for GORM
 func (Issue) TableName() string {
 	return "issues"
+}
+
+// BeforeSave validates relationships before persisting changes
+func (issue *Issue) BeforeSave(tx *gorm.DB) error {
+	if issue.ContactID == nil {
+		return nil
+	}
+
+	var contact Contact
+	if err := tx.Select("account_id").First(&contact, *issue.ContactID).Error; err != nil {
+		return err
+	}
+
+	if contact.AccountID != issue.AccountID {
+		return fmt.Errorf("contact %d does not belong to account %d", *issue.ContactID, issue.AccountID)
+	}
+
+	return nil
 }

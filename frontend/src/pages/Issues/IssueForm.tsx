@@ -31,14 +31,6 @@ export default function IssueForm() {
     },
   })
 
-  const { data: contactsData } = useQuery({
-    queryKey: ['contacts'],
-    queryFn: async () => {
-      const response = await api.get('/Contacts')
-      return response.data
-    },
-  })
-
   const getInitialFormData = (): Partial<Issue> => {
     if (issue) {
       return {
@@ -68,11 +60,59 @@ export default function IssueForm() {
 
   const [formData, setFormData] = useState<Partial<Issue>>(getInitialFormData())
 
-  // Reset form data when issue ID changes
+  const selectedAccountId = formData.AccountID
+
+  const { data: contactsData } = useQuery({
+    queryKey: ['contacts', selectedAccountId],
+    queryFn: async () => {
+      const response = await api.get('/Contacts', {
+        params: {
+          $filter: `AccountID eq ${selectedAccountId}`,
+        },
+      })
+      return response.data
+    },
+    enabled: Boolean(selectedAccountId),
+  })
+
+  // Reset form data when issue data changes (e.g., navigating between edit/new)
   useEffect(() => {
     setFormData(getInitialFormData())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [id, issue])
+
+  // Clear the selected contact if the account is cleared
+  useEffect(() => {
+    if (!selectedAccountId && formData.ContactID) {
+      setFormData(prev => ({
+        ...prev,
+        ContactID: undefined,
+      }))
+    }
+  }, [selectedAccountId, formData.ContactID])
+
+  // Ensure the selected contact belongs to the currently selected account
+  useEffect(() => {
+    if (!formData.ContactID) {
+      return
+    }
+
+    const accountContacts = contactsData?.items as Contact[] | undefined
+    if (!accountContacts) {
+      return
+    }
+
+    const contactMatchesAccount = accountContacts.some(
+      contact => contact.ID === formData.ContactID
+    )
+
+    if (!contactMatchesAccount) {
+      setFormData(prev => ({
+        ...prev,
+        ContactID: undefined,
+      }))
+    }
+  }, [contactsData, formData.ContactID])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Issue>) => {
@@ -119,7 +159,7 @@ export default function IssueForm() {
   }
 
   const accounts = accountsData?.items || []
-  const contacts = contactsData?.items || []
+  const contacts = selectedAccountId ? ((contactsData?.items as Contact[]) || []) : []
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
