@@ -105,10 +105,8 @@ func SeedData(db *gorm.DB) error {
 		},
 	}
 
-	for i := range employees {
-		if err := db.Create(&employees[i]).Error; err != nil {
-			return fmt.Errorf("failed to create employee: %w", err)
-		}
+	if err := db.Create(&employees).Error; err != nil {
+		return fmt.Errorf("failed to create employees: %w", err)
 	}
 
 	// Create sample accounts
