@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Input } from './ui/Input'
+import { Button } from './ui/Button'
 
 export interface SortOption {
   label: string
@@ -25,11 +26,103 @@ export interface EntitySearchProps {
   onPageSizeChange?: (size: number) => void
 }
 
+export interface PaginationControlsProps {
+  totalCount: number
+  currentPage: number
+  pageSize: number
+  onPageChange: (page: number) => void
+  onPageSizeChange?: (size: number) => void
+}
+
+/**
+ * PaginationControls - Reusable pagination component
+ * 
+ * Provides consistent pagination UI with Previous/Next buttons,
+ * page count, and page size selector. Should be placed below result tables.
+ * 
+ * @example
+ * ```tsx
+ * <PaginationControls
+ *   totalCount={totalCount}
+ *   currentPage={currentPage}
+ *   pageSize={pageSize}
+ *   onPageChange={setCurrentPage}
+ *   onPageSizeChange={setPageSize}
+ * />
+ * ```
+ */
+export function PaginationControls({
+  totalCount,
+  currentPage,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: PaginationControlsProps) {
+  const totalPages = Math.ceil(totalCount / pageSize)
+
+  if (totalCount === 0) {
+    return null
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+      <div className="text-sm text-gray-600 dark:text-gray-400">
+        Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} -{' '}
+        {Math.min(currentPage * pageSize, totalCount)} of {totalCount} results
+      </div>
+
+      <div className="flex items-center gap-2">
+        {/* Page Size Selector */}
+        {onPageSizeChange && (
+          <select
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+            className="input py-1.5 text-sm"
+          >
+            <option value="5">5 per page</option>
+            <option value="10">10 per page</option>
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+          </select>
+        )}
+
+        {/* Page Navigation */}
+        {totalPages > 1 && (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="py-1.5 px-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </Button>
+            <div className="flex items-center px-4 text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[100px] justify-center whitespace-nowrap">
+              Page {currentPage} of {totalPages}
+            </div>
+            <Button
+              variant="secondary"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="py-1.5 px-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /**
  * EntitySearch - A reusable search component for entity lists
  * 
- * Provides consistent search, filtering, sorting, and pagination UI
+ * Provides consistent search, filtering, and sorting UI
  * across all entity list pages. Generates OData query parameters.
+ * 
+ * Note: Pagination controls are now separate. Use PaginationControls component
+ * below your results table.
  * 
  * @example
  * ```tsx
@@ -49,16 +142,17 @@ export default function EntitySearch({
   sortOptions = [],
   filterOptions = [],
   onQueryChange,
-  totalCount = 0,
   currentPage = 1,
   pageSize = 10,
   onPageChange,
-  onPageSizeChange,
 }: EntitySearchProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState(sortOptions[0]?.value || '')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const prevSearchRef = useRef(debouncedSearchTerm)
+  const prevFiltersRef = useRef(filters)
+  const prevSortRef = useRef(sortBy)
 
   // Debounce search term
   useEffect(() => {
@@ -109,7 +203,20 @@ export default function EntitySearch({
     onQueryChange(params.length > 0 ? '?' + params.join('&') : '')
   }, [debouncedSearchTerm, sortBy, filters, currentPage, pageSize, filterOptions, onQueryChange])
 
-  const totalPages = Math.ceil(totalCount / pageSize)
+  // Reset to page 1 when search or filters change
+  useEffect(() => {
+    const searchChanged = prevSearchRef.current !== debouncedSearchTerm
+    const sortChanged = prevSortRef.current !== sortBy
+    const filtersChanged = JSON.stringify(prevFiltersRef.current) !== JSON.stringify(filters)
+    
+    if ((searchChanged || sortChanged || filtersChanged) && onPageChange && currentPage !== 1) {
+      onPageChange(1)
+    }
+    
+    prevSearchRef.current = debouncedSearchTerm
+    prevSortRef.current = sortBy
+    prevFiltersRef.current = filters
+  }, [debouncedSearchTerm, sortBy, filters, onPageChange, currentPage])
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
@@ -185,54 +292,6 @@ export default function EntitySearch({
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} -{' '}
-            {Math.min(currentPage * pageSize, totalCount)} of {totalCount} results
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Page Size Selector */}
-            {onPageSizeChange && (
-              <select
-                value={pageSize}
-                onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                className="input py-1.5 text-sm"
-              >
-                <option value="5">5 per page</option>
-                <option value="10">10 per page</option>
-                <option value="25">25 per page</option>
-                <option value="50">50 per page</option>
-              </select>
-            )}
-
-            {/* Page Navigation */}
-            {onPageChange && totalPages > 1 && (
-              <div className="flex gap-1">
-                <button
-                  onClick={() => onPageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="btn btn-secondary py-1.5 px-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ← Previous
-                </button>
-                <div className="flex items-center px-3 text-sm text-gray-600 dark:text-gray-400">
-                  Page {currentPage} of {totalPages}
-                </div>
-                <button
-                  onClick={() => onPageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="btn btn-secondary py-1.5 px-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next →
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
