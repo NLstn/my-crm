@@ -1,15 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/nlstn/go-odata"
 	"github.com/nlstn/my-crm/backend/database"
 	"github.com/nlstn/my-crm/backend/models"
+	"gorm.io/gorm"
 )
+
+// DEVELOPMENT ONLY: Fake JWT secret key
+// TODO: Replace with proper authentication provider integration (e.g., Auth0, Okta, Azure AD)
+const devJWTSecret = "development-only-secret-key-replace-in-production"
 
 func main() {
 	// Connect to database
@@ -112,6 +120,12 @@ func main() {
 		log.Fatal("Failed to register Opportunity entity:", err)
 	}
 
+	// Register fake authentication action (DEVELOPMENT ONLY)
+	// TODO: Replace with proper authentication provider integration in production
+	if err := registerDevAuthAction(service, db); err != nil {
+		log.Fatal("Failed to register authentication action:", err)
+	}
+
 	// Create HTTP server with logging and CORS middleware
 	mux := http.NewServeMux()
 	mux.Handle("/", loggingMiddleware(corsMiddleware(service)))
@@ -192,5 +206,74 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+// registerDevAuthAction registers a fake authentication action for development purposes
+// DEVELOPMENT ONLY: This is NOT a secure authentication implementation
+// TODO: Replace with proper authentication provider integration (e.g., Auth0, Okta, Azure AD)
+func registerDevAuthAction(service *odata.Service, db *gorm.DB) error {
+	return service.RegisterAction(odata.ActionDefinition{
+		Name:      "LoginWithEmail",
+		IsBound:   false, // Unbound action - not tied to a specific entity
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "email", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			// Extract email from parameters
+			email, ok := params["email"].(string)
+			if !ok || email == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{
+					"error": "email parameter is required",
+				})
+				return nil
+			}
+
+			// Find employee by email
+			var employee models.Employee
+			result := db.Where("email = ?", email).First(&employee)
+			if result.Error != nil {
+				if result.Error == gorm.ErrRecordNotFound {
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(map[string]string{
+						"error": "No employee found with this email address",
+					})
+					return nil
+				}
+				return result.Error
+			}
+
+			// Generate JWT token with employee ID
+			// DEVELOPMENT ONLY: Using a static secret key
+			token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"employeeId": employee.ID,
+				"email":      employee.Email,
+				"name":       employee.FirstName + " " + employee.LastName,
+				"exp":        time.Now().Add(24 * time.Hour).Unix(), // Token expires in 24 hours
+				"iat":        time.Now().Unix(),
+			})
+
+			tokenString, err := token.SignedString([]byte(devJWTSecret))
+			if err != nil {
+				return err
+			}
+
+			// Return token and user info
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"token": tokenString,
+				"user": map[string]interface{}{
+					"id":        employee.ID,
+					"firstName": employee.FirstName,
+					"lastName":  employee.LastName,
+					"email":     employee.Email,
+				},
+				"_devWarning": "DEVELOPMENT ONLY - This is fake authentication. Replace with proper auth provider.",
+			})
+		},
 	})
 }
