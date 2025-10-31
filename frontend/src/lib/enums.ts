@@ -1,10 +1,40 @@
 import api from './api'
 
+const fallbackIssueStatuses = [
+  { value: 1, label: 'New' },
+  { value: 2, label: 'In Progress' },
+  { value: 3, label: 'Pending' },
+  { value: 4, label: 'Resolved' },
+  { value: 5, label: 'Closed' },
+]
+
+const fallbackIssuePriorities = [
+  { value: 1, label: 'Low' },
+  { value: 2, label: 'Medium' },
+  { value: 3, label: 'High' },
+  { value: 4, label: 'Critical' },
+]
+
+const fallbackOpportunityStages = [
+  { value: 1, label: 'Prospecting' },
+  { value: 2, label: 'Qualification' },
+  { value: 3, label: 'Needs Analysis' },
+  { value: 4, label: 'Proposal' },
+  { value: 5, label: 'Negotiation' },
+  { value: 6, label: 'Closed Won' },
+  { value: 7, label: 'Closed Lost' },
+]
+
 // Cache for enum values to avoid repeated API calls
 const enumCache: {
-  issueStatuses?: Array<{ value: number; label: string }>
-  issuePriorities?: Array<{ value: number; label: string }>
-} = {}
+  issueStatuses: Array<{ value: number; label: string }>
+  issuePriorities: Array<{ value: number; label: string }>
+  opportunityStages: Array<{ value: number; label: string }>
+} = {
+  issueStatuses: fallbackIssueStatuses,
+  issuePriorities: fallbackIssuePriorities,
+  opportunityStages: fallbackOpportunityStages,
+}
 
 interface ODataMetadata {
   [namespace: string]: {
@@ -18,6 +48,14 @@ interface ODataMetadata {
 /**
  * Parse OData metadata JSON to extract enum definitions
  */
+const formatEnumLabel = (name: string): string => {
+  return name
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 const parseEnumsFromMetadata = (metadata: ODataMetadata): Map<string, Record<string, number>> => {
   const enums = new Map<string, Record<string, number>>()
 
@@ -64,7 +102,7 @@ export const fetchEnums = async (): Promise<void> => {
     if (issueStatusEnum) {
       enumCache.issueStatuses = Object.entries(issueStatusEnum).map(([name, value]) => ({
         value,
-        label: name === 'InProgress' ? 'In Progress' : name,
+        label: name === 'InProgress' ? 'In Progress' : formatEnumLabel(name),
       }))
     }
 
@@ -73,25 +111,24 @@ export const fetchEnums = async (): Promise<void> => {
     if (issuePriorityEnum) {
       enumCache.issuePriorities = Object.entries(issuePriorityEnum).map(([name, value]) => ({
         value,
-        label: name,
+        label: formatEnumLabel(name),
+      }))
+    }
+
+    // Parse OpportunityStage
+    const opportunityStageEnum = enums.get('OpportunityStage')
+    if (opportunityStageEnum) {
+      enumCache.opportunityStages = Object.entries(opportunityStageEnum).map(([name, value]) => ({
+        value,
+        label: formatEnumLabel(name),
       }))
     }
   } catch (error) {
     console.error('Failed to fetch enums from backend:', error)
     // Fallback to hardcoded values if fetch fails
-    enumCache.issueStatuses = [
-      { value: 1, label: 'New' },
-      { value: 2, label: 'In Progress' },
-      { value: 3, label: 'Pending' },
-      { value: 4, label: 'Resolved' },
-      { value: 5, label: 'Closed' },
-    ]
-    enumCache.issuePriorities = [
-      { value: 1, label: 'Low' },
-      { value: 2, label: 'Medium' },
-      { value: 3, label: 'High' },
-      { value: 4, label: 'Critical' },
-    ]
+    enumCache.issueStatuses = fallbackIssueStatuses
+    enumCache.issuePriorities = fallbackIssuePriorities
+    enumCache.opportunityStages = fallbackOpportunityStages
   }
 }
 
@@ -99,14 +136,21 @@ export const fetchEnums = async (): Promise<void> => {
  * Get issue status options for dropdowns
  */
 export const getIssueStatuses = (): Array<{ value: number; label: string }> => {
-  return enumCache.issueStatuses || []
+  return enumCache.issueStatuses || fallbackIssueStatuses
 }
 
 /**
  * Get issue priority options for dropdowns
  */
 export const getIssuePriorities = (): Array<{ value: number; label: string }> => {
-  return enumCache.issuePriorities || []
+  return enumCache.issuePriorities || fallbackIssuePriorities
+}
+
+/**
+ * Get opportunity stage options for dropdowns
+ */
+export const getOpportunityStages = (): Array<{ value: number; label: string }> => {
+  return enumCache.opportunityStages || fallbackOpportunityStages
 }
 
 /**
@@ -124,5 +168,14 @@ export const issueStatusToString = (status: number): string => {
 export const issuePriorityToString = (priority: number): string => {
   const priorities = getIssuePriorities()
   const found = priorities.find((p) => p.value === priority)
+  return found ? found.label : 'Unknown'
+}
+
+/**
+ * Convert opportunity stage value to display string
+ */
+export const opportunityStageToString = (stage: number): string => {
+  const stages = getOpportunityStages()
+  const found = stages.find((s) => s.value === stage)
   return found ? found.label : 'Unknown'
 }

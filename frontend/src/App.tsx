@@ -12,6 +12,9 @@ import ContactForm from './pages/Contacts/ContactForm'
 import IssuesList from './pages/Issues/IssuesList'
 import IssueDetail from './pages/Issues/IssueDetail'
 import IssueForm from './pages/Issues/IssueForm'
+import OpportunitiesList from './pages/Opportunities/OpportunitiesList'
+import OpportunityDetail from './pages/Opportunities/OpportunityDetail'
+import OpportunityForm from './pages/Opportunities/OpportunityForm'
 import EmployeesList from './pages/Employees/EmployeesList'
 import EmployeeDetail from './pages/Employees/EmployeeDetail'
 import EmployeeForm from './pages/Employees/EmployeeForm'
@@ -49,6 +52,12 @@ function App() {
             <Route path="issues/new" element={<IssueForm />} />
             <Route path="issues/:id" element={<IssueDetail />} />
             <Route path="issues/:id/edit" element={<IssueForm />} />
+
+            {/* Opportunities routes */}
+            <Route path="opportunities" element={<OpportunitiesList />} />
+            <Route path="opportunities/new" element={<OpportunityForm />} />
+            <Route path="opportunities/:id" element={<OpportunityDetail />} />
+            <Route path="opportunities/:id/edit" element={<OpportunityForm />} />
             
             {/* Employees routes */}
             <Route path="employees" element={<EmployeesList />} />
