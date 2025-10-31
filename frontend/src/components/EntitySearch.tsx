@@ -74,12 +74,12 @@ export default function EntitySearch({
 
     // Add search parameter
     if (debouncedSearchTerm) {
-      params.push(`$search="${encodeURIComponent(debouncedSearchTerm)}"`)
+      params.push(`$search=${encodeURIComponent(debouncedSearchTerm)}`)
     }
 
     // Add sort parameter
     if (sortBy) {
-      params.push(`$orderby=${sortBy}`)
+      params.push(`$orderby=${encodeURIComponent(sortBy)}`)
     }
 
     // Add filter parameters
@@ -96,7 +96,7 @@ export default function EntitySearch({
       }
     })
     if (filterConditions.length > 0) {
-      params.push(`$filter=${filterConditions.join(' and ')}`)
+      params.push(`$filter=${encodeURIComponent(filterConditions.join(' and '))}`)
     }
 
     // Add pagination
