@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
+import { mergeODataQuery } from '../../lib/odataUtils'
 import { Employee } from '../../types'
 import EntitySearch from '../../components/EntitySearch'
 
 export default function EmployeesList() {
-  const [odataQuery, setOdataQuery] = useState('?$count=true&$top=10&$skip=0')
+  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+
+  // Build OData query
+  const odataQuery = mergeODataQuery(searchQuery, {})
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['employees', odataQuery],
@@ -31,19 +35,6 @@ export default function EmployeesList() {
   }
 
   const employees = data?.items || []
-
-  const handleQueryChange = (query: string) => {
-    setOdataQuery(query || '?$count=true')
-  }
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size)
-    setCurrentPage(1) // Reset to first page when changing page size
-  }
 
   return (
     <div className="space-y-6">
@@ -78,12 +69,15 @@ export default function EmployeesList() {
             type: 'text',
           },
         ]}
-        onQueryChange={handleQueryChange}
+        onQueryChange={setSearchQuery}
         totalCount={data?.count || 0}
         currentPage={currentPage}
         pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size)
+          setCurrentPage(1)
+        }}
       />
 
       <div className="grid grid-cols-1 gap-4">

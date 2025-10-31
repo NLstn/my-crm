@@ -86,12 +86,14 @@ export default function EntitySearch({
     const filterConditions: string[] = []
     Object.entries(filters).forEach(([key, value]) => {
       if (value) {
+        // Escape single quotes in values to prevent injection
+        const escapedValue = value.replace(/'/g, "''")
         // Handle different filter types
         const filterOption = filterOptions.find(f => f.key === key)
         if (filterOption?.type === 'select') {
-          filterConditions.push(`${key} eq '${value}'`)
+          filterConditions.push(`${key} eq '${escapedValue}'`)
         } else {
-          filterConditions.push(`contains(${key}, '${value}')`)
+          filterConditions.push(`contains(${key}, '${escapedValue}')`)
         }
       }
     })
@@ -126,8 +128,9 @@ export default function EntitySearch({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
+              aria-label={searchPlaceholder}
             />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
               🔍
             </div>
           </div>
