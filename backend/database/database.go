@@ -67,92 +67,64 @@ func SeedData(db *gorm.DB) error {
 
 	log.Println("Seeding database with sample data...")
 
-	// Create sample employees first
-	hireDate1 := time.Date(2020, 5, 15, 0, 0, 0, 0, time.UTC)
-	hireDate2 := time.Date(2019, 3, 10, 0, 0, 0, 0, time.UTC)
-	hireDate3 := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
+	// Create 20 employees
+	firstNames := []string{"Alice", "Bob", "Carol", "David", "Emma", "Frank", "Grace", "Henry", "Iris", "Jack", "Kate", "Liam", "Maya", "Noah", "Olivia", "Paul", "Quinn", "Rachel", "Sam", "Tina"}
+	lastNames := []string{"Johnson", "Williams", "Martinez", "Brown", "Davis", "Miller", "Wilson", "Moore", "Taylor", "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Garcia", "Robinson", "Clark", "Rodriguez"}
+	departments := []string{"Sales", "Engineering", "Support", "Marketing", "Finance", "HR", "Operations", "Product", "Legal", "IT"}
+	positions := []string{"Manager", "Senior Developer", "Specialist", "Director", "Analyst", "Coordinator", "Lead", "Associate", "Consultant", "Engineer"}
 
-	employees := []models.Employee{
-		{
-			FirstName:  "Alice",
-			LastName:   "Johnson",
-			Email:      "alice.johnson@company.com",
-			Phone:      "+1-555-1001",
-			Department: "Sales",
-			Position:   "Sales Manager",
-			HireDate:   &hireDate1,
-			Notes:      "Leads the sales team",
-		},
-		{
-			FirstName:  "Bob",
-			LastName:   "Williams",
-			Email:      "bob.williams@company.com",
-			Phone:      "+1-555-1002",
-			Department: "Engineering",
-			Position:   "Senior Developer",
-			HireDate:   &hireDate2,
-			Notes:      "Full-stack developer",
-		},
-		{
-			FirstName:  "Carol",
-			LastName:   "Martinez",
-			Email:      "carol.martinez@company.com",
-			Phone:      "+1-555-1003",
-			Department: "Support",
-			Position:   "Support Specialist",
-			HireDate:   &hireDate3,
-			Notes:      "Handles customer support",
-		},
+	employees := make([]models.Employee, 20)
+	for i := 0; i < 20; i++ {
+		hireDate := time.Date(2018+i%5, time.Month(1+(i%12)), 1+(i%28), 0, 0, 0, 0, time.UTC)
+		employees[i] = models.Employee{
+			FirstName:  firstNames[i],
+			LastName:   lastNames[i],
+			Email:      fmt.Sprintf("%s.%s@company.com", firstNames[i], lastNames[i]),
+			Phone:      fmt.Sprintf("+1-555-%04d", 1001+i),
+			Department: departments[i%len(departments)],
+			Position:   positions[i%len(positions)],
+			HireDate:   &hireDate,
+			Notes:      fmt.Sprintf("Employee %d", i+1),
+		}
 	}
 
 	if err := db.Create(&employees).Error; err != nil {
 		return fmt.Errorf("failed to create employees: %w", err)
 	}
 
-	// Create sample accounts
-	accounts := []models.Account{
-		{
-			Name:        "Acme Corporation",
-			Industry:    "Technology",
-			Website:     "https://acme.example.com",
-			Phone:       "+1-555-0100",
-			Email:       "contact@acme.example.com",
-			Address:     "123 Tech Street",
-			City:        "San Francisco",
-			State:       "CA",
+	// Create 30 accounts
+	accountNames := []string{"Acme Corporation", "Global Industries Inc", "Retail Masters Ltd", "Tech Innovations LLC", "Green Energy Solutions", 
+		"Medical Services Group", "Financial Advisors Inc", "Education Systems", "Transport Logistics", "Food Services Co",
+		"Manufacturing Plus", "Software Systems", "Consulting Group", "Marketing Agency", "Real Estate Partners",
+		"Construction Corp", "Telecom Services", "Insurance Providers", "Legal Associates", "Entertainment Media",
+		"Fitness Centers", "Automotive Group", "Aerospace Technologies", "Pharmaceutical Labs", "Agriculture Corp",
+		"Hospitality Services", "Fashion Retail", "Publishing House", "Security Systems", "Environmental Solutions"}
+	accountDomains := []string{"acme", "globalindustries", "retailmasters", "techinnovations", "greenenergy", 
+		"medicalservices", "financialadvisors", "educationsystems", "transportlogistics", "foodservices",
+		"manufacturingplus", "softwaresystems", "consultinggroup", "marketingagency", "realestatepartners",
+		"constructioncorp", "telecomservices", "insuranceproviders", "legalassociates", "entertainmentmedia",
+		"fitnesscenters", "automotivegroup", "aerospacetechnologies", "pharmalabs", "agriculturecorp",
+		"hospitalityservices", "fashionretail", "publishinghouse", "securitysystems", "environmentalsolutions"}
+	industries := []string{"Technology", "Manufacturing", "Retail", "Healthcare", "Finance", "Education", "Logistics", "Food & Beverage", "Consulting", "Marketing"}
+	cities := []string{"San Francisco", "Detroit", "New York", "Austin", "Seattle", "Boston", "Chicago", "Denver", "Atlanta", "Los Angeles"}
+	states := []string{"CA", "MI", "NY", "TX", "WA", "MA", "IL", "CO", "GA", "FL"}
+
+	accounts := make([]models.Account, 30)
+	for i := 0; i < 30; i++ {
+		accounts[i] = models.Account{
+			Name:        accountNames[i],
+			Industry:    industries[i%len(industries)],
+			Website:     fmt.Sprintf("https://%s.example.com", accountDomains[i]),
+			Phone:       fmt.Sprintf("+1-555-%04d", 100+i*10),
+			Email:       fmt.Sprintf("contact@%s.example.com", accountDomains[i]),
+			Address:     fmt.Sprintf("%d Business Street", 100+i*10),
+			City:        cities[i%len(cities)],
+			State:       states[i%len(states)],
 			Country:     "USA",
-			PostalCode:  "94105",
-			Description: "Leading technology solutions provider",
-			EmployeeID:  &employees[0].ID,
-		},
-		{
-			Name:        "Global Industries Inc",
-			Industry:    "Manufacturing",
-			Website:     "https://globalindustries.example.com",
-			Phone:       "+1-555-0200",
-			Email:       "info@globalindustries.example.com",
-			Address:     "456 Industrial Blvd",
-			City:        "Detroit",
-			State:       "MI",
-			Country:     "USA",
-			PostalCode:  "48201",
-			Description: "International manufacturing company",
-			EmployeeID:  &employees[1].ID,
-		},
-		{
-			Name:        "Retail Masters Ltd",
-			Industry:    "Retail",
-			Website:     "https://retailmasters.example.com",
-			Phone:       "+1-555-0300",
-			Email:       "support@retailmasters.example.com",
-			Address:     "789 Commerce Ave",
-			City:        "New York",
-			State:       "NY",
-			Country:     "USA",
-			PostalCode:  "10001",
-			Description: "Premier retail solutions company",
-			EmployeeID:  &employees[2].ID,
-		},
+			PostalCode:  fmt.Sprintf("%05d", 10000+i*100),
+			Description: fmt.Sprintf("Account for %s", accountNames[i]),
+			EmployeeID:  &employees[i%len(employees)].ID,
+		}
 	}
 
 	for i := range accounts {
@@ -161,47 +133,32 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
-	// Create sample contacts
-	contacts := []models.Contact{
-		{
-			AccountID: accounts[0].ID,
-			FirstName: "John",
-			LastName:  "Smith",
-			Title:     "CTO",
-			Email:     "john.smith@acme.example.com",
-			Phone:     "+1-555-0101",
-			Mobile:    "+1-555-0102",
-			IsPrimary: true,
-			Notes:     "Primary technical contact",
-		},
-		{
-			AccountID: accounts[0].ID,
-			FirstName: "Sarah",
-			LastName:  "Johnson",
-			Title:     "VP of Engineering",
-			Email:     "sarah.johnson@acme.example.com",
-			Phone:     "+1-555-0103",
-			IsPrimary: false,
-		},
-		{
-			AccountID: accounts[1].ID,
-			FirstName: "Michael",
-			LastName:  "Brown",
-			Title:     "Operations Manager",
-			Email:     "michael.brown@globalindustries.example.com",
-			Phone:     "+1-555-0201",
-			IsPrimary: true,
-		},
-		{
-			AccountID: accounts[2].ID,
-			FirstName: "Emily",
-			LastName:  "Davis",
-			Title:     "Director of Sales",
-			Email:     "emily.davis@retailmasters.example.com",
-			Phone:     "+1-555-0301",
-			Mobile:    "+1-555-0302",
-			IsPrimary: true,
-		},
+	// Create at least 1 contact per account (40 contacts total)
+	contactFirstNames := []string{"John", "Sarah", "Michael", "Emily", "James", "Patricia", "Robert", "Jennifer", "William", "Linda",
+		"Richard", "Barbara", "Joseph", "Susan", "Thomas", "Jessica", "Charles", "Karen", "Christopher", "Nancy",
+		"Daniel", "Betty", "Matthew", "Helen", "Donald", "Margaret", "Mark", "Ruth", "Paul", "Sharon",
+		"George", "Michelle", "Kenneth", "Laura", "Steven", "Sandra", "Edward", "Donna", "Brian", "Carol"}
+	contactLastNames := []string{"Smith", "Johnson", "Brown", "Davis", "Miller", "Wilson", "Moore", "Taylor", "Anderson", "Thomas",
+		"Jackson", "White", "Harris", "Martin", "Thompson", "Garcia", "Martinez", "Robinson", "Clark", "Rodriguez",
+		"Lewis", "Lee", "Walker", "Hall", "Allen", "Young", "King", "Wright", "Lopez", "Hill",
+		"Scott", "Green", "Adams", "Baker", "Nelson", "Carter", "Mitchell", "Perez", "Roberts", "Turner"}
+	titles := []string{"CTO", "VP of Engineering", "Operations Manager", "Director of Sales", "CEO", "CFO", "COO", "President", "Manager", "Director"}
+
+	contacts := make([]models.Contact, 40)
+	for i := 0; i < 40; i++ {
+		accountIndex := i % 30 // Ensure at least 1 contact per account
+		isPrimary := i < 30    // First contact for each account is primary
+		contacts[i] = models.Contact{
+			AccountID: accounts[accountIndex].ID,
+			FirstName: contactFirstNames[i],
+			LastName:  contactLastNames[i],
+			Title:     titles[i%len(titles)],
+			Email:     fmt.Sprintf("%s.%s@%s.example.com", contactFirstNames[i], contactLastNames[i], accountDomains[accountIndex]),
+			Phone:     fmt.Sprintf("+1-555-%04d", 2000+i),
+			Mobile:    fmt.Sprintf("+1-555-%04d", 3000+i),
+			IsPrimary: isPrimary,
+			Notes:     fmt.Sprintf("Contact %d for %s", i+1, accountNames[accountIndex]),
+		}
 	}
 
 	for i := range contacts {
@@ -210,45 +167,48 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
-	// Create sample issues
-	issues := []models.Issue{
-		{
-			AccountID:   accounts[0].ID,
-			ContactID:   &contacts[0].ID,
-			Title:       "System integration issue",
-			Description: "Need help integrating our API with your platform",
-			Status:      models.IssueStatusInProgress,
-			Priority:    models.IssuePriorityHigh,
-			AssignedTo:  "Tech Support Team",
-			EmployeeID:  &employees[1].ID,
-		},
-		{
-			AccountID:   accounts[0].ID,
-			Title:       "Feature request: Custom reporting",
-			Description: "Would like to see custom reporting capabilities",
-			Status:      models.IssueStatusNew,
-			Priority:    models.IssuePriorityMedium,
-			EmployeeID:  &employees[1].ID,
-		},
-		{
-			AccountID:   accounts[1].ID,
-			ContactID:   &contacts[2].ID,
-			Title:       "Performance optimization needed",
-			Description: "System is running slower than expected during peak hours",
-			Status:      models.IssueStatusInProgress,
-			Priority:    models.IssuePriorityCritical,
-			AssignedTo:  "Engineering Team",
-			EmployeeID:  &employees[1].ID,
-		},
-		{
-			AccountID:   accounts[2].ID,
-			ContactID:   &contacts[3].ID,
-			Title:       "Training request",
-			Description: "Need training session for new team members",
-			Status:      models.IssueStatusNew,
-			Priority:    models.IssuePriorityLow,
-			EmployeeID:  &employees[2].ID,
-		},
+	// Create 80 issues (tickets)
+	issueTitles := []string{"System integration issue", "Feature request", "Performance optimization needed", "Training request", 
+		"Bug report", "Data migration", "Security concern", "API documentation update", "UI improvement", "Database backup issue",
+		"Network connectivity", "Software update", "Hardware replacement", "User account setup", "Email configuration",
+		"Report generation", "Dashboard customization", "Mobile app issue", "Payment processing", "Invoice generation",
+		"Data export", "User permissions", "System backup", "Server maintenance", "Load balancing", 
+		"SSL certificate", "DNS configuration", "Firewall rule", "VPN access", "Cloud migration",
+		"Disaster recovery", "Performance tuning", "Code review", "Testing support", "Deployment issue",
+		"Monitoring setup", "Logging configuration", "Alert setup", "Backup verification", "Recovery test",
+		"Integration testing", "User acceptance", "Documentation update", "Knowledge base", "FAQ update",
+		"Video tutorial", "Training material", "User guide", "API reference", "Release notes"}
+	issueDescriptions := []string{"Need assistance with this issue", "Requesting this feature", "Performance needs improvement", 
+		"Training is required", "Bug needs to be fixed", "Data needs migration", "Security review needed", "Documentation needs update",
+		"UI needs enhancement", "Backup issue detected"}
+	statuses := []models.IssueStatus{models.IssueStatusNew, models.IssueStatusInProgress, models.IssueStatusPending, models.IssueStatusResolved, models.IssueStatusClosed}
+	priorities := []models.IssuePriority{models.IssuePriorityLow, models.IssuePriorityMedium, models.IssuePriorityHigh, models.IssuePriorityCritical}
+	teams := []string{"Tech Support Team", "Engineering Team", "Sales Team", "Operations Team", "IT Team", "Security Team", "DevOps Team", "QA Team"}
+
+	issues := make([]models.Issue, 80)
+	for i := 0; i < 80; i++ {
+		accountIndex := i % 30
+		employeeIndex := i % 20
+		// Find a contact that belongs to this account
+		// Since we have 40 contacts and first 30 are primary contacts for the 30 accounts,
+		// we can safely use contacts that match the account index
+		var contactID *uint
+		for j := 0; j < len(contacts); j++ {
+			if contacts[j].AccountID == accounts[accountIndex].ID {
+				contactID = &contacts[j].ID
+				break
+			}
+		}
+		issues[i] = models.Issue{
+			AccountID:   accounts[accountIndex].ID,
+			ContactID:   contactID,
+			Title:       fmt.Sprintf("%s - #%d", issueTitles[i%len(issueTitles)], i+1),
+			Description: issueDescriptions[i%len(issueDescriptions)],
+			Status:      statuses[i%len(statuses)],
+			Priority:    priorities[i%len(priorities)],
+			AssignedTo:  teams[i%len(teams)],
+			EmployeeID:  &employees[employeeIndex].ID,
+		}
 	}
 
 	for i := range issues {
@@ -257,58 +217,26 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
-	// Create sample products
-	products := []models.Product{
-		{
-			Name:        "CRM Enterprise License",
-			SKU:         "CRM-ENT-001",
-			Category:    "Software",
-			Description: "Enterprise CRM software license with unlimited users",
-			Price:       9999.99,
-			Cost:        5000.00,
-			Stock:       100,
+	// Create 20 products
+	productNames := []string{"CRM Enterprise License", "Support Package - Premium", "Training Session - Basic", "API Integration Module", "Custom Dashboard",
+		"Mobile App License", "Analytics Module", "Reporting Tools", "Security Package", "Backup Service",
+		"Cloud Storage", "Email Marketing", "Social Media Integration", "Payment Gateway", "Inventory Management",
+		"HR Management Module", "Project Management", "Time Tracking", "Document Management", "Customer Portal"}
+	categories := []string{"Software", "Service", "Module", "Customization", "Integration"}
+	
+	products := make([]models.Product, 20)
+	for i := 0; i < 20; i++ {
+		basePrice := float64(500 + i*500)
+		products[i] = models.Product{
+			Name:        productNames[i],
+			SKU:         fmt.Sprintf("PRD-%03d", i+1),
+			Category:    categories[i%len(categories)],
+			Description: fmt.Sprintf("Description for %s", productNames[i]),
+			Price:       basePrice,
+			Cost:        basePrice * 0.5,
+			Stock:       25 + i*5,
 			IsActive:    true,
-		},
-		{
-			Name:        "Support Package - Premium",
-			SKU:         "SUP-PREM-001",
-			Category:    "Service",
-			Description: "24/7 premium support package with dedicated account manager",
-			Price:       2999.99,
-			Cost:        1500.00,
-			Stock:       50,
-			IsActive:    true,
-		},
-		{
-			Name:        "Training Session - Basic",
-			SKU:         "TRN-BAS-001",
-			Category:    "Service",
-			Description: "4-hour basic training session for new users",
-			Price:       499.99,
-			Cost:        200.00,
-			Stock:       25,
-			IsActive:    true,
-		},
-		{
-			Name:        "API Integration Module",
-			SKU:         "INT-API-001",
-			Category:    "Software",
-			Description: "Advanced API integration module for third-party systems",
-			Price:       1999.99,
-			Cost:        800.00,
-			Stock:       75,
-			IsActive:    true,
-		},
-		{
-			Name:        "Custom Dashboard",
-			SKU:         "DASH-CUS-001",
-			Category:    "Customization",
-			Description: "Custom dashboard development service",
-			Price:       3499.99,
-			Cost:        1800.00,
-			Stock:       10,
-			IsActive:    true,
-		},
+		}
 	}
 
 	for i := range products {
