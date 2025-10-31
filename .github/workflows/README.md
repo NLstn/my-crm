@@ -12,7 +12,7 @@ This directory contains GitHub Actions workflows for continuous integration and 
 
 **Steps:**
 1. Checkout code
-2. Set up Go 1.24 with dependency caching
+2. Set up Go 1.25 with dependency caching
 3. Download and verify Go dependencies
 4. Build the backend application
 5. Run tests with race detection and coverage
