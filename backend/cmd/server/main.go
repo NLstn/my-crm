@@ -57,6 +57,18 @@ func main() {
 		log.Fatal("Failed to register IssuePriority enum:", err)
 	}
 
+	if err := odata.RegisterEnumType(models.OpportunityStage(1), map[string]int64{
+		"Prospecting":   int64(models.OpportunityStageProspecting),
+		"Qualification": int64(models.OpportunityStageQualification),
+		"NeedsAnalysis": int64(models.OpportunityStageNeedsAnalysis),
+		"Proposal":      int64(models.OpportunityStageProposal),
+		"Negotiation":   int64(models.OpportunityStageNegotiation),
+		"ClosedWon":     int64(models.OpportunityStageClosedWon),
+		"ClosedLost":    int64(models.OpportunityStageClosedLost),
+	}); err != nil {
+		log.Fatal("Failed to register OpportunityStage enum:", err)
+	}
+
 	// Register entities - must use go-odata for ALL APIs
 	if err := service.RegisterEntity(&models.Account{}); err != nil {
 		log.Fatal("Failed to register Account entity:", err)
@@ -76,6 +88,10 @@ func main() {
 
 	if err := service.RegisterEntity(&models.Product{}); err != nil {
 		log.Fatal("Failed to register Product entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.Opportunity{}); err != nil {
+		log.Fatal("Failed to register Opportunity entity:", err)
 	}
 
 	// Create HTTP server with logging and CORS middleware
@@ -100,6 +116,7 @@ func main() {
 	fmt.Println("Issues:            http://localhost:" + port + "/Issues")
 	fmt.Println("Employees:         http://localhost:" + port + "/Employees")
 	fmt.Println("Products:          http://localhost:" + port + "/Products")
+	fmt.Println("Opportunities:     http://localhost:" + port + "/Opportunities")
 	fmt.Println("========================================")
 	fmt.Println("All APIs are built using go-odata (OData v4 compliant)")
 	fmt.Println("Health Check:      http://localhost:" + port + "/health")

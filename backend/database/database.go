@@ -45,6 +45,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Issue{},
 		&models.Employee{},
 		&models.Product{},
+		&models.Opportunity{},
 	)
 
 	if err != nil {
@@ -93,13 +94,13 @@ func SeedData(db *gorm.DB) error {
 	}
 
 	// Create 30 accounts
-	accountNames := []string{"Acme Corporation", "Global Industries Inc", "Retail Masters Ltd", "Tech Innovations LLC", "Green Energy Solutions", 
+	accountNames := []string{"Acme Corporation", "Global Industries Inc", "Retail Masters Ltd", "Tech Innovations LLC", "Green Energy Solutions",
 		"Medical Services Group", "Financial Advisors Inc", "Education Systems", "Transport Logistics", "Food Services Co",
 		"Manufacturing Plus", "Software Systems", "Consulting Group", "Marketing Agency", "Real Estate Partners",
 		"Construction Corp", "Telecom Services", "Insurance Providers", "Legal Associates", "Entertainment Media",
 		"Fitness Centers", "Automotive Group", "Aerospace Technologies", "Pharmaceutical Labs", "Agriculture Corp",
 		"Hospitality Services", "Fashion Retail", "Publishing House", "Security Systems", "Environmental Solutions"}
-	accountDomains := []string{"acme", "globalindustries", "retailmasters", "techinnovations", "greenenergy", 
+	accountDomains := []string{"acme", "globalindustries", "retailmasters", "techinnovations", "greenenergy",
 		"medicalservices", "financialadvisors", "educationsystems", "transportlogistics", "foodservices",
 		"manufacturingplus", "softwaresystems", "consultinggroup", "marketingagency", "realestatepartners",
 		"constructioncorp", "telecomservices", "insuranceproviders", "legalassociates", "entertainmentmedia",
@@ -144,6 +145,7 @@ func SeedData(db *gorm.DB) error {
 		"Scott", "Green", "Adams", "Baker", "Nelson", "Carter", "Mitchell", "Perez", "Roberts", "Turner"}
 	titles := []string{"CTO", "VP of Engineering", "Operations Manager", "Director of Sales", "CEO", "CFO", "COO", "President", "Manager", "Director"}
 
+	contactIDsByAccount := make(map[uint][]uint)
 	contacts := make([]models.Contact, 40)
 	for i := 0; i < 40; i++ {
 		accountIndex := i % 30 // Ensure at least 1 contact per account
@@ -165,20 +167,98 @@ func SeedData(db *gorm.DB) error {
 		if err := db.Create(&contacts[i]).Error; err != nil {
 			return fmt.Errorf("failed to create contact: %w", err)
 		}
+		contactIDsByAccount[contacts[i].AccountID] = append(contactIDsByAccount[contacts[i].AccountID], contacts[i].ID)
+	}
+
+	// Create 18 opportunities tied to existing accounts, contacts, and employees
+	opportunityNames := []string{
+		"CRM Expansion",
+		"Support Renewal",
+		"Analytics Suite Upgrade",
+		"Global Rollout",
+		"Integration Project",
+		"Premium Support Upsell",
+		"Training Program",
+		"Mobile App Deployment",
+		"Data Migration",
+		"Customer Portal Refresh",
+		"Automation Initiative",
+		"Security Review",
+		"Multi-year Renewal",
+		"Executive Workshop",
+		"Cloud Migration",
+		"Regional Rollout",
+		"Strategic Partnership",
+		"AI Enablement",
+	}
+	stageRotation := []models.OpportunityStage{
+		models.OpportunityStageProspecting,
+		models.OpportunityStageQualification,
+		models.OpportunityStageNeedsAnalysis,
+		models.OpportunityStageProposal,
+		models.OpportunityStageNegotiation,
+		models.OpportunityStageClosedWon,
+		models.OpportunityStageClosedLost,
+	}
+
+	opportunities := make([]models.Opportunity, len(opportunityNames))
+	for i := range opportunityNames {
+		account := accounts[i%len(accounts)]
+		owner := employees[(i*3)%len(employees)]
+		stage := stageRotation[i%len(stageRotation)]
+
+		var contactID *uint
+		if ids := contactIDsByAccount[account.ID]; len(ids) > 0 {
+			id := ids[i%len(ids)]
+			contactID = &id
+		}
+
+		amount := 25000.0 + float64((i%6))*12500.0
+		probability := 35 + (i%5)*12
+		expectedClose := time.Now().AddDate(0, (i%6)-1, 12+(i%7))
+		if stage == models.OpportunityStageClosedWon {
+			probability = 100
+			expectedClose = time.Now().AddDate(0, -1, -i)
+		} else if stage == models.OpportunityStageClosedLost {
+			probability = 0
+			expectedClose = time.Now().AddDate(0, -2, -i)
+		} else if probability > 95 {
+			probability = 95
+		}
+
+		description := fmt.Sprintf("%s opportunity for %s with focus on solution alignment and value realization.", opportunityNames[i], account.Name)
+
+		opportunities[i] = models.Opportunity{
+			Name:              fmt.Sprintf("%s - %s", account.Name, opportunityNames[i]),
+			AccountID:         account.ID,
+			ContactID:         contactID,
+			OwnerEmployeeID:   &owner.ID,
+			Amount:            amount,
+			Probability:       probability,
+			ExpectedCloseDate: &expectedClose,
+			Stage:             stage,
+			Description:       description,
+		}
+	}
+
+	for i := range opportunities {
+		if err := db.Create(&opportunities[i]).Error; err != nil {
+			return fmt.Errorf("failed to create opportunity: %w", err)
+		}
 	}
 
 	// Create 80 issues (tickets)
-	issueTitles := []string{"System integration issue", "Feature request", "Performance optimization needed", "Training request", 
+	issueTitles := []string{"System integration issue", "Feature request", "Performance optimization needed", "Training request",
 		"Bug report", "Data migration", "Security concern", "API documentation update", "UI improvement", "Database backup issue",
 		"Network connectivity", "Software update", "Hardware replacement", "User account setup", "Email configuration",
 		"Report generation", "Dashboard customization", "Mobile app issue", "Payment processing", "Invoice generation",
-		"Data export", "User permissions", "System backup", "Server maintenance", "Load balancing", 
+		"Data export", "User permissions", "System backup", "Server maintenance", "Load balancing",
 		"SSL certificate", "DNS configuration", "Firewall rule", "VPN access", "Cloud migration",
 		"Disaster recovery", "Performance tuning", "Code review", "Testing support", "Deployment issue",
 		"Monitoring setup", "Logging configuration", "Alert setup", "Backup verification", "Recovery test",
 		"Integration testing", "User acceptance", "Documentation update", "Knowledge base", "FAQ update",
 		"Video tutorial", "Training material", "User guide", "API reference", "Release notes"}
-	issueDescriptions := []string{"Need assistance with this issue", "Requesting this feature", "Performance needs improvement", 
+	issueDescriptions := []string{"Need assistance with this issue", "Requesting this feature", "Performance needs improvement",
 		"Training is required", "Bug needs to be fixed", "Data needs migration", "Security review needed", "Documentation needs update",
 		"UI needs enhancement", "Backup issue detected"}
 	statuses := []models.IssueStatus{models.IssueStatusNew, models.IssueStatusInProgress, models.IssueStatusPending, models.IssueStatusResolved, models.IssueStatusClosed}
@@ -223,7 +303,7 @@ func SeedData(db *gorm.DB) error {
 		"Cloud Storage", "Email Marketing", "Social Media Integration", "Payment Gateway", "Inventory Management",
 		"HR Management Module", "Project Management", "Time Tracking", "Document Management", "Customer Portal"}
 	categories := []string{"Software", "Service", "Module", "Customization", "Integration"}
-	
+
 	products := make([]models.Product, 20)
 	for i := 0; i < 20; i++ {
 		basePrice := float64(500 + i*500)

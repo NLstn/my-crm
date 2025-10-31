@@ -2,8 +2,29 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
-import { Contact } from '../../types'
+import { Contact, opportunityStageToString } from '../../types'
 import { Button } from '../../components/ui'
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 0,
+})
+
+const getOpportunityStageBadge = (stage: number) => {
+  switch (stage) {
+    case 6:
+      return 'badge-success'
+    case 7:
+      return 'badge-error'
+    case 5:
+      return 'badge-warning'
+    case 4:
+      return 'badge-primary'
+    default:
+      return 'badge-secondary'
+  }
+}
 
 export default function ContactDetail() {
   const { id } = useParams<{ id: string }>()
@@ -14,7 +35,7 @@ export default function ContactDetail() {
   const { data: contact, isLoading, error } = useQuery({
     queryKey: ['contact', id],
     queryFn: async () => {
-      const response = await api.get(`/Contacts(${id})?$expand=Account`)
+      const response = await api.get(`/Contacts(${id})?$expand=Account,Opportunities($expand=Account,Owner)`)
       return response.data as Contact
     },
   })
@@ -117,6 +138,70 @@ export default function ContactDetail() {
             </>
           )}
         </dl>
+      </div>
+
+      {/* Opportunities */}
+      <div className="card p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Opportunities ({contact.Opportunities?.length || 0})
+          </h2>
+          <Link
+            to={`/opportunities/new?accountId=${contact.AccountID}&contactId=${id}`}
+            className="btn btn-secondary text-sm"
+          >
+            Log Opportunity
+          </Link>
+        </div>
+        {contact.Opportunities && contact.Opportunities.length > 0 ? (
+          <div className="space-y-3">
+            {contact.Opportunities.map((opportunity) => (
+              <Link
+                key={opportunity.ID}
+                to={`/opportunities/${opportunity.ID}`}
+                className="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {opportunity.Name}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
+                      <span className={`badge ${getOpportunityStageBadge(opportunity.Stage)}`}>
+                        {opportunityStageToString(opportunity.Stage)}
+                      </span>
+                      <span className="badge badge-primary">
+                        {currencyFormatter.format(opportunity.Amount)}
+                      </span>
+                      <span className="badge badge-secondary">{opportunity.Probability}% probability</span>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 text-left md:text-right">
+                    {opportunity.ExpectedCloseDate ? (
+                      <>Expected close {new Date(opportunity.ExpectedCloseDate).toLocaleDateString()}</>
+                    ) : (
+                      'Expected close TBD'
+                    )}
+                    {opportunity.Account && (
+                      <div className="mt-1">
+                        🏢 {opportunity.Account.Name}
+                      </div>
+                    )}
+                    {opportunity.Owner && (
+                      <div className="mt-1">
+                        👥 {opportunity.Owner.FirstName} {opportunity.Owner.LastName}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600 dark:text-gray-400 text-center py-4">
+            No opportunities linked to this contact yet
+          </p>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

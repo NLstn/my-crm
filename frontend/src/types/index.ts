@@ -16,6 +16,7 @@ export interface Account {
   UpdatedAt: string
   Contacts?: Contact[]
   Issues?: Issue[]
+  Opportunities?: Opportunity[]
   Employee?: Employee
 }
 
@@ -33,6 +34,7 @@ export interface Contact {
   CreatedAt: string
   UpdatedAt: string
   Account?: Account
+  Opportunities?: Opportunity[]
 }
 
 export interface Issue {
@@ -55,6 +57,24 @@ export interface Issue {
   Employee?: Employee
 }
 
+export interface Opportunity {
+  ID: number
+  AccountID: number
+  ContactID?: number
+  OwnerEmployeeID?: number
+  Name: string
+  Amount: number
+  Probability: number
+  ExpectedCloseDate?: string
+  Stage: number
+  Description?: string
+  CreatedAt: string
+  UpdatedAt: string
+  Account?: Account
+  Contact?: Contact
+  Owner?: Employee
+}
+
 // Re-export enum utilities from lib/enums
 // These are now dynamically loaded from the backend OData metadata
 export {
@@ -62,6 +82,8 @@ export {
   issuePriorityToString,
   getIssueStatuses as ISSUE_STATUSES,
   getIssuePriorities as ISSUE_PRIORITIES,
+  getOpportunityStages as OPPORTUNITY_STAGES,
+  opportunityStageToString,
 } from '../lib/enums'
 
 export interface Employee {
