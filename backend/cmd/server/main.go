@@ -74,6 +74,10 @@ func main() {
 		log.Fatal("Failed to register Employee entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.Product{}); err != nil {
+		log.Fatal("Failed to register Product entity:", err)
+	}
+
 	// Create HTTP server with logging and CORS middleware
 	mux := http.NewServeMux()
 	mux.Handle("/", loggingMiddleware(corsMiddleware(service)))
@@ -95,6 +99,7 @@ func main() {
 	fmt.Println("Contacts:          http://localhost:" + port + "/Contacts")
 	fmt.Println("Issues:            http://localhost:" + port + "/Issues")
 	fmt.Println("Employees:         http://localhost:" + port + "/Employees")
+	fmt.Println("Products:          http://localhost:" + port + "/Products")
 	fmt.Println("========================================")
 	fmt.Println("All APIs are built using go-odata (OData v4 compliant)")
 	fmt.Println("Health Check:      http://localhost:" + port + "/health")
