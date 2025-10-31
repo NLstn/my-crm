@@ -44,6 +44,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Contact{},
 		&models.Issue{},
 		&models.Employee{},
+		&models.Product{},
 	)
 
 	if err != nil {
@@ -248,6 +249,66 @@ func SeedData(db *gorm.DB) error {
 	for i := range employees {
 		if err := db.Create(&employees[i]).Error; err != nil {
 			return fmt.Errorf("failed to create employee: %w", err)
+		}
+	}
+
+	// Create sample products
+	products := []models.Product{
+		{
+			Name:        "CRM Enterprise License",
+			SKU:         "CRM-ENT-001",
+			Category:    "Software",
+			Description: "Enterprise CRM software license with unlimited users",
+			Price:       9999.99,
+			Cost:        5000.00,
+			Stock:       100,
+			IsActive:    true,
+		},
+		{
+			Name:        "Support Package - Premium",
+			SKU:         "SUP-PREM-001",
+			Category:    "Service",
+			Description: "24/7 premium support package with dedicated account manager",
+			Price:       2999.99,
+			Cost:        1500.00,
+			Stock:       50,
+			IsActive:    true,
+		},
+		{
+			Name:        "Training Session - Basic",
+			SKU:         "TRN-BAS-001",
+			Category:    "Service",
+			Description: "4-hour basic training session for new users",
+			Price:       499.99,
+			Cost:        200.00,
+			Stock:       25,
+			IsActive:    true,
+		},
+		{
+			Name:        "API Integration Module",
+			SKU:         "INT-API-001",
+			Category:    "Software",
+			Description: "Advanced API integration module for third-party systems",
+			Price:       1999.99,
+			Cost:        800.00,
+			Stock:       75,
+			IsActive:    true,
+		},
+		{
+			Name:        "Custom Dashboard",
+			SKU:         "DASH-CUS-001",
+			Category:    "Customization",
+			Description: "Custom dashboard development service",
+			Price:       3499.99,
+			Cost:        1800.00,
+			Stock:       10,
+			IsActive:    true,
+		},
+	}
+
+	for i := range products {
+		if err := db.Create(&products[i]).Error; err != nil {
+			return fmt.Errorf("failed to create product: %w", err)
 		}
 	}
 

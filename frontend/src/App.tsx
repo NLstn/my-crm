@@ -15,6 +15,9 @@ import IssueForm from './pages/Issues/IssueForm'
 import EmployeesList from './pages/Employees/EmployeesList'
 import EmployeeDetail from './pages/Employees/EmployeeDetail'
 import EmployeeForm from './pages/Employees/EmployeeForm'
+import ProductsList from './pages/Products/ProductsList'
+import ProductDetail from './pages/Products/ProductDetail'
+import ProductForm from './pages/Products/ProductForm'
 import { fetchEnums } from './lib/enums'
 
 function App() {
@@ -52,6 +55,12 @@ function App() {
             <Route path="employees/new" element={<EmployeeForm />} />
             <Route path="employees/:id" element={<EmployeeDetail />} />
             <Route path="employees/:id/edit" element={<EmployeeForm />} />
+            
+            {/* Products routes */}
+            <Route path="products" element={<ProductsList />} />
+            <Route path="products/new" element={<ProductForm />} />
+            <Route path="products/:id" element={<ProductDetail />} />
+            <Route path="products/:id/edit" element={<ProductForm />} />
           </Route>
         </Routes>
       </Router>

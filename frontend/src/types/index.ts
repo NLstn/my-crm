@@ -73,3 +73,17 @@ export interface Employee {
   CreatedAt: string
   UpdatedAt: string
 }
+
+export interface Product {
+  ID: number
+  Name: string
+  SKU?: string
+  Category?: string
+  Description?: string
+  Price: number
+  Cost: number
+  Stock: number
+  IsActive: boolean
+  CreatedAt: string
+  UpdatedAt: string
+}
