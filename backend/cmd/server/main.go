@@ -100,6 +100,10 @@ func main() {
 		log.Fatal("Failed to register Issue entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.IssueUpdate{}); err != nil {
+		log.Fatal("Failed to register IssueUpdate entity:", err)
+	}
+
 	if err := service.RegisterEntity(&models.Activity{}); err != nil {
 		log.Fatal("Failed to register Activity entity:", err)
 	}
