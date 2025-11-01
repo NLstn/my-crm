@@ -62,6 +62,7 @@ export interface Lead {
   Source?: string
   Status: LeadStatus
   Notes?: string
+  OwnerEmployeeID?: number
   ConvertedAccountID?: number
   ConvertedContactID?: number
   ConvertedAt?: string
@@ -69,6 +70,7 @@ export interface Lead {
   UpdatedAt: string
   ConvertedAccount?: Account
   ConvertedContact?: Contact
+  OwnerEmployee?: Employee
 }
 
 export interface Issue {

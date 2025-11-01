@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Input, Textarea } from '../../components/ui'
-import { useLead, useLeadMutation } from '../../lib/hooks/leads'
-import type { Lead, LeadStatus } from '../../types'
+import api from '../../lib/api'
+import { useLead, useLeadMutation, type LeadPayload } from '../../lib/hooks/leads'
+import type { Employee, LeadStatus } from '../../types'
 
 const STATUS_OPTIONS: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Converted', 'Disqualified']
 
-type LeadFormState = Partial<Pick<Lead, 'Name' | 'Email' | 'Phone' | 'Company' | 'Title' | 'Website' | 'Source' | 'Status' | 'Notes'>>
+type LeadFormState = LeadPayload
 
 const EMPTY_FORM: LeadFormState = {
   Name: '',
@@ -18,6 +20,7 @@ const EMPTY_FORM: LeadFormState = {
   Source: '',
   Status: 'New',
   Notes: '',
+  OwnerEmployeeID: undefined,
 }
 
 export default function LeadForm() {
@@ -27,6 +30,19 @@ export default function LeadForm() {
 
   const { data: lead } = useLead(id)
   const mutation = useLeadMutation(id)
+
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees', 'lead-form'],
+    queryFn: async () => {
+      const response = await api.get('/Employees', {
+        params: {
+          $select: 'ID,FirstName,LastName',
+          $orderby: 'FirstName asc',
+        },
+      })
+      return response.data
+    },
+  })
 
   const initialFormState = useMemo(() => {
     if (lead) {
@@ -40,6 +56,7 @@ export default function LeadForm() {
         Source: lead.Source || '',
         Status: lead.Status,
         Notes: lead.Notes || '',
+        OwnerEmployeeID: lead.OwnerEmployeeID ?? undefined,
       }
     }
     return { ...EMPTY_FORM }
@@ -60,6 +77,16 @@ export default function LeadForm() {
       [name]: value,
     }))
   }
+
+  const handleOwnerChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value
+    setFormData((prev) => ({
+      ...prev,
+      OwnerEmployeeID: value ? Number(value) : undefined,
+    }))
+  }
+
+  const employees = (employeesData?.items as Employee[]) || []
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -150,6 +177,26 @@ export default function LeadForm() {
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
                   {status}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="OwnerEmployeeID" className="label">
+              Owner
+            </label>
+            <select
+              id="OwnerEmployeeID"
+              name="OwnerEmployeeID"
+              value={formData.OwnerEmployeeID?.toString() ?? ''}
+              onChange={handleOwnerChange}
+              className="input"
+            >
+              <option value="">Unassigned</option>
+              {employees.map((employee) => (
+                <option key={employee.ID} value={employee.ID}>
+                  {employee.FirstName} {employee.LastName}
                 </option>
               ))}
             </select>

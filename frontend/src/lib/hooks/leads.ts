@@ -3,7 +3,7 @@ import api from '../api'
 import { mergeODataQuery } from '../odataUtils'
 import type { Lead } from '../../types'
 
-type LeadPayload = Partial<Pick<Lead,
+export type LeadPayload = Partial<Pick<Lead,
   | 'Name'
   | 'Email'
   | 'Phone'
@@ -13,6 +13,7 @@ type LeadPayload = Partial<Pick<Lead,
   | 'Source'
   | 'Status'
   | 'Notes'
+  | 'OwnerEmployeeID'
 >>
 
 export const leadKeys = {
@@ -36,7 +37,15 @@ export function useLead(id?: string, expand?: string) {
   return useQuery({
     queryKey: leadKeys.detail(id ?? 'new'),
     queryFn: async () => {
-      const expandQuery = expand ? mergeODataQuery('', { '$expand': expand }) : ''
+      const expandSet = new Set(
+        expand
+          ?.split(',')
+          .map(part => part.trim())
+          .filter(Boolean),
+      )
+      expandSet.add('OwnerEmployee')
+      const expandParam = Array.from(expandSet).join(',')
+      const expandQuery = mergeODataQuery('', { '$expand': expandParam })
       const response = await api.get(`/Leads(${id})${expandQuery}`)
       return response.data as Lead
     },
@@ -97,7 +106,7 @@ export function useConvertLead(id: string) {
 export function buildLeadQuery(searchQuery: string, extraParams?: Record<string, string>) {
   return mergeODataQuery(searchQuery, {
     $count: 'true',
-    $expand: 'ConvertedAccount,ConvertedContact',
+    $expand: 'ConvertedAccount,ConvertedContact,OwnerEmployee',
     ...extraParams,
   })
 }
