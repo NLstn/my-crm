@@ -278,7 +278,7 @@ func registerBulkDataActions(service *odata.Service, db *gorm.DB) error {
 				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
 			}
 
-			accounts, validationErrors, err := database.ParseAccountsCSV(strings.NewReader(csvPayload))
+			accounts, _, validationErrors, err := database.ParseAccountsCSV(strings.NewReader(csvPayload))
 			if err != nil {
 				return writeJSONError(w, http.StatusBadRequest, err.Error())
 			}
@@ -340,12 +340,18 @@ func registerBulkDataActions(service *odata.Service, db *gorm.DB) error {
 				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
 			}
 
-			contacts, validationErrors, err := database.ParseContactsCSV(strings.NewReader(csvPayload))
+			contacts, contactRows, validationErrors, err := database.ParseContactsCSV(strings.NewReader(csvPayload))
 			if err != nil {
 				return writeJSONError(w, http.StatusBadRequest, err.Error())
 			}
-			if len(validationErrors) > 0 {
-				return writeValidationErrors(w, "One or more contact rows could not be imported", validationErrors)
+			dependencyErrors, depErr := validateContactDependencies(db, contacts, contactRows)
+			if depErr != nil {
+				return depErr
+			}
+
+			if len(validationErrors) > 0 || len(dependencyErrors) > 0 {
+				combined := append(validationErrors, dependencyErrors...)
+				return writeValidationErrors(w, "One or more contact rows could not be imported", combined)
 			}
 			if len(contacts) == 0 {
 				return writeJSONError(w, http.StatusBadRequest, "No contact rows were found in the CSV file")
@@ -402,7 +408,7 @@ func registerBulkDataActions(service *odata.Service, db *gorm.DB) error {
 				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
 			}
 
-			leads, validationErrors, err := database.ParseLeadsCSV(strings.NewReader(csvPayload))
+			leads, _, validationErrors, err := database.ParseLeadsCSV(strings.NewReader(csvPayload))
 			if err != nil {
 				return writeJSONError(w, http.StatusBadRequest, err.Error())
 			}
@@ -450,6 +456,484 @@ func registerBulkDataActions(service *odata.Service, db *gorm.DB) error {
 		return err
 	}
 
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportActivitiesCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			activities, rowNumbers, validationErrors, err := database.ParseActivitiesCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+
+			dependencyErrors, depErr := validateActivityDependencies(db, activities, rowNumbers)
+			if depErr != nil {
+				return depErr
+			}
+
+			if len(validationErrors) > 0 || len(dependencyErrors) > 0 {
+				combined := append(validationErrors, dependencyErrors...)
+				return writeValidationErrors(w, "One or more activity rows could not be imported", combined)
+			}
+
+			if len(activities) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No activity rows were found in the CSV file")
+			}
+
+			if err := db.Create(&activities).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(activities),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportActivitiesCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var activities []models.Activity
+			if err := db.Order("id ASC").Find(&activities).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.ActivitiesToCSV(activities)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "activities", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportIssuesCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			issues, rowNumbers, validationErrors, err := database.ParseIssuesCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+
+			dependencyErrors, depErr := validateIssueDependencies(db, issues, rowNumbers)
+			if depErr != nil {
+				return depErr
+			}
+
+			if len(validationErrors) > 0 || len(dependencyErrors) > 0 {
+				combined := append(validationErrors, dependencyErrors...)
+				return writeValidationErrors(w, "One or more issue rows could not be imported", combined)
+			}
+
+			if len(issues) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No issue rows were found in the CSV file")
+			}
+
+			if err := db.Create(&issues).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(issues),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportIssuesCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var issues []models.Issue
+			if err := db.Order("id ASC").Find(&issues).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.IssuesToCSV(issues)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "issues", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportTasksCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			tasks, rowNumbers, validationErrors, err := database.ParseTasksCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+
+			dependencyErrors, depErr := validateTaskDependencies(db, tasks, rowNumbers)
+			if depErr != nil {
+				return depErr
+			}
+
+			if len(validationErrors) > 0 || len(dependencyErrors) > 0 {
+				combined := append(validationErrors, dependencyErrors...)
+				return writeValidationErrors(w, "One or more task rows could not be imported", combined)
+			}
+
+			if len(tasks) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No task rows were found in the CSV file")
+			}
+
+			if err := db.Create(&tasks).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(tasks),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportTasksCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var tasks []models.Task
+			if err := db.Order("id ASC").Find(&tasks).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.TasksToCSV(tasks)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "tasks", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportOpportunitiesCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			opportunities, rowNumbers, validationErrors, err := database.ParseOpportunitiesCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+
+			dependencyErrors, depErr := validateOpportunityDependencies(db, opportunities, rowNumbers)
+			if depErr != nil {
+				return depErr
+			}
+
+			if len(validationErrors) > 0 || len(dependencyErrors) > 0 {
+				combined := append(validationErrors, dependencyErrors...)
+				return writeValidationErrors(w, "One or more opportunity rows could not be imported", combined)
+			}
+
+			if len(opportunities) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No opportunity rows were found in the CSV file")
+			}
+
+			if err := db.Create(&opportunities).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(opportunities),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportOpportunitiesCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var opportunities []models.Opportunity
+			if err := db.Order("id ASC").Find(&opportunities).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.OpportunitiesToCSV(opportunities)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "opportunities", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportOpportunityLineItemsCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			items, rowNumbers, validationErrors, err := database.ParseOpportunityLineItemsCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+
+			dependencyErrors, depErr := validateOpportunityLineItemDependencies(db, items, rowNumbers)
+			if depErr != nil {
+				return depErr
+			}
+
+			if len(validationErrors) > 0 || len(dependencyErrors) > 0 {
+				combined := append(validationErrors, dependencyErrors...)
+				return writeValidationErrors(w, "One or more opportunity line item rows could not be imported", combined)
+			}
+
+			if len(items) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No opportunity line item rows were found in the CSV file")
+			}
+
+			if err := db.Create(&items).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(items),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportOpportunityLineItemsCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var items []models.OpportunityLineItem
+			if err := db.Order("id ASC").Find(&items).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.OpportunityLineItemsToCSV(items)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "opportunity-line-items", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportEmployeesCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			employees, _, validationErrors, err := database.ParseEmployeesCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+
+			if len(validationErrors) > 0 {
+				return writeValidationErrors(w, "One or more employee rows could not be imported", validationErrors)
+			}
+
+			if len(employees) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No employee rows were found in the CSV file")
+			}
+
+			if err := db.Create(&employees).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(employees),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportEmployeesCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var employees []models.Employee
+			if err := db.Order("id ASC").Find(&employees).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.EmployeesToCSV(employees)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "employees", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportProductsCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			products, _, validationErrors, err := database.ParseProductsCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+
+			if len(validationErrors) > 0 {
+				return writeValidationErrors(w, "One or more product rows could not be imported", validationErrors)
+			}
+
+			if len(products) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No product rows were found in the CSV file")
+			}
+
+			if err := db.Create(&products).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(products),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportProductsCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var products []models.Product
+			if err := db.Order("id ASC").Find(&products).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.ProductsToCSV(products)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "products", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -470,6 +954,465 @@ func writeCSVResponse(w http.ResponseWriter, prefix string, data []byte) error {
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write(data)
 	return err
+}
+
+func validateContactDependencies(db *gorm.DB, contacts []models.Contact, rowNumbers []int) ([]database.RowError, error) {
+	accountIDSet := make(map[uint]struct{})
+	for _, contact := range contacts {
+		accountIDSet[contact.AccountID] = struct{}{}
+	}
+
+	existingAccounts, err := fetchExistingIDs(db, &models.Account{}, keysFromSet(accountIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	var errors []database.RowError
+	for idx, contact := range contacts {
+		if _, ok := existingAccounts[contact.AccountID]; !ok {
+			errors = append(errors, database.RowError{
+				Row:     rowNumbers[idx],
+				Field:   "AccountID",
+				Message: fmt.Sprintf("account %d does not exist", contact.AccountID),
+			})
+		}
+	}
+
+	return errors, nil
+}
+
+func validateActivityDependencies(db *gorm.DB, activities []models.Activity, rowNumbers []int) ([]database.RowError, error) {
+	accountIDSet := make(map[uint]struct{})
+	leadIDSet := make(map[uint]struct{})
+	contactIDSet := make(map[uint]struct{})
+	employeeIDSet := make(map[uint]struct{})
+	opportunityIDSet := make(map[uint]struct{})
+
+	for _, activity := range activities {
+		if activity.AccountID != nil {
+			accountIDSet[*activity.AccountID] = struct{}{}
+		}
+		if activity.LeadID != nil {
+			leadIDSet[*activity.LeadID] = struct{}{}
+		}
+		if activity.ContactID != nil {
+			contactIDSet[*activity.ContactID] = struct{}{}
+		}
+		if activity.EmployeeID != nil {
+			employeeIDSet[*activity.EmployeeID] = struct{}{}
+		}
+		if activity.OpportunityID != nil {
+			opportunityIDSet[*activity.OpportunityID] = struct{}{}
+		}
+	}
+
+	existingAccounts, err := fetchExistingIDs(db, &models.Account{}, keysFromSet(accountIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	existingLeads, err := fetchExistingIDs(db, &models.Lead{}, keysFromSet(leadIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	existingEmployees, err := fetchExistingIDs(db, &models.Employee{}, keysFromSet(employeeIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	contactAccounts, err := fetchContactAccounts(db, keysFromSet(contactIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	opportunityAccounts, err := fetchOpportunityAccounts(db, keysFromSet(opportunityIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	var errors []database.RowError
+	for idx, activity := range activities {
+		row := rowNumbers[idx]
+
+		if activity.AccountID != nil {
+			if _, ok := existingAccounts[*activity.AccountID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "AccountID", Message: fmt.Sprintf("account %d does not exist", *activity.AccountID)})
+			}
+		}
+
+		if activity.LeadID != nil {
+			if _, ok := existingLeads[*activity.LeadID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "LeadID", Message: fmt.Sprintf("lead %d does not exist", *activity.LeadID)})
+			}
+		}
+
+		if activity.EmployeeID != nil {
+			if _, ok := existingEmployees[*activity.EmployeeID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "EmployeeID", Message: fmt.Sprintf("employee %d does not exist", *activity.EmployeeID)})
+			}
+		}
+
+		if activity.ContactID != nil {
+			accountID, ok := contactAccounts[*activity.ContactID]
+			if !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not exist", *activity.ContactID)})
+			} else if activity.AccountID != nil {
+				if accountID != *activity.AccountID {
+					errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not belong to account %d", *activity.ContactID, *activity.AccountID)})
+				}
+			}
+		}
+
+		if activity.OpportunityID != nil {
+			accountID, ok := opportunityAccounts[*activity.OpportunityID]
+			if !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "OpportunityID", Message: fmt.Sprintf("opportunity %d does not exist", *activity.OpportunityID)})
+			} else if activity.AccountID != nil {
+				if accountID != *activity.AccountID {
+					errors = append(errors, database.RowError{Row: row, Field: "OpportunityID", Message: fmt.Sprintf("opportunity %d does not belong to account %d", *activity.OpportunityID, *activity.AccountID)})
+				}
+			}
+		}
+	}
+
+	return errors, nil
+}
+
+func validateIssueDependencies(db *gorm.DB, issues []models.Issue, rowNumbers []int) ([]database.RowError, error) {
+	accountIDSet := make(map[uint]struct{})
+	contactIDSet := make(map[uint]struct{})
+	employeeIDSet := make(map[uint]struct{})
+
+	for _, issue := range issues {
+		accountIDSet[issue.AccountID] = struct{}{}
+		if issue.ContactID != nil {
+			contactIDSet[*issue.ContactID] = struct{}{}
+		}
+		if issue.EmployeeID != nil {
+			employeeIDSet[*issue.EmployeeID] = struct{}{}
+		}
+	}
+
+	existingAccounts, err := fetchExistingIDs(db, &models.Account{}, keysFromSet(accountIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	contactAccounts, err := fetchContactAccounts(db, keysFromSet(contactIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	existingEmployees, err := fetchExistingIDs(db, &models.Employee{}, keysFromSet(employeeIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	var errors []database.RowError
+	for idx, issue := range issues {
+		row := rowNumbers[idx]
+		if _, ok := existingAccounts[issue.AccountID]; !ok {
+			errors = append(errors, database.RowError{Row: row, Field: "AccountID", Message: fmt.Sprintf("account %d does not exist", issue.AccountID)})
+		}
+
+		if issue.ContactID != nil {
+			accountID, ok := contactAccounts[*issue.ContactID]
+			if !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not exist", *issue.ContactID)})
+			} else if accountID != issue.AccountID {
+				errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not belong to account %d", *issue.ContactID, issue.AccountID)})
+			}
+		}
+
+		if issue.EmployeeID != nil {
+			if _, ok := existingEmployees[*issue.EmployeeID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "EmployeeID", Message: fmt.Sprintf("employee %d does not exist", *issue.EmployeeID)})
+			}
+		}
+	}
+
+	return errors, nil
+}
+
+func validateTaskDependencies(db *gorm.DB, tasks []models.Task, rowNumbers []int) ([]database.RowError, error) {
+	accountIDSet := make(map[uint]struct{})
+	leadIDSet := make(map[uint]struct{})
+	contactIDSet := make(map[uint]struct{})
+	employeeIDSet := make(map[uint]struct{})
+	opportunityIDSet := make(map[uint]struct{})
+
+	for _, task := range tasks {
+		if task.AccountID != nil {
+			accountIDSet[*task.AccountID] = struct{}{}
+		}
+		if task.LeadID != nil {
+			leadIDSet[*task.LeadID] = struct{}{}
+		}
+		if task.ContactID != nil {
+			contactIDSet[*task.ContactID] = struct{}{}
+		}
+		if task.EmployeeID != nil {
+			employeeIDSet[*task.EmployeeID] = struct{}{}
+		}
+		if task.OpportunityID != nil {
+			opportunityIDSet[*task.OpportunityID] = struct{}{}
+		}
+	}
+
+	existingAccounts, err := fetchExistingIDs(db, &models.Account{}, keysFromSet(accountIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	existingLeads, err := fetchExistingIDs(db, &models.Lead{}, keysFromSet(leadIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	existingEmployees, err := fetchExistingIDs(db, &models.Employee{}, keysFromSet(employeeIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	contactAccounts, err := fetchContactAccounts(db, keysFromSet(contactIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	opportunityAccounts, err := fetchOpportunityAccounts(db, keysFromSet(opportunityIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	var errors []database.RowError
+	for idx, task := range tasks {
+		row := rowNumbers[idx]
+
+		if task.AccountID != nil {
+			if _, ok := existingAccounts[*task.AccountID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "AccountID", Message: fmt.Sprintf("account %d does not exist", *task.AccountID)})
+			}
+		}
+
+		if task.LeadID != nil {
+			if _, ok := existingLeads[*task.LeadID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "LeadID", Message: fmt.Sprintf("lead %d does not exist", *task.LeadID)})
+			}
+		}
+
+		if task.EmployeeID != nil {
+			if _, ok := existingEmployees[*task.EmployeeID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "EmployeeID", Message: fmt.Sprintf("employee %d does not exist", *task.EmployeeID)})
+			}
+		}
+
+		if task.ContactID != nil {
+			accountID, ok := contactAccounts[*task.ContactID]
+			if !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not exist", *task.ContactID)})
+			} else if task.AccountID != nil {
+				if accountID != *task.AccountID {
+					errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not belong to account %d", *task.ContactID, *task.AccountID)})
+				}
+			}
+		}
+
+		if task.OpportunityID != nil {
+			accountID, ok := opportunityAccounts[*task.OpportunityID]
+			if !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "OpportunityID", Message: fmt.Sprintf("opportunity %d does not exist", *task.OpportunityID)})
+			} else if task.AccountID != nil {
+				if accountID != *task.AccountID {
+					errors = append(errors, database.RowError{Row: row, Field: "OpportunityID", Message: fmt.Sprintf("opportunity %d does not belong to account %d", *task.OpportunityID, *task.AccountID)})
+				}
+			}
+		}
+	}
+
+	return errors, nil
+}
+
+func validateOpportunityDependencies(db *gorm.DB, opportunities []models.Opportunity, rowNumbers []int) ([]database.RowError, error) {
+	accountIDSet := make(map[uint]struct{})
+	contactIDSet := make(map[uint]struct{})
+	ownerIDSet := make(map[uint]struct{})
+	closedByIDSet := make(map[uint]struct{})
+
+	for _, opportunity := range opportunities {
+		accountIDSet[opportunity.AccountID] = struct{}{}
+		if opportunity.ContactID != nil {
+			contactIDSet[*opportunity.ContactID] = struct{}{}
+		}
+		if opportunity.OwnerEmployeeID != nil {
+			ownerIDSet[*opportunity.OwnerEmployeeID] = struct{}{}
+		}
+		if opportunity.ClosedByEmployeeID != nil {
+			closedByIDSet[*opportunity.ClosedByEmployeeID] = struct{}{}
+		}
+	}
+
+	existingAccounts, err := fetchExistingIDs(db, &models.Account{}, keysFromSet(accountIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	contactAccounts, err := fetchContactAccounts(db, keysFromSet(contactIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	employeeIDSet := mergeSets(ownerIDSet, closedByIDSet)
+	existingEmployees, err := fetchExistingIDs(db, &models.Employee{}, keysFromSet(employeeIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	var errors []database.RowError
+	for idx, opportunity := range opportunities {
+		row := rowNumbers[idx]
+		if _, ok := existingAccounts[opportunity.AccountID]; !ok {
+			errors = append(errors, database.RowError{Row: row, Field: "AccountID", Message: fmt.Sprintf("account %d does not exist", opportunity.AccountID)})
+		}
+
+		if opportunity.ContactID != nil {
+			accountID, ok := contactAccounts[*opportunity.ContactID]
+			if !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not exist", *opportunity.ContactID)})
+			} else if accountID != opportunity.AccountID {
+				errors = append(errors, database.RowError{Row: row, Field: "ContactID", Message: fmt.Sprintf("contact %d does not belong to account %d", *opportunity.ContactID, opportunity.AccountID)})
+			}
+		}
+
+		if opportunity.OwnerEmployeeID != nil {
+			if _, ok := existingEmployees[*opportunity.OwnerEmployeeID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "OwnerEmployeeID", Message: fmt.Sprintf("employee %d does not exist", *opportunity.OwnerEmployeeID)})
+			}
+		}
+
+		if opportunity.ClosedByEmployeeID != nil {
+			if _, ok := existingEmployees[*opportunity.ClosedByEmployeeID]; !ok {
+				errors = append(errors, database.RowError{Row: row, Field: "ClosedByEmployeeID", Message: fmt.Sprintf("employee %d does not exist", *opportunity.ClosedByEmployeeID)})
+			}
+		}
+	}
+
+	return errors, nil
+}
+
+func validateOpportunityLineItemDependencies(db *gorm.DB, items []models.OpportunityLineItem, rowNumbers []int) ([]database.RowError, error) {
+	opportunityIDSet := make(map[uint]struct{})
+	productIDSet := make(map[uint]struct{})
+
+	for _, item := range items {
+		opportunityIDSet[item.OpportunityID] = struct{}{}
+		productIDSet[item.ProductID] = struct{}{}
+	}
+
+	existingOpportunities, err := fetchExistingIDs(db, &models.Opportunity{}, keysFromSet(opportunityIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	existingProducts, err := fetchExistingIDs(db, &models.Product{}, keysFromSet(productIDSet))
+	if err != nil {
+		return nil, err
+	}
+
+	var errors []database.RowError
+	for idx, item := range items {
+		row := rowNumbers[idx]
+		if _, ok := existingOpportunities[item.OpportunityID]; !ok {
+			errors = append(errors, database.RowError{Row: row, Field: "OpportunityID", Message: fmt.Sprintf("opportunity %d does not exist", item.OpportunityID)})
+		}
+		if _, ok := existingProducts[item.ProductID]; !ok {
+			errors = append(errors, database.RowError{Row: row, Field: "ProductID", Message: fmt.Sprintf("product %d does not exist", item.ProductID)})
+		}
+	}
+
+	return errors, nil
+}
+
+func fetchExistingIDs(db *gorm.DB, model interface{}, ids []uint) (map[uint]struct{}, error) {
+	result := make(map[uint]struct{})
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	var found []uint
+	if err := db.Model(model).Where("id IN ?", ids).Pluck("id", &found).Error; err != nil {
+		return nil, err
+	}
+
+	for _, id := range found {
+		result[id] = struct{}{}
+	}
+
+	return result, nil
+}
+
+func fetchContactAccounts(db *gorm.DB, ids []uint) (map[uint]uint, error) {
+	result := make(map[uint]uint)
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	type contactRow struct {
+		ID        uint
+		AccountID uint
+	}
+
+	var rows []contactRow
+	if err := db.Model(&models.Contact{}).Where("id IN ?", ids).Select("id", "account_id").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		result[row.ID] = row.AccountID
+	}
+
+	return result, nil
+}
+
+func fetchOpportunityAccounts(db *gorm.DB, ids []uint) (map[uint]uint, error) {
+	result := make(map[uint]uint)
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	type opportunityRow struct {
+		ID        uint
+		AccountID uint
+	}
+
+	var rows []opportunityRow
+	if err := db.Model(&models.Opportunity{}).Where("id IN ?", ids).Select("id", "account_id").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		result[row.ID] = row.AccountID
+	}
+
+	return result, nil
+}
+
+func keysFromSet(set map[uint]struct{}) []uint {
+	keys := make([]uint, 0, len(set))
+	for id := range set {
+		keys = append(keys, id)
+	}
+	return keys
+}
+
+func mergeSets(sets ...map[uint]struct{}) map[uint]struct{} {
+	merged := make(map[uint]struct{})
+	for _, set := range sets {
+		for id := range set {
+			merged[id] = struct{}{}
+		}
+	}
+	return merged
 }
 
 // registerLeadConversionAction exposes a bound OData action that converts a lead into an account and contact

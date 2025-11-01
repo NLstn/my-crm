@@ -38,6 +38,27 @@ All APIs are built using `go-odata` and strictly follow the OData v4 specificati
 - `PATCH /Accounts(1)` - Update account
 - `DELETE /Accounts(1)` - Delete account
 
+### Bulk Data Actions
+
+All bulk import/export operations are exposed as unbound OData actions that accept or return CSV payloads. Import actions return a
+JSON object containing the number of imported rows when successful and emit structured validation errors when foreign-key
+dependencies are missing. Export actions stream UTF-8 CSV attachments.
+
+| Entity                    | Import Action                     | Export Action                          |
+|---------------------------|-----------------------------------|----------------------------------------|
+| Accounts                  | `POST /ImportAccountsCSV`         | `POST /ExportAccountsCSV`              |
+| Contacts                  | `POST /ImportContactsCSV`         | `POST /ExportContactsCSV`              |
+| Leads                     | `POST /ImportLeadsCSV`            | `POST /ExportLeadsCSV`                 |
+| Activities                | `POST /ImportActivitiesCSV`       | `POST /ExportActivitiesCSV`            |
+| Issues                    | `POST /ImportIssuesCSV`           | `POST /ExportIssuesCSV`                |
+| Tasks                     | `POST /ImportTasksCSV`            | `POST /ExportTasksCSV`                 |
+| Opportunities             | `POST /ImportOpportunitiesCSV`    | `POST /ExportOpportunitiesCSV`         |
+| Opportunity Line Items    | `POST /ImportOpportunityLineItemsCSV` | `POST /ExportOpportunityLineItemsCSV` |
+| Employees                 | `POST /ImportEmployeesCSV`        | `POST /ExportEmployeesCSV`             |
+| Products                  | `POST /ImportProductsCSV`         | `POST /ExportProductsCSV`              |
+
+All timestamps should be provided in RFC3339 format, and numeric identifiers must reference existing records to pass validation.
+
 ### Contacts
 - `GET /Contacts` - List all contacts
 - `GET /Contacts(1)` - Get specific contact
