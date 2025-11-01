@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { mergeODataQuery } from '../../lib/odataUtils'
 import { Opportunity, OPPORTUNITY_STAGES, opportunityStageToString } from '../../types'
 import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
+import { Button } from '@/components/ui'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -28,6 +29,7 @@ const getStageBadgeClass = (stage: number) => {
 }
 
 export default function OpportunitiesList() {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -57,9 +59,14 @@ export default function OpportunitiesList() {
             Monitor your sales pipeline, forecast revenue, and track upcoming closes.
           </p>
         </div>
-        <Link to="/opportunities/new" className="btn btn-primary">
-          Create Opportunity
-        </Link>
+        <div className="flex items-center gap-3">
+          <Button variant="secondary" onClick={() => navigate('/opportunities/board')}>
+            Board View
+          </Button>
+          <Link to="/opportunities/new" className="btn btn-primary">
+            Create Opportunity
+          </Link>
+        </div>
       </div>
 
       <EntitySearch

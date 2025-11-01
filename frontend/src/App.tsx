@@ -25,6 +25,7 @@ import TasksList from './pages/Tasks/TasksList'
 import TaskDetail from './pages/Tasks/TaskDetail'
 import TaskForm from './pages/Tasks/TaskForm'
 import OpportunitiesList from './pages/Opportunities/OpportunitiesList'
+import OpportunitiesBoard from './pages/Opportunities/OpportunitiesBoard'
 import OpportunityDetail from './pages/Opportunities/OpportunityDetail'
 import OpportunityForm from './pages/Opportunities/OpportunityForm'
 import EmployeesList from './pages/Employees/EmployeesList'
@@ -91,6 +92,7 @@ function App() {
 
             {/* Opportunities routes */}
             <Route path="opportunities" element={<OpportunitiesList />} />
+            <Route path="opportunities/board" element={<OpportunitiesBoard />} />
             <Route path="opportunities/new" element={<OpportunityForm />} />
             <Route path="opportunities/:id" element={<OpportunityDetail />} />
             <Route path="opportunities/:id/edit" element={<OpportunityForm />} />
