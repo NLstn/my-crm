@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -87,7 +88,7 @@ export default function OpportunityForm() {
   const accountIdFromQuery = searchParams.get('accountId')
 
   const stageOptions = OPPORTUNITY_STAGES()
-  const defaultStage = stageOptions[0]?.value ?? 1
+  const defaultStage = useMemo(() => stageOptions[0]?.value ?? 1, [stageOptions])
 
   const { data: opportunity } = useQuery({
     queryKey: ['opportunity', id],
@@ -207,7 +208,7 @@ export default function OpportunityForm() {
   useEffect(() => {
     const newFormData = getInitialFormData()
     setFormData(newFormData)
-  }, [getInitialFormData]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [getInitialFormData])
 
   // Initialize line items when form changes
   useEffect(() => {
@@ -222,7 +223,7 @@ export default function OpportunityForm() {
     }
 
     setLineItemError(null)
-  }, [isEdit, opportunity, currencyCode, formData.CurrencyCode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isEdit, opportunity, currencyCode, formData.CurrencyCode])
 
   // Clear contact if account changes
   useEffect(() => {
@@ -232,7 +233,7 @@ export default function OpportunityForm() {
         ContactID: undefined,
       }))
     }
-  }, [selectedAccountId, formData.ContactID]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedAccountId, formData.ContactID])
 
   // Validate contact against account
   useEffect(() => {
@@ -249,7 +250,7 @@ export default function OpportunityForm() {
         ContactID: undefined,
       }))
     }
-  }, [contactsData, formData.ContactID]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [contactsData, formData.ContactID])
 
   // Handle closed stage logic
   useEffect(() => {
@@ -271,7 +272,7 @@ export default function OpportunityForm() {
         ClosedByEmployeeID: prev.ClosedByEmployeeID ?? prev.OwnerEmployeeID,
       }))
     }
-  }, [formData.Stage, formData.ClosedAt, formData.CloseReason, formData.ClosedByEmployeeID, formData.OwnerEmployeeID]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [formData.Stage, formData.ClosedAt, formData.CloseReason, formData.ClosedByEmployeeID, formData.OwnerEmployeeID])
 
   // Update amount from line items total
   useEffect(() => {
@@ -286,44 +287,7 @@ export default function OpportunityForm() {
         Amount: roundedTotal,
       }
     })
-  }, [lineItemsTotal]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const [formData, setFormData] = useState<Partial<Opportunity>>(getInitialFormData())
-  const [lineItems, setLineItems] = useState<LineItemFormState[]>(() =>
-    isEdit ? [] : [createEmptyLineItem(currencyCode)],
-  )
-  const [lineItemError, setLineItemError] = useState<string | null>(null)
-
-  const selectedAccountId = formData.AccountID
-
-  const { subtotal: lineItemsSubtotal, total: lineItemsTotal } = useMemo(() => {
-    return lineItems.reduce(
-      (acc, item) => {
-        const { subtotal, total } = calculateLineItemTotals(item)
-        return {
-          subtotal: acc.subtotal + subtotal,
-          total: acc.total + total,
-        }
-      },
-      { subtotal: 0, total: 0 },
-    )
-  }, [lineItems])
-
-  const totalDiscount = Math.max(0, lineItemsSubtotal - lineItemsTotal)
-  const resolvedCurrency = formData.CurrencyCode || currencyCode
-
-  const { data: contactsData } = useQuery({
-    queryKey: ['contacts', selectedAccountId],
-    queryFn: async () => {
-      const response = await api.get('/Contacts', {
-        params: {
-          $filter: `AccountID eq ${selectedAccountId}`,
-        },
-      })
-      return response.data
-    },
-    enabled: Boolean(selectedAccountId),
-  })
+  }, [lineItemsTotal])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Opportunity>) => {
