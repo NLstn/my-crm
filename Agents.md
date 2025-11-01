@@ -452,6 +452,71 @@ This repository includes Playwright MCP server configuration for AI-driven brows
 
 When testing or verifying web functionality, AI agents can use the Playwright MCP tools to interact with the running application at `http://localhost:5173`.
 
+## How to Log Into the CRM (For AI Agents)
+
+**⚠️ IMPORTANT**: This is a development-only authentication system. See `AUTHENTICATION.md` for technical details and security warnings.
+
+### Quick Login Steps
+
+1. **Navigate to the login page**: `http://localhost:5173/login` (or `http://localhost:3000/login` depending on setup)
+
+2. **Enter an employee email address** (no password required):
+   - Try: `alice.johnson@company.com`
+   - Or any email from the list below
+
+3. **Click "Sign in"** to access the CRM
+
+4. **You're logged in!** You'll be redirected to the dashboard
+
+### Available Employee Emails for Testing
+
+The seeded database includes these employee accounts you can use to log in:
+
+- `alice.johnson@company.com`
+- `bob.williams@company.com`
+- `carol.martinez@company.com`
+- `david.brown@company.com`
+- `emma.davis@company.com`
+- `frank.miller@company.com`
+- `grace.wilson@company.com`
+- `henry.moore@company.com`
+- `iris.taylor@company.com`
+- `jack.anderson@company.com`
+- `kate.thomas@company.com`
+- `liam.jackson@company.com`
+- `maya.white@company.com`
+- `noah.harris@company.com`
+- `olivia.martin@company.com`
+- `paul.thompson@company.com`
+- `quinn.garcia@company.com`
+- `rachel.robinson@company.com`
+- `sam.clark@company.com`
+- `tina.rodriguez@company.com`
+- `lonny.lohnsteich@outlook.com` (special test account)
+
+### Using Playwright MCP to Login
+
+When using Playwright MCP tools for automated testing:
+
+```typescript
+// Example workflow
+1. Navigate to login page: browser_navigate to 'http://localhost:5173/login'
+2. Take snapshot: browser_snapshot to see the login form
+3. Fill email field: browser_type with element "Email address" and text "alice.johnson@company.com"
+4. Click sign in: browser_click on the "Sign in" button
+5. Verify redirect: browser_snapshot to confirm you're on the dashboard
+```
+
+### Technical Details
+
+- **Authentication Method**: OData Action `LoginWithEmail` 
+- **API Endpoint**: POST to `/LoginWithEmail`
+- **Token Storage**: JWT token stored in `localStorage`
+- **Token Lifetime**: 24 hours
+- **Logout**: Click the logout button in the top-right corner
+
+For complete authentication details, security warnings, and production replacement plans, see `AUTHENTICATION.md`.
+
 ## Questions?
 
 When in doubt:
