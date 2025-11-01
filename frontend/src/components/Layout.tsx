@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { Button, Input } from './ui'
+import { Input } from './ui'
 import { useGlobalSearch } from '../hooks/useGlobalSearch'
 import { GlobalSearchResults } from './GlobalSearchResults'
 import type { GlobalSearchResult } from './searchTypes'
@@ -15,6 +16,8 @@ export default function Layout() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [isSearchActive, setIsSearchActive] = useState(false)
   const searchContainerRef = useRef<HTMLDivElement>(null)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -51,7 +54,7 @@ export default function Layout() {
     navigate(result.path)
   }
 
-  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && globalSearchResults.length > 0) {
       event.preventDefault()
       handleSearchSelect(globalSearchResults[0])
@@ -63,6 +66,15 @@ export default function Layout() {
   }
 
   const shouldShowSearchResults = isSearchActive && debouncedSearch.trim().length > 0
+
+  const userInitials = [user?.firstName?.[0], user?.lastName?.[0]]
+    .filter(Boolean)
+    .join('')
+    .toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'
+
+  const profileAriaLabel = user?.firstName || user?.lastName
+    ? `Open profile menu for ${[user?.firstName, user?.lastName].filter(Boolean).join(' ')}`
+    : 'Open profile menu'
 
   type NavigationItem = {
     name: string
@@ -105,74 +117,152 @@ export default function Layout() {
     setIsMobileMenuOpen(false)
   }
 
+  const toggleProfileMenu = () => {
+    setIsProfileMenuOpen((previous) => !previous)
+  }
+
+  const handleLogout = () => {
+    setIsProfileMenuOpen(false)
+    logout()
+    navigate('/login')
+  }
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) {
+      return
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isProfileMenuOpen])
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) {
+      return
+    }
+
+    return () => {
+      setIsProfileMenuOpen(false)
+    }
+  }, [isProfileMenuOpen, location.pathname])
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            {/* Hamburger menu button */}
-            <button
-              onClick={toggleMobileMenu}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              aria-label="Toggle menu"
-              aria-expanded={isMobileMenuOpen}
-            >
-              {isMobileMenuOpen ? (
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
+            <div className="flex flex-1 items-center gap-4 min-w-0">
+              {/* Hamburger menu button */}
+              <button
+                onClick={toggleMobileMenu}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
+              >
+                {isMobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
 
-            {/* Logo - now clickable */}
-            <Link to="/">
-              <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
-                CRM System
-              </h1>
-            </Link>
-
-            {/* Global search */}
-            <div ref={searchContainerRef} className="relative hidden min-w-0 flex-1 sm:block">
-              <Input
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                onFocus={() => setIsSearchActive(true)}
-                onKeyDown={handleSearchKeyDown}
-                placeholder="Search accounts, contacts, leads, opportunities..."
-                aria-label="Global search"
-                autoComplete="off"
-              />
-              {shouldShowSearchResults && (
-                <GlobalSearchResults
-                  query={debouncedSearch}
-                  isLoading={isGlobalSearchLoading}
-                  results={globalSearchResults}
-                  onSelect={handleSearchSelect}
-                />
-              )}
+              {/* Logo - now clickable */}
+              <Link to="/">
+                <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                  CRM System
+                </h1>
+              </Link>
             </div>
 
-            {/* User info and logout - right side */}
-            <div className="ml-auto flex items-center gap-4">
-              <div className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">{user?.firstName} {user?.lastName}</span>
-                <span className="text-gray-500 dark:text-gray-400 ml-2">({user?.email})</span>
-              </div>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  logout()
-                  navigate('/login')
-                }}
+            {/* Global search */}
+            <div className="hidden flex-1 sm:flex">
+              <div
+                ref={searchContainerRef}
+                className="relative mx-auto w-full max-w-xl"
               >
-                Logout
-              </Button>
+                <Input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onFocus={() => setIsSearchActive(true)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search accounts, contacts, leads, opportunities..."
+                  aria-label="Global search"
+                  autoComplete="off"
+                />
+                {shouldShowSearchResults && (
+                  <GlobalSearchResults
+                    query={debouncedSearch}
+                    isLoading={isGlobalSearchLoading}
+                    results={globalSearchResults}
+                    onSelect={handleSearchSelect}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* User menu - right side */}
+            <div className="flex flex-1 items-center justify-end gap-4">
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  onClick={toggleProfileMenu}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-primary-900 dark:text-primary-100 dark:hover:bg-primary-800 dark:focus-visible:ring-primary-300 dark:focus-visible:ring-offset-gray-900"
+                  aria-haspopup="menu"
+                  aria-expanded={isProfileMenuOpen}
+                  aria-label={profileAriaLabel}
+                >
+                  <span className="text-sm font-medium">{userInitials}</span>
+                </button>
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900">
+                    <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user?.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <Link
+                        to="/settings/profile"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        Profile settings
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="block w-full px-4 py-2 text-left text-sm text-error-600 transition-colors hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-900/20"
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
