@@ -88,7 +88,7 @@ func (Opportunity) TableName() string {
 // BeforeSave validates relationships before persisting changes
 func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
 	opportunity.CurrencyCode = NormalizeCurrencyCode(opportunity.CurrencyCode)
-	
+
 	opportunity.stageHistoryShouldRecord = false
 	opportunity.stageHistoryHadPrevious = false
 
