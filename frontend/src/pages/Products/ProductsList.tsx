@@ -5,8 +5,10 @@ import api from '../../lib/api'
 import { mergeODataQuery } from '../../lib/odataUtils'
 import { Product } from '../../types'
 import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 export default function ProductsList() {
+  const { currencyCode, formatCurrency } = useCurrency()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -105,7 +107,7 @@ export default function ProductsList() {
                   </div>
                   <div className="text-right ml-4">
                     <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                      ${product.Price.toFixed(2)}
+                      {formatCurrency(product.Price, product.CurrencyCode || currencyCode)}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       Stock: {product.Stock}

@@ -4,12 +4,14 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Product } from '../../types'
 import { Button } from '../../components/ui'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const { currencyCode, formatCurrency } = useCurrency()
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', id],
@@ -47,6 +49,7 @@ export default function ProductDetail() {
 
   const margin = product.Price - product.Cost
   const marginPercent = product.Price > 0 ? ((margin / product.Price) * 100).toFixed(1) : '0.0'
+  const productCurrency = product.CurrencyCode || currencyCode
 
   return (
     <div className="space-y-6">
@@ -91,15 +94,15 @@ export default function ProductDetail() {
           )}
           <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Price</dt>
           <dd className="text-sm text-gray-900 dark:text-gray-100">
-            ${product.Price.toFixed(2)}
+            {formatCurrency(product.Price, productCurrency)}
           </dd>
           <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Cost</dt>
           <dd className="text-sm text-gray-900 dark:text-gray-100">
-            ${product.Cost.toFixed(2)}
+            {formatCurrency(product.Cost, productCurrency)}
           </dd>
           <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Margin</dt>
           <dd className="text-sm text-gray-900 dark:text-gray-100">
-            ${margin.toFixed(2)} ({marginPercent}%)
+            {formatCurrency(margin, productCurrency)} ({marginPercent}%)
           </dd>
           <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Stock</dt>
           <dd className="text-sm text-gray-900 dark:text-gray-100">

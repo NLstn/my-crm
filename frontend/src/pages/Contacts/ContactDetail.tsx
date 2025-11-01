@@ -4,12 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Contact, opportunityStageToString } from '../../types'
 import { Button } from '../../components/ui'
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 0,
-})
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 const getOpportunityStageBadge = (stage: number) => {
   switch (stage) {
@@ -31,6 +26,7 @@ export default function ContactDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const { currencyCode, formatCurrency } = useCurrency()
 
   const { data: contact, isLoading, error } = useQuery({
     queryKey: ['contact', id],
@@ -188,7 +184,7 @@ export default function ContactDetail() {
                         {opportunityStageToString(opportunity.Stage)}
                       </span>
                       <span className="badge badge-primary">
-                        {currencyFormatter.format(opportunity.Amount)}
+                        {formatCurrency(opportunity.Amount, opportunity.CurrencyCode || currencyCode)}
                       </span>
                       <span className="badge badge-secondary">{opportunity.Probability}% probability</span>
                     </div>

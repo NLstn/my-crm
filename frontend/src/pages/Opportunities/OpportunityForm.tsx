@@ -12,6 +12,7 @@ import {
   OPPORTUNITY_STAGES,
 } from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 const CLOSED_WON_STAGE = 6
 const CLOSED_LOST_STAGE = 7
@@ -36,16 +37,18 @@ type LineItemFormState = {
   UnitPrice: number
   DiscountAmount: number
   DiscountPercent: number
+  CurrencyCode?: string
 }
 
 const createTempId = () => `li-${Math.random().toString(36).slice(2)}-${Date.now()}`
 
-const createEmptyLineItem = (): LineItemFormState => ({
+const createEmptyLineItem = (currencyCode?: string): LineItemFormState => ({
   tempId: createTempId(),
   Quantity: 1,
   UnitPrice: 0,
   DiscountAmount: 0,
   DiscountPercent: 0,
+  CurrencyCode: currencyCode,
 })
 
 const mapOpportunityLineItemToFormState = (item: OpportunityLineItem): LineItemFormState => ({
@@ -57,6 +60,7 @@ const mapOpportunityLineItemToFormState = (item: OpportunityLineItem): LineItemF
   UnitPrice: item.UnitPrice,
   DiscountAmount: item.DiscountAmount,
   DiscountPercent: item.DiscountPercent,
+  CurrencyCode: item.CurrencyCode,
 })
 
 const calculateLineItemTotals = (item: LineItemFormState) => {
@@ -72,17 +76,12 @@ const calculateLineItemTotals = (item: LineItemFormState) => {
   }
 }
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 0,
-})
-
 export default function OpportunityForm() {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { currencyCode, formatCurrency } = useCurrency()
   const isEdit = Boolean(id)
 
   const accountIdFromQuery = searchParams.get('accountId')
@@ -132,6 +131,7 @@ export default function OpportunityForm() {
         OwnerEmployeeID: opportunity.OwnerEmployeeID,
         Name: opportunity.Name,
         Amount: opportunity.Amount,
+        CurrencyCode: opportunity.CurrencyCode,
         Probability: opportunity.Probability,
         ExpectedCloseDate: opportunity.ExpectedCloseDate,
         Stage: opportunity.Stage,
@@ -148,6 +148,7 @@ export default function OpportunityForm() {
       OwnerEmployeeID: undefined,
       Name: '',
       Amount: 0,
+      CurrencyCode: currencyCode,
       Probability: 50,
       ExpectedCloseDate: undefined,
       Stage: defaultStage,
@@ -160,7 +161,7 @@ export default function OpportunityForm() {
 
   const [formData, setFormData] = useState<Partial<Opportunity>>(getInitialFormData())
   const [lineItems, setLineItems] = useState<LineItemFormState[]>(() =>
-    isEdit ? [] : [createEmptyLineItem()],
+    isEdit ? [] : [createEmptyLineItem(currencyCode)],
   )
   const [lineItemError, setLineItemError] = useState<string | null>(null)
 
@@ -180,6 +181,7 @@ export default function OpportunityForm() {
   }, [lineItems])
 
   const totalDiscount = Math.max(0, lineItemsSubtotal - lineItemsTotal)
+  const resolvedCurrency = formData.CurrencyCode || currencyCode
 
   const { data: contactsData } = useQuery({
     queryKey: ['contacts', selectedAccountId],
@@ -196,23 +198,21 @@ export default function OpportunityForm() {
 
   useEffect(() => {
     setFormData(getInitialFormData())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, opportunity?.ID])
+  }, [id, opportunity?.ID, currencyCode])
 
   useEffect(() => {
     if (isEdit && opportunity) {
       if (opportunity.LineItems && opportunity.LineItems.length > 0) {
         setLineItems(opportunity.LineItems.map(mapOpportunityLineItemToFormState))
       } else {
-        setLineItems([createEmptyLineItem()])
+        setLineItems([createEmptyLineItem(formData.CurrencyCode || currencyCode)])
       }
     } else if (!isEdit) {
-      setLineItems([createEmptyLineItem()])
+      setLineItems([createEmptyLineItem(formData.CurrencyCode || currencyCode)])
     }
 
     setLineItemError(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, opportunity?.ID, opportunity?.UpdatedAt])
+  }, [isEdit, opportunity?.ID, opportunity?.UpdatedAt, currencyCode, formData.CurrencyCode])
 
   useEffect(() => {
     if (!selectedAccountId && formData.ContactID) {
@@ -349,6 +349,7 @@ export default function OpportunityForm() {
           DiscountPercent: item.DiscountPercent,
           Subtotal: subtotal,
           Total: total,
+          CurrencyCode: item.CurrencyCode || formData.CurrencyCode || currencyCode,
         }
 
         if (opportunityId) {
@@ -371,6 +372,7 @@ export default function OpportunityForm() {
 
     const payload: Partial<Opportunity> = {
       ...formData,
+      CurrencyCode: formData.CurrencyCode || currencyCode,
       Amount: Number(lineItemsTotal.toFixed(2)),
       LineItems: sanitizedLineItems as OpportunityLineItem[],
     }
@@ -403,6 +405,22 @@ export default function OpportunityForm() {
     const productValue = event.target.value
     const productId = productValue ? parseInt(productValue, 10) : undefined
     const selectedProduct = products.find(product => product.ID === productId)
+    const productCurrency = selectedProduct?.CurrencyCode
+
+    if (productCurrency && formData.CurrencyCode && productCurrency !== formData.CurrencyCode) {
+      setLineItemError(
+        `Selected product currency (${productCurrency}) does not match opportunity currency (${formData.CurrencyCode}).`,
+      )
+    } else {
+      setLineItemError(null)
+    }
+
+    if (!formData.CurrencyCode && productCurrency) {
+      setFormData(prev => ({
+        ...prev,
+        CurrencyCode: productCurrency,
+      }))
+    }
 
     setLineItems(prev =>
       prev.map(item => {
@@ -415,11 +433,14 @@ export default function OpportunityForm() {
           ProductID: productId,
           ProductName: selectedProduct?.Name ?? item.ProductName,
           UnitPrice: selectedProduct ? selectedProduct.Price : item.UnitPrice,
+          CurrencyCode: productCurrency ?? item.CurrencyCode,
         }
       }),
     )
 
-    setLineItemError(null)
+    if (!productCurrency || !formData.CurrencyCode || productCurrency === formData.CurrencyCode) {
+      setLineItemError(null)
+    }
   }
 
   const handleLineItemValueChange = (
@@ -459,14 +480,14 @@ export default function OpportunityForm() {
     }
 
   const handleAddLineItem = () => {
-    setLineItems(prev => [...prev, createEmptyLineItem()])
+    setLineItems(prev => [...prev, createEmptyLineItem(formData.CurrencyCode || currencyCode)])
     setLineItemError(null)
   }
 
   const handleRemoveLineItem = (tempId: string) => {
     setLineItems(prev => {
       const filtered = prev.filter(item => item.tempId !== tempId)
-      return filtered.length > 0 ? filtered : [createEmptyLineItem()]
+      return filtered.length > 0 ? filtered : [createEmptyLineItem(formData.CurrencyCode || currencyCode)]
     })
     setLineItemError(null)
   }
@@ -787,13 +808,13 @@ export default function OpportunityForm() {
                     <div>
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Subtotal</p>
                       <p className="text-base font-medium text-gray-900 dark:text-gray-100">
-                        {currencyFormatter.format(subtotal)}
+                        {formatCurrency(subtotal, item.CurrencyCode || resolvedCurrency)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Line Total</p>
                       <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        {currencyFormatter.format(total)}
+                        {formatCurrency(total, item.CurrencyCode || resolvedCurrency)}
                       </p>
                     </div>
                   </div>
@@ -810,18 +831,18 @@ export default function OpportunityForm() {
             <div className="flex gap-2">
               <span>Subtotal:</span>
               <span className="font-medium text-gray-900 dark:text-gray-100">
-                {currencyFormatter.format(lineItemsSubtotal)}
+                {formatCurrency(lineItemsSubtotal, resolvedCurrency)}
               </span>
             </div>
             <div className="flex gap-2">
               <span>Discounts:</span>
               <span className="font-medium text-gray-900 dark:text-gray-100">
-                -{currencyFormatter.format(totalDiscount)}
+                -{formatCurrency(totalDiscount, resolvedCurrency)}
               </span>
             </div>
             <div className="flex gap-2 text-base font-semibold text-gray-900 dark:text-gray-100">
               <span>Deal Total:</span>
-              <span>{currencyFormatter.format(lineItemsTotal)}</span>
+              <span>{formatCurrency(lineItemsTotal, resolvedCurrency)}</span>
             </div>
           </div>
         </div>

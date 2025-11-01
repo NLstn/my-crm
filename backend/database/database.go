@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -41,6 +42,7 @@ func AutoMigrate(db *gorm.DB) error {
 	log.Println("Running database migrations...")
 
 	err := db.AutoMigrate(
+		&models.OrganizationSetting{},
 		&models.Account{},
 		&models.Contact{},
 		&models.Lead{},
@@ -61,7 +63,76 @@ func AutoMigrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
+	if err := ensureOrganizationSetting(db); err != nil {
+		return fmt.Errorf("failed to ensure organization settings: %w", err)
+	}
+
+	if err := backfillCurrencyCodes(db); err != nil {
+		return fmt.Errorf("failed to backfill currency codes: %w", err)
+	}
+
 	log.Println("Database migrations completed successfully")
+	return nil
+}
+
+func ensureOrganizationSetting(db *gorm.DB) error {
+	var count int64
+	if err := db.Model(&models.OrganizationSetting{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count == 0 {
+		setting := models.OrganizationSetting{DefaultCurrencyCode: models.DefaultCurrencyCode}
+		if err := db.Create(&setting).Error; err != nil {
+			return err
+		}
+		return nil
+	}
+
+	var setting models.OrganizationSetting
+	if err := db.Order("id asc").First(&setting).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Create a default row if the table is empty for some reason
+			fallback := models.OrganizationSetting{DefaultCurrencyCode: models.DefaultCurrencyCode}
+			return db.Create(&fallback).Error
+		}
+		return err
+	}
+
+	normalized := models.NormalizeCurrencyCode(setting.DefaultCurrencyCode)
+	if normalized == "" {
+		normalized = models.DefaultCurrencyCode
+	}
+
+	if normalized != setting.DefaultCurrencyCode {
+		return db.Model(&models.OrganizationSetting{}).
+			Where("id = ?", setting.ID).
+			Update("default_currency_code", normalized).Error
+	}
+
+	return nil
+}
+
+func backfillCurrencyCodes(db *gorm.DB) error {
+	defaultCurrency, err := models.GetDefaultCurrencyCode(db)
+	if err != nil {
+		return err
+	}
+	if defaultCurrency == "" {
+		defaultCurrency = models.DefaultCurrencyCode
+	}
+
+	tables := []string{"products", "opportunities", "opportunity_line_items"}
+	for _, table := range tables {
+		if err := db.Exec(fmt.Sprintf("UPDATE %s SET currency_code = upper(currency_code) WHERE currency_code IS NOT NULL", table)).Error; err != nil {
+			return err
+		}
+
+		if err := db.Exec(fmt.Sprintf("UPDATE %s SET currency_code = ? WHERE currency_code IS NULL OR trim(currency_code) = ''", table), defaultCurrency).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -76,6 +147,14 @@ func SeedData(db *gorm.DB) error {
 	}
 
 	log.Println("Seeding database with sample data...")
+
+	defaultCurrency, err := models.GetDefaultCurrencyCode(db)
+	if err != nil {
+		return fmt.Errorf("failed to resolve default currency: %w", err)
+	}
+	if defaultCurrency == "" {
+		defaultCurrency = models.DefaultCurrencyCode
+	}
 
 	// Create 21 employees (including Lonny Lohnsteich)
 	firstNames := []string{"Alice", "Bob", "Carol", "David", "Emma", "Frank", "Grace", "Henry", "Iris", "Jack", "Kate", "Liam", "Maya", "Noah", "Olivia", "Paul", "Quinn", "Rachel", "Sam", "Tina", "Lonny"}
@@ -270,6 +349,7 @@ func SeedData(db *gorm.DB) error {
 			ContactID:         contactID,
 			OwnerEmployeeID:   &owner.ID,
 			Amount:            amount,
+			CurrencyCode:      defaultCurrency,
 			Probability:       probability,
 			ExpectedCloseDate: &expectedClose,
 			Stage:             stage,
@@ -409,14 +489,15 @@ func SeedData(db *gorm.DB) error {
 	for i := 0; i < 20; i++ {
 		basePrice := float64(500 + i*500)
 		products[i] = models.Product{
-			Name:        productNames[i],
-			SKU:         fmt.Sprintf("PRD-%03d", i+1),
-			Category:    categories[i%len(categories)],
-			Description: fmt.Sprintf("Description for %s", productNames[i]),
-			Price:       basePrice,
-			Cost:        basePrice * 0.5,
-			Stock:       25 + i*5,
-			IsActive:    true,
+			Name:         productNames[i],
+			SKU:          fmt.Sprintf("PRD-%03d", i+1),
+			Category:     categories[i%len(categories)],
+			Description:  fmt.Sprintf("Description for %s", productNames[i]),
+			CurrencyCode: defaultCurrency,
+			Price:        basePrice,
+			Cost:         basePrice * 0.5,
+			Stock:        25 + i*5,
+			IsActive:     true,
 		}
 	}
 
@@ -470,6 +551,7 @@ func SeedData(db *gorm.DB) error {
 				Quantity:       quantityA,
 				UnitPrice:      primaryProduct.Price,
 				DiscountAmount: discountAmountA,
+				CurrencyCode:   primaryProduct.CurrencyCode,
 			}
 
 			itemB := models.OpportunityLineItem{
@@ -478,6 +560,7 @@ func SeedData(db *gorm.DB) error {
 				Quantity:        quantityB,
 				UnitPrice:       secondaryProduct.Price,
 				DiscountPercent: discountPercentB,
+				CurrencyCode:    secondaryProduct.CurrencyCode,
 			}
 
 			amountByOpportunity[opportunity.ID] += computeLineTotal(itemA.Quantity, itemA.UnitPrice, itemA.DiscountAmount, itemA.DiscountPercent)

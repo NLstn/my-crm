@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider } from './contexts/AuthContext'
+import { CurrencyProvider } from './contexts/CurrencyContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -45,11 +46,12 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <Routes>
+        <CurrencyProvider>
+          <Router>
+            <Routes>
             {/* Public route */}
             <Route path="/login" element={<Login />} />
-            
+
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
@@ -112,8 +114,9 @@ function App() {
             {/* Settings routes */}
             <Route path="settings/workflows" element={<WorkflowSettingsPage />} />
             </Route>
-          </Routes>
-        </Router>
+            </Routes>
+          </Router>
+        </CurrencyProvider>
       </AuthProvider>
     </ThemeProvider>
   )

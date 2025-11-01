@@ -131,6 +131,10 @@ func main() {
 		log.Fatal("Failed to register Employee entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.OrganizationSetting{}); err != nil {
+		log.Fatal("Failed to register OrganizationSetting entity:", err)
+	}
+
 	if err := service.RegisterEntity(&models.Product{}); err != nil {
 		log.Fatal("Failed to register Product entity:", err)
 	}

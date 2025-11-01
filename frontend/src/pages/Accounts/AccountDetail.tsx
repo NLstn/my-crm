@@ -6,12 +6,7 @@ import { Account, issueStatusToString, issuePriorityToString, opportunityStageTo
 import { Button } from '../../components/ui'
 import Timeline from '../../components/Timeline'
 import TaskList from '../../components/TaskList'
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 0,
-})
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 const getOpportunityStageBadge = (stage: number) => {
   switch (stage) {
@@ -33,6 +28,7 @@ export default function AccountDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const { currencyCode, formatCurrency } = useCurrency()
 
   const { data: account, isLoading, error } = useQuery({
     queryKey: ['account', id],
@@ -293,7 +289,7 @@ export default function AccountDetail() {
                         {opportunityStageToString(opportunity.Stage)}
                       </span>
                       <span className="badge badge-primary">
-                        {currencyFormatter.format(opportunity.Amount)}
+                        {formatCurrency(opportunity.Amount, opportunity.CurrencyCode || currencyCode)}
                       </span>
                       <span className="badge badge-secondary">{opportunity.Probability}% probability</span>
                     </div>

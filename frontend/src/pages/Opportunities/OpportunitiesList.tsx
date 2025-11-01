@@ -6,12 +6,7 @@ import { mergeODataQuery } from '../../lib/odataUtils'
 import { Opportunity, OPPORTUNITY_STAGES, opportunityStageToString } from '../../types'
 import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
 import { Button } from '@/components/ui'
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 0,
-})
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 const getStageBadgeClass = (stage: number) => {
   switch (stage) {
@@ -30,6 +25,7 @@ const getStageBadgeClass = (stage: number) => {
 
 export default function OpportunitiesList() {
   const navigate = useNavigate()
+  const { currencyCode, formatCurrency } = useCurrency()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -127,7 +123,7 @@ export default function OpportunitiesList() {
                         {opportunityStageToString(opportunity.Stage)}
                       </span>
                       <span className="badge badge-primary">
-                        {currencyFormatter.format(opportunity.Amount)}
+                        {formatCurrency(opportunity.Amount, opportunity.CurrencyCode || currencyCode)}
                       </span>
                       <span className="badge badge-secondary">
                         {opportunity.Probability}% probability

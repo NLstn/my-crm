@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"time"
 
@@ -18,6 +20,7 @@ type OpportunityLineItem struct {
 	DiscountPercent float64   `json:"DiscountPercent" gorm:"type:numeric(5,2);default:0"`
 	Subtotal        float64   `json:"Subtotal" gorm:"not null;type:numeric(12,2);default:0"`
 	Total           float64   `json:"Total" gorm:"not null;type:numeric(12,2);default:0"`
+	CurrencyCode    string    `json:"CurrencyCode" gorm:"type:char(3);not null;default:USD" odata:"maxlength(3)"`
 	CreatedAt       time.Time `json:"CreatedAt" gorm:"autoCreateTime"`
 	UpdatedAt       time.Time `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
@@ -34,6 +37,54 @@ func (OpportunityLineItem) TableName() string {
 func (item *OpportunityLineItem) BeforeSave(tx *gorm.DB) error {
 	if item.Quantity <= 0 {
 		item.Quantity = 1
+	}
+
+	item.CurrencyCode = NormalizeCurrencyCode(item.CurrencyCode)
+
+	var productCurrency string
+	if item.ProductID != 0 {
+		var product Product
+		if err := tx.Select("currency_code").First(&product, item.ProductID).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		} else {
+			productCurrency = NormalizeCurrencyCode(product.CurrencyCode)
+			if productCurrency != "" && item.CurrencyCode == "" {
+				item.CurrencyCode = productCurrency
+			}
+		}
+	}
+
+	var opportunityCurrency string
+	if item.OpportunityID != 0 {
+		var opportunity Opportunity
+		if err := tx.Select("currency_code").First(&opportunity, item.OpportunityID).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		} else {
+			opportunityCurrency = NormalizeCurrencyCode(opportunity.CurrencyCode)
+			if opportunityCurrency != "" && item.CurrencyCode == "" {
+				item.CurrencyCode = opportunityCurrency
+			}
+		}
+	}
+
+	if item.CurrencyCode == "" {
+		defaultCurrency, err := GetDefaultCurrencyCode(tx)
+		if err != nil {
+			return err
+		}
+		item.CurrencyCode = defaultCurrency
+	}
+
+	if productCurrency != "" && item.CurrencyCode != productCurrency {
+		return fmt.Errorf("line item currency %s does not match product currency %s", item.CurrencyCode, productCurrency)
+	}
+
+	if opportunityCurrency != "" && item.CurrencyCode != opportunityCurrency {
+		return fmt.Errorf("line item currency %s does not match opportunity currency %s", item.CurrencyCode, opportunityCurrency)
 	}
 
 	subtotal := float64(item.Quantity) * item.UnitPrice

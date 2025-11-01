@@ -54,6 +54,7 @@ type Opportunity struct {
 	OwnerEmployeeID    *uint            `json:"OwnerEmployeeID" gorm:"index"`
 	Name               string           `json:"Name" gorm:"not null;type:varchar(255)" odata:"required,maxlength(255)"`
 	Amount             float64          `json:"Amount" gorm:"not null;type:numeric(12,2)" odata:"required"`
+	CurrencyCode       string           `json:"CurrencyCode" gorm:"type:char(3);not null;default:USD" odata:"maxlength(3)"`
 	Probability        int              `json:"Probability" gorm:"not null;type:integer;default:50" odata:"required"`
 	ExpectedCloseDate  *time.Time       `json:"ExpectedCloseDate"`
 	Stage              OpportunityStage `json:"Stage" gorm:"not null;type:integer;default:1" odata:"required,enum=OpportunityStage"`
@@ -86,6 +87,8 @@ func (Opportunity) TableName() string {
 
 // BeforeSave validates relationships before persisting changes
 func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
+	opportunity.CurrencyCode = NormalizeCurrencyCode(opportunity.CurrencyCode)
+	
 	opportunity.stageHistoryShouldRecord = false
 	opportunity.stageHistoryHadPrevious = false
 
@@ -152,11 +155,39 @@ func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 
+	if opportunity.CurrencyCode == "" {
+		defaultCurrency, err := GetDefaultCurrencyCode(tx)
+		if err != nil {
+			return err
+		}
+		opportunity.CurrencyCode = defaultCurrency
+	}
+
 	// Calculate total from line items if present
 	if len(opportunity.LineItems) > 0 {
 		total := 0.0
+		lineCurrency := opportunity.CurrencyCode
 		for i := range opportunity.LineItems {
+			opportunity.LineItems[i].CurrencyCode = NormalizeCurrencyCode(opportunity.LineItems[i].CurrencyCode)
+			if opportunity.LineItems[i].CurrencyCode == "" {
+				opportunity.LineItems[i].CurrencyCode = opportunity.CurrencyCode
+			}
+
+			if lineCurrency == "" {
+				lineCurrency = opportunity.LineItems[i].CurrencyCode
+			}
+
+			if lineCurrency != "" && opportunity.LineItems[i].CurrencyCode != "" && opportunity.LineItems[i].CurrencyCode != lineCurrency {
+				return fmt.Errorf("opportunity line item currency %s does not match %s", opportunity.LineItems[i].CurrencyCode, lineCurrency)
+			}
+
 			total += opportunity.LineItems[i].Total
+		}
+		if lineCurrency != "" && opportunity.CurrencyCode != lineCurrency {
+			return fmt.Errorf("opportunity currency %s does not match line item currency %s", opportunity.CurrencyCode, lineCurrency)
+		}
+		if lineCurrency != "" {
+			opportunity.CurrencyCode = lineCurrency
 		}
 		opportunity.Amount = math.Round(total*100) / 100
 	}

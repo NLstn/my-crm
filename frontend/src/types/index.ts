@@ -140,6 +140,7 @@ export interface Opportunity {
   OwnerEmployeeID?: number
   Name: string
   Amount: number
+  CurrencyCode: string
   Probability: number
   ExpectedCloseDate?: string
   Stage: number
@@ -169,6 +170,7 @@ export interface OpportunityLineItem {
   DiscountPercent: number
   Subtotal: number
   Total: number
+  CurrencyCode: string
   CreatedAt: string
   UpdatedAt: string
   Product?: Product
@@ -217,6 +219,7 @@ export interface Product {
   SKU?: string
   Category?: string
   Description?: string
+  CurrencyCode: string
   Price: number
   Cost: number
   Stock: number

@@ -2,12 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../lib/api'
 import { Opportunity, OPPORTUNITY_STAGES, opportunityStageToString } from '../types'
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 0,
-})
+import { useCurrency } from '../contexts/CurrencyContext'
 
 const CLOSED_WON_STAGE = 6
 const CLOSED_LOST_STAGE = 7
@@ -30,6 +25,7 @@ const getStageBadgeClass = (stage: number) => {
 }
 
 export default function Dashboard() {
+  const { currencyCode, formatCurrency } = useCurrency()
   // Fetch total accounts count
   const { data: accountsData, isLoading: accountsLoading, error: accountsError } = useQuery({
     queryKey: ['accounts-count'],
@@ -77,14 +73,21 @@ export default function Dashboard() {
 
   const opportunities = (opportunitiesData?.items as Opportunity[]) || []
   const openOpportunities = opportunities.filter(opportunity => !isClosedStage(opportunity.Stage))
-  const totalOpenPipeline = openOpportunities.reduce((sum, opportunity) => sum + opportunity.Amount, 0)
+  const currencyAlignedOpportunities = openOpportunities.filter(
+    opportunity => !opportunity.CurrencyCode || opportunity.CurrencyCode === currencyCode,
+  )
+  const totalOpenPipeline = currencyAlignedOpportunities.reduce((sum, opportunity) => sum + opportunity.Amount, 0)
 
   const stageOptions = OPPORTUNITY_STAGES()
   const pipelineByStage = stageOptions
     .map(stage => ({
       stage,
       total: opportunities
-        .filter(opportunity => opportunity.Stage === stage.value && !isClosedStage(stage.value))
+        .filter(opportunity =>
+          opportunity.Stage === stage.value &&
+          !isClosedStage(stage.value) &&
+          (!opportunity.CurrencyCode || opportunity.CurrencyCode === currencyCode),
+        )
         .reduce((sum, opportunity) => sum + opportunity.Amount, 0),
     }))
     .filter(item => item.total > 0)
@@ -162,7 +165,7 @@ export default function Dashboard() {
             {isLoading ? '...' : openOpportunities.length}
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-            Pipeline value {isLoading ? '...' : currencyFormatter.format(totalOpenPipeline)}
+            Pipeline value {isLoading ? '...' : formatCurrency(totalOpenPipeline, currencyCode)}
           </p>
         </div>
       </div>
@@ -230,7 +233,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <span className="text-base font-medium text-gray-900 dark:text-gray-100">
-                    {currencyFormatter.format(total)}
+                    {formatCurrency(total, currencyCode)}
                   </span>
                 </li>
               ))}
@@ -264,7 +267,7 @@ export default function Dashboard() {
                       <span className={`badge ${getStageBadgeClass(opportunity.Stage)}`}>
                         {opportunityStageToString(opportunity.Stage)}
                       </span>
-                      <span>{currencyFormatter.format(opportunity.Amount)}</span>
+                      <span>{formatCurrency(opportunity.Amount, opportunity.CurrencyCode || currencyCode)}</span>
                       <span>{opportunity.Probability}% probability</span>
                     </div>
                   </div>

@@ -4,12 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api'
 import { Opportunity, opportunityStageToString, taskStatusToString } from '../../types'
 import { Button } from '../../components/ui'
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 0,
-})
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 const CLOSED_WON_STAGE = 6
 const CLOSED_LOST_STAGE = 7
@@ -65,6 +60,7 @@ export default function OpportunityDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'open' | 'completed'>('open')
   const [activityTypeFilter, setActivityTypeFilter] = useState<string>('all')
+  const { currencyCode, formatCurrency } = useCurrency()
 
   const { data: opportunity, isLoading, error } = useQuery({
     queryKey: ['opportunity', id],
@@ -203,6 +199,7 @@ export default function OpportunityDetail() {
   }
 
   const lineItems = opportunity.LineItems ?? []
+  const opportunityCurrency = opportunity.CurrencyCode || currencyCode
   const dealTotal = lineItems.reduce((sum, item) => sum + (item.Total ?? 0), 0)
 
   return (
@@ -214,7 +211,7 @@ export default function OpportunityDetail() {
               {opportunity.Name}
             </h1>
             <span className="badge badge-primary">
-              {currencyFormatter.format(opportunity.Amount)}
+              {formatCurrency(opportunity.Amount, opportunityCurrency)}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-3">
@@ -327,7 +324,7 @@ export default function OpportunityDetail() {
             <div>
               <dt className="text-gray-600 dark:text-gray-400">Amount</dt>
               <dd className="text-gray-900 dark:text-gray-100">
-                {currencyFormatter.format(opportunity.Amount)}
+                {formatCurrency(opportunity.Amount, opportunityCurrency)}
               </dd>
             </div>
             <div>
@@ -615,7 +612,7 @@ export default function OpportunityDetail() {
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Deal total:{' '}
               <span className="font-semibold text-gray-900 dark:text-gray-100">
-                {currencyFormatter.format(dealTotal)}
+                {formatCurrency(dealTotal, opportunityCurrency)}
               </span>
             </div>
           )}
@@ -639,9 +636,10 @@ export default function OpportunityDetail() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 {lineItems.map(item => {
+                  const itemCurrency = item.CurrencyCode || opportunityCurrency
                   const discountParts: string[] = []
                   if (item.DiscountAmount > 0) {
-                    discountParts.push(currencyFormatter.format(item.DiscountAmount))
+                    discountParts.push(formatCurrency(item.DiscountAmount, itemCurrency))
                   }
                   if (item.DiscountPercent > 0) {
                     discountParts.push(`${item.DiscountPercent}%`)
@@ -653,12 +651,12 @@ export default function OpportunityDetail() {
                         {item.Product ? item.Product.Name : `Product #${item.ProductID}`}
                       </td>
                       <td className="px-4 py-3">{item.Quantity}</td>
-                      <td className="px-4 py-3">{currencyFormatter.format(item.UnitPrice)}</td>
+                      <td className="px-4 py-3">{formatCurrency(item.UnitPrice, itemCurrency)}</td>
                       <td className="px-4 py-3">
                         {discountParts.length > 0 ? discountParts.join(' + ') : '—'}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold">
-                        {currencyFormatter.format(item.Total)}
+                        {formatCurrency(item.Total, itemCurrency)}
                       </td>
                     </tr>
                   )
