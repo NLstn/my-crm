@@ -143,6 +143,10 @@ func main() {
 		log.Fatal("Failed to register OpportunityLineItem entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.OpportunityStageHistory{}); err != nil {
+		log.Fatal("Failed to register OpportunityStageHistory entity:", err)
+	}
+
 	if err := service.RegisterEntity(&models.WorkflowRule{}); err != nil {
 		log.Fatal("Failed to register WorkflowRule entity:", err)
 	}
@@ -190,6 +194,7 @@ func main() {
 	fmt.Println("Tasks:             http://localhost:" + port + "/Tasks")
 	fmt.Println("Opportunities:     http://localhost:" + port + "/Opportunities")
 	fmt.Println("Opportunity Items: http://localhost:" + port + "/OpportunityLineItems")
+	fmt.Println("Stage History:     http://localhost:" + port + "/OpportunityStageHistory")
 	fmt.Println("Employees:         http://localhost:" + port + "/Employees")
 	fmt.Println("Products:          http://localhost:" + port + "/Products")
 	fmt.Println("========================================")

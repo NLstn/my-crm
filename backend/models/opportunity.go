@@ -65,13 +65,18 @@ type Opportunity struct {
 	UpdatedAt          time.Time        `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Account    *Account              `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Contact    *Contact              `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
-	Owner      *Employee             `json:"Owner" gorm:"foreignKey:OwnerEmployeeID" odata:"navigation"`
-	ClosedBy   *Employee             `json:"ClosedBy" gorm:"foreignKey:ClosedByEmployeeID" odata:"navigation"`
-	LineItems  []OpportunityLineItem `json:"LineItems,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:OpportunityID" odata:"navigation"`
-	Activities []Activity            `json:"Activities,omitempty" gorm:"foreignKey:OpportunityID" odata:"navigation"`
-	Tasks      []Task                `json:"Tasks,omitempty" gorm:"foreignKey:OpportunityID" odata:"navigation"`
+	Account      *Account                  `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Contact      *Contact                  `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
+	Owner        *Employee                 `json:"Owner" gorm:"foreignKey:OwnerEmployeeID" odata:"navigation"`
+	ClosedBy     *Employee                 `json:"ClosedBy" gorm:"foreignKey:ClosedByEmployeeID" odata:"navigation"`
+	LineItems    []OpportunityLineItem     `json:"LineItems,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:OpportunityID" odata:"navigation"`
+	Activities   []Activity                `json:"Activities,omitempty" gorm:"foreignKey:OpportunityID" odata:"navigation"`
+	Tasks        []Task                    `json:"Tasks,omitempty" gorm:"foreignKey:OpportunityID" odata:"navigation"`
+	StageHistory []OpportunityStageHistory `json:"StageHistory,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:OpportunityID" odata:"navigation"`
+
+	stageHistoryShouldRecord bool             `json:"-" gorm:"-"`
+	stageHistoryHadPrevious  bool             `json:"-" gorm:"-"`
+	previousStageValue       OpportunityStage `json:"-" gorm:"-"`
 }
 
 // TableName specifies the table name for GORM
@@ -81,6 +86,13 @@ func (Opportunity) TableName() string {
 
 // BeforeSave validates relationships before persisting changes
 func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
+	opportunity.stageHistoryShouldRecord = false
+	opportunity.stageHistoryHadPrevious = false
+
+	if opportunity.ID == 0 {
+		opportunity.stageHistoryShouldRecord = true
+	}
+
 	if opportunity.ContactID != nil {
 		var contact Contact
 		if err := tx.Select("account_id").First(&contact, *opportunity.ContactID).Error; err != nil {
@@ -102,6 +114,12 @@ func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
 				return err
 			}
 		} else {
+			if existing.Stage != opportunity.Stage {
+				opportunity.stageHistoryShouldRecord = true
+				opportunity.stageHistoryHadPrevious = true
+				opportunity.previousStageValue = existing.Stage
+			}
+
 			previousWasClosed = existing.Stage == OpportunityStageClosedWon || existing.Stage == OpportunityStageClosedLost
 		}
 	}
@@ -142,6 +160,42 @@ func (opportunity *Opportunity) BeforeSave(tx *gorm.DB) error {
 		}
 		opportunity.Amount = math.Round(total*100) / 100
 	}
+
+	return nil
+}
+
+// AfterSave records a stage history entry when a new opportunity is created or when the stage changes
+func (opportunity *Opportunity) AfterSave(tx *gorm.DB) error {
+	if !opportunity.stageHistoryShouldRecord {
+		return nil
+	}
+
+	history := OpportunityStageHistory{
+		OpportunityID: opportunity.ID,
+		Stage:         opportunity.Stage,
+	}
+
+	if opportunity.stageHistoryHadPrevious {
+		prev := int64(opportunity.previousStageValue)
+		history.PreviousStage = &prev
+	}
+
+	if opportunity.Stage == OpportunityStageClosedWon || opportunity.Stage == OpportunityStageClosedLost {
+		if opportunity.ClosedByEmployeeID != nil {
+			history.ChangedByEmployeeID = opportunity.ClosedByEmployeeID
+		} else if opportunity.OwnerEmployeeID != nil {
+			history.ChangedByEmployeeID = opportunity.OwnerEmployeeID
+		}
+	} else if opportunity.OwnerEmployeeID != nil {
+		history.ChangedByEmployeeID = opportunity.OwnerEmployeeID
+	}
+
+	if err := tx.Omit("Opportunity").Create(&history).Error; err != nil {
+		return err
+	}
+
+	opportunity.stageHistoryShouldRecord = false
+	opportunity.stageHistoryHadPrevious = false
 
 	return nil
 }

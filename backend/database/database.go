@@ -52,6 +52,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Product{},
 		&models.Opportunity{},
 		&models.OpportunityLineItem{},
+		&models.OpportunityStageHistory{},
 		&models.WorkflowRule{},
 		&models.WorkflowExecution{},
 	)
