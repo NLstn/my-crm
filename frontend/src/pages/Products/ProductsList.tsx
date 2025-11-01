@@ -5,7 +5,7 @@ import api from '../../lib/api'
 import { mergeODataQuery } from '../../lib/odataUtils'
 import { Product } from '../../types'
 import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
-import { useCurrency } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 
 export default function ProductsList() {
   const { currencyCode, formatCurrency } = useCurrency()

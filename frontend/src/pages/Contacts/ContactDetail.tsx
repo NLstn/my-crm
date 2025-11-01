@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Contact, opportunityStageToString } from '../../types'
 import { Button } from '../../components/ui'
-import { useCurrency } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 
 const getOpportunityStageBadge = (stage: number) => {
   switch (stage) {

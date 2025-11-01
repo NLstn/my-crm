@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import api from '../lib/api'
 import { createCurrencyFormatter, DEFAULT_CURRENCY_CODE } from '../lib/currency'
 
@@ -14,6 +14,8 @@ const CurrencyContext = createContext<{
   formatter: Intl.NumberFormat
   formatCurrency: (value: number, currencyOverride?: string, localeOverride?: string) => string
 } | undefined>(undefined)
+
+export { CurrencyContext }
 
 const defaultFetchSettings: FetchSettingsFn = async () => {
   const response = await api.get('/OrganizationSettings?$top=1')
@@ -88,12 +90,4 @@ export function CurrencyProvider({ children, fetchSettings }: CurrencyProviderPr
   )
 
   return <CurrencyContext.Provider value={contextValue}>{children}</CurrencyContext.Provider>
-}
-
-export function useCurrency() {
-  const context = useContext(CurrencyContext)
-  if (!context) {
-    throw new Error('useCurrency must be used within a CurrencyProvider')
-  }
-  return context
 }

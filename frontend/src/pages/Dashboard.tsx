@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../lib/api'
 import { Opportunity, OPPORTUNITY_STAGES, opportunityStageToString } from '../types'
-import { useCurrency } from '../contexts/CurrencyContext'
+import { useCurrency } from '../hooks/useCurrency'
 
 const CLOSED_WON_STAGE = 6
 const CLOSED_LOST_STAGE = 7

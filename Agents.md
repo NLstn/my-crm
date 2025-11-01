@@ -360,8 +360,51 @@ Always include dark mode for colors:
 
 1. **Check existing patterns** in similar files
 2. **For backend**: Verify go-odata supports what you need
-3. **For frontend**: Confirm colors exist in theme
+3. **For frontend**: Confirm colors exist in theme and use UI components
 4. **Read related code** to understand context
+5. **ALWAYS run linting** before committing changes
+
+### 🚨 CRITICAL: Linting is MANDATORY
+
+**⚠️ NEVER commit code that fails linting**
+
+**Frontend linting workflow:**
+```bash
+cd /workspaces/my-crm/frontend
+npm run lint
+```
+
+**Backend linting workflow:**
+```bash
+cd /workspaces/my-crm/backend
+gofmt -l . && go vet ./...
+```
+
+**Common linting issues and fixes:**
+
+1. **React hooks exhaustive-deps warnings:**
+   - Add missing dependencies to useEffect dependency arrays
+   - For stable functions like setState, use `eslint-disable-line react-hooks/exhaustive-deps`
+   - Example: `}, [dependency1, dependency2]) // eslint-disable-line react-hooks/exhaustive-deps`
+
+2. **React Fast Refresh warnings:**
+   - Don't export both components and hooks/constants from the same file
+   - Move hooks to separate files in `src/hooks/`
+   - Move constants to utility files in `src/lib/`
+
+3. **TypeScript syntax in JSX files:**
+   - Ensure test files with JSX use `.tsx` extension, not `.ts`
+   - Import React types properly: `import type { ReactNode } from 'react'`
+
+4. **Unused variables:**
+   - Remove unused imports and variables
+   - Use underscore prefix for intentionally unused variables: `_unusedParam`
+
+**CI/CD Integration:**
+- Linting runs automatically in GitHub Actions
+- Frontend CI checks: `npm run lint` and `npm test`
+- Backend CI checks: `go fmt`, `go vet`, and `go test`
+- **All checks must pass** before PR can be merged
 
 ### When You're Stuck
 
@@ -377,11 +420,54 @@ Always include dark mode for colors:
 3. Suggest adding it to the theme configuration
 4. Wait for user to update `tailwind.config.js`
 
+**Linting failures:**
+1. **NEVER ignore linting errors** by disabling rules globally
+2. Fix the underlying issue, don't just suppress warnings
+3. Use `eslint-disable-line` or `eslint-disable-next-line` sparingly and only for specific cases
+4. Document why you're disabling a rule with a comment
+
+### 📋 Standard Development Workflow for AI Agents
+
+**Every change should follow this exact workflow:**
+
+1. **✅ ANALYZE THE REQUEST**
+   - Understand what the user wants to accomplish
+   - Check existing patterns in similar files
+   - Verify the approach aligns with project requirements
+
+2. **✅ MAKE THE CHANGES**
+   - Use UI components from `@/components/ui` (frontend)
+   - Use go-odata library exclusively (backend)
+   - Follow existing code patterns
+   - Use predefined colors and include dark mode
+
+3. **✅ RUN LINTING (MANDATORY)**
+   - Frontend: `cd /workspaces/my-crm/frontend && npm run lint`
+   - Backend: `cd /workspaces/my-crm/backend && gofmt -l . && go vet ./...`
+   - **NEVER skip this step**
+
+4. **✅ FIX ALL LINTING ISSUES**
+   - Fix errors and warnings properly
+   - Use eslint-disable comments only when absolutely necessary
+   - Document why you're disabling any rules
+
+5. **✅ TEST THE CHANGES**
+   - Frontend: `npm run dev` and test in browser
+   - Backend: `go run cmd/server/main.go` and test endpoints
+   - Run tests: `npm test` (frontend) or `go test ./...` (backend)
+
+6. **✅ VERIFY EVERYTHING WORKS**
+   - Check that your changes solve the original problem
+   - Test both light and dark modes (frontend)
+   - Verify responsive design (frontend)
+
+**This workflow is NON-NEGOTIABLE. Do not skip steps.**
+
 ### Testing Changes
 
 **Backend:**
 ```bash
-cd /workspace/backend
+cd /workspaces/my-crm/backend
 go run cmd/server/main.go
 ```
 Test endpoints:
@@ -391,7 +477,7 @@ Test endpoints:
 
 **Frontend:**
 ```bash
-cd /workspace/frontend
+cd /workspaces/my-crm/frontend
 npm run dev
 ```
 Test in browser:
@@ -457,7 +543,8 @@ When testing or verifying web functionality, AI agents can use the Playwright MC
 When in doubt:
 1. **Look at existing code** for patterns
 2. **Check documentation** for libraries
-3. **Ask the user** before making assumptions
-4. **Report limitations** rather than work around them
+3. **Run linting** to catch issues early
+4. **Ask the user** before making assumptions
+5. **Report limitations** rather than work around them
 
-Remember: This project values **consistency**, **standards compliance**, and **maintainability** over quick hacks.
+Remember: This project values **consistency**, **standards compliance**, **linting compliance**, and **maintainability** over quick hacks.

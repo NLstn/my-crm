@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createCurrencyFormatter, DEFAULT_CURRENCY_CODE } from '../currency'
-import { CurrencyProvider, useCurrency } from '../../contexts/CurrencyContext'
+import { CurrencyProvider } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 import type { ReactNode } from 'react'
 
 describe('createCurrencyFormatter', () => {

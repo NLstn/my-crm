@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../lib/api'
@@ -12,7 +12,7 @@ import {
   OPPORTUNITY_STAGES,
 } from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
-import { useCurrency } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 
 const CLOSED_WON_STAGE = 6
 const CLOSED_LOST_STAGE = 7
@@ -85,7 +85,6 @@ export default function OpportunityForm() {
   const isEdit = Boolean(id)
 
   const accountIdFromQuery = searchParams.get('accountId')
-  const contactIdFromQuery = searchParams.get('contactId')
 
   const stageOptions = OPPORTUNITY_STAGES()
   const defaultStage = stageOptions[0]?.value ?? 1
@@ -123,8 +122,8 @@ export default function OpportunityForm() {
     },
   })
 
-  const getInitialFormData = (): Partial<Opportunity> => {
-    if (opportunity) {
+  const getInitialFormData = useCallback((): Partial<Opportunity> => {
+    if (isEdit && opportunity) {
       return {
         AccountID: opportunity.AccountID,
         ContactID: opportunity.ContactID,
@@ -135,29 +134,159 @@ export default function OpportunityForm() {
         Probability: opportunity.Probability,
         ExpectedCloseDate: opportunity.ExpectedCloseDate,
         Stage: opportunity.Stage,
-        Description: opportunity.Description || '',
-        CloseReason: opportunity.CloseReason || '',
+        Description: opportunity.Description,
         ClosedAt: opportunity.ClosedAt,
+        CloseReason: opportunity.CloseReason,
         ClosedByEmployeeID: opportunity.ClosedByEmployeeID,
       }
+    } else {
+      return {
+        AccountID: accountIdFromQuery ? parseInt(accountIdFromQuery, 10) : undefined,
+        ContactID: undefined,
+        OwnerEmployeeID: undefined,
+        Name: '',
+        Amount: 0,
+        CurrencyCode: currencyCode,
+        Probability: 50,
+        ExpectedCloseDate: undefined,
+        Stage: defaultStage,
+        Description: '',
+        ClosedAt: undefined,
+        CloseReason: '',
+        ClosedByEmployeeID: undefined,
+      }
+    }
+  }, [isEdit, opportunity, accountIdFromQuery, currencyCode, defaultStage])
+
+  const [formData, setFormData] = useState<Partial<Opportunity>>(getInitialFormData())
+  const [lineItems, setLineItems] = useState<LineItemFormState[]>(() =>
+    isEdit ? [] : [createEmptyLineItem(currencyCode)],
+  )
+  const [lineItemError, setLineItemError] = useState<string | null>(null)
+
+  const selectedAccountId = formData.AccountID
+
+  const lineItemsSubtotal = useMemo(() => {
+    return lineItems.reduce((acc, item) => {
+      if (item.ProductID) {
+        const subtotal = item.Quantity * item.UnitPrice
+        return acc + subtotal
+      }
+      return acc
+    }, 0)
+  }, [lineItems])
+
+  const lineItemsTotal = useMemo(() => {
+    return lineItems.reduce((acc, item) => {
+      if (item.ProductID) {
+        const { total } = calculateLineItemTotals(item)
+        return acc + total
+      }
+      return acc
+    }, 0)
+  }, [lineItems])
+
+  const totalDiscount = Math.max(0, lineItemsSubtotal - lineItemsTotal)
+  const resolvedCurrency = formData.CurrencyCode || currencyCode
+
+  const { data: contactsData } = useQuery({
+    queryKey: ['contacts', selectedAccountId],
+    queryFn: async () => {
+      if (!selectedAccountId) return null
+      const response = await api.get('/Contacts', {
+        params: {
+          $filter: `AccountID eq ${selectedAccountId}`,
+        },
+      })
+      return response.data
+    },
+    enabled: Boolean(selectedAccountId),
+  })
+
+  // Initialize form data when dependencies change
+  useEffect(() => {
+    const newFormData = getInitialFormData()
+    setFormData(newFormData)
+  }, [getInitialFormData]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Initialize line items when form changes
+  useEffect(() => {
+    if (isEdit && opportunity) {
+      if (opportunity.LineItems && opportunity.LineItems.length > 0) {
+        setLineItems(opportunity.LineItems.map(mapOpportunityLineItemToFormState))
+      } else {
+        setLineItems([createEmptyLineItem(formData.CurrencyCode || currencyCode)])
+      }
+    } else if (!isEdit) {
+      setLineItems([createEmptyLineItem(formData.CurrencyCode || currencyCode)])
     }
 
-    return {
-      AccountID: accountIdFromQuery ? parseInt(accountIdFromQuery, 10) : 0,
-      ContactID: contactIdFromQuery ? parseInt(contactIdFromQuery, 10) : undefined,
-      OwnerEmployeeID: undefined,
-      Name: '',
-      Amount: 0,
-      CurrencyCode: currencyCode,
-      Probability: 50,
-      ExpectedCloseDate: undefined,
-      Stage: defaultStage,
-      Description: '',
-      ClosedAt: undefined,
-      CloseReason: '',
-      ClosedByEmployeeID: undefined,
+    setLineItemError(null)
+  }, [isEdit, opportunity, currencyCode, formData.CurrencyCode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear contact if account changes
+  useEffect(() => {
+    if (!selectedAccountId && formData.ContactID) {
+      setFormData(prev => ({
+        ...prev,
+        ContactID: undefined,
+      }))
     }
-  }
+  }, [selectedAccountId, formData.ContactID]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Validate contact against account
+  useEffect(() => {
+    if (!formData.ContactID) return
+
+    const accountContacts = contactsData?.items as Contact[] | undefined
+    if (!accountContacts) return
+
+    const contactMatchesAccount = accountContacts.some(contact => contact.ID === formData.ContactID)
+
+    if (!contactMatchesAccount) {
+      setFormData(prev => ({
+        ...prev,
+        ContactID: undefined,
+      }))
+    }
+  }, [contactsData, formData.ContactID]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle closed stage logic
+  useEffect(() => {
+    if (!isClosedStageValue(formData.Stage)) {
+      if (formData.ClosedAt || (formData.CloseReason && formData.CloseReason.trim() !== '') || formData.ClosedByEmployeeID) {
+        setFormData(prev => ({
+          ...prev,
+          ClosedAt: undefined,
+          CloseReason: '',
+          ClosedByEmployeeID: undefined,
+        }))
+      }
+      return
+    }
+
+    if (!formData.ClosedByEmployeeID && formData.OwnerEmployeeID) {
+      setFormData(prev => ({
+        ...prev,
+        ClosedByEmployeeID: prev.ClosedByEmployeeID ?? prev.OwnerEmployeeID,
+      }))
+    }
+  }, [formData.Stage, formData.ClosedAt, formData.CloseReason, formData.ClosedByEmployeeID, formData.OwnerEmployeeID]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Update amount from line items total
+  useEffect(() => {
+    const roundedTotal = Number(lineItemsTotal.toFixed(2))
+    setFormData(prev => {
+      const currentAmount = prev.Amount ?? 0
+      if (Math.abs(currentAmount - roundedTotal) < 0.005) {
+        return prev
+      }
+      return {
+        ...prev,
+        Amount: roundedTotal,
+      }
+    })
+  }, [lineItemsTotal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [formData, setFormData] = useState<Partial<Opportunity>>(getInitialFormData())
   const [lineItems, setLineItems] = useState<LineItemFormState[]>(() =>
@@ -195,86 +324,6 @@ export default function OpportunityForm() {
     },
     enabled: Boolean(selectedAccountId),
   })
-
-  useEffect(() => {
-    setFormData(getInitialFormData())
-  }, [id, opportunity?.ID, currencyCode])
-
-  useEffect(() => {
-    if (isEdit && opportunity) {
-      if (opportunity.LineItems && opportunity.LineItems.length > 0) {
-        setLineItems(opportunity.LineItems.map(mapOpportunityLineItemToFormState))
-      } else {
-        setLineItems([createEmptyLineItem(formData.CurrencyCode || currencyCode)])
-      }
-    } else if (!isEdit) {
-      setLineItems([createEmptyLineItem(formData.CurrencyCode || currencyCode)])
-    }
-
-    setLineItemError(null)
-  }, [isEdit, opportunity?.ID, opportunity?.UpdatedAt, currencyCode, formData.CurrencyCode])
-
-  useEffect(() => {
-    if (!selectedAccountId && formData.ContactID) {
-      setFormData(prev => ({
-        ...prev,
-        ContactID: undefined,
-      }))
-    }
-  }, [selectedAccountId, formData.ContactID])
-
-  useEffect(() => {
-    if (!formData.ContactID) return
-
-    const accountContacts = contactsData?.items as Contact[] | undefined
-    if (!accountContacts) return
-
-    const contactMatchesAccount = accountContacts.some(contact => contact.ID === formData.ContactID)
-
-    if (!contactMatchesAccount) {
-      setFormData(prev => ({
-        ...prev,
-        ContactID: undefined,
-      }))
-    }
-  }, [contactsData, formData.ContactID])
-
-  // Handle closed stage logic
-  useEffect(() => {
-    if (!isClosedStageValue(formData.Stage)) {
-      if (formData.ClosedAt || (formData.CloseReason && formData.CloseReason.trim() !== '') || formData.ClosedByEmployeeID) {
-        setFormData(prev => ({
-          ...prev,
-          ClosedAt: undefined,
-          CloseReason: '',
-          ClosedByEmployeeID: undefined,
-        }))
-      }
-      return
-    }
-
-    if (!formData.ClosedByEmployeeID && formData.OwnerEmployeeID) {
-      setFormData(prev => ({
-        ...prev,
-        ClosedByEmployeeID: prev.ClosedByEmployeeID ?? prev.OwnerEmployeeID,
-      }))
-    }
-  }, [formData.Stage, formData.ClosedAt, formData.CloseReason, formData.ClosedByEmployeeID, formData.OwnerEmployeeID])
-
-  // Update amount from line items total
-  useEffect(() => {
-    const roundedTotal = Number(lineItemsTotal.toFixed(2))
-    setFormData(prev => {
-      const currentAmount = prev.Amount ?? 0
-      if (Math.abs(currentAmount - roundedTotal) < 0.005) {
-        return prev
-      }
-      return {
-        ...prev,
-        Amount: roundedTotal,
-      }
-    })
-  }, [lineItemsTotal])
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<Opportunity>) => {

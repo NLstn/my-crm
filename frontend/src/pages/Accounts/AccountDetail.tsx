@@ -6,7 +6,7 @@ import { Account, issueStatusToString, issuePriorityToString, opportunityStageTo
 import { Button } from '../../components/ui'
 import Timeline from '../../components/Timeline'
 import TaskList from '../../components/TaskList'
-import { useCurrency } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 
 const getOpportunityStageBadge = (stage: number) => {
   switch (stage) {

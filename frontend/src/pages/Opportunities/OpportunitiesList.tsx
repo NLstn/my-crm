@@ -6,7 +6,7 @@ import { mergeODataQuery } from '../../lib/odataUtils'
 import { Opportunity, OPPORTUNITY_STAGES, opportunityStageToString } from '../../types'
 import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
 import { Button } from '@/components/ui'
-import { useCurrency } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 
 const getStageBadgeClass = (stage: number) => {
   switch (stage) {

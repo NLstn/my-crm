@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api'
 import { Opportunity, opportunityStageToString, taskStatusToString } from '../../types'
 import { Button } from '../../components/ui'
-import { useCurrency } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 
 const CLOSED_WON_STAGE = 6
 const CLOSED_LOST_STAGE = 7

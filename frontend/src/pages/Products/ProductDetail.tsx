@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Product } from '../../types'
 import { Button } from '../../components/ui'
-import { useCurrency } from '../../contexts/CurrencyContext'
+import { useCurrency } from '../../hooks/useCurrency'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
