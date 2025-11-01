@@ -70,7 +70,7 @@ export default function OpportunityDetail() {
     queryKey: ['opportunity', id],
     queryFn: async () => {
       const response = await api.get(
-        `/Opportunities(${id})?$expand=Account,Contact,Owner,ClosedBy,LineItems($expand=Product),Activities($expand=Contact,Employee),Tasks($expand=Contact,Employee)`,
+        `/Opportunities(${id})?$expand=Account,Contact,Owner,ClosedBy,LineItems($expand=Product),StageHistory($orderby=ChangedAt desc;$expand=ChangedBy),Activities($expand=Contact,Employee),Tasks($expand=Contact,Employee)`,
       )
       return response.data as Opportunity
     },
@@ -94,6 +94,16 @@ export default function OpportunityDetail() {
     return [...opportunity.Activities]
       .filter(activity => activity.OpportunityID === opportunity.ID)
       .sort((a, b) => new Date(b.ActivityTime).getTime() - new Date(a.ActivityTime).getTime())
+  }, [opportunity])
+
+  const stageHistoryEntries = useMemo(() => {
+    if (!opportunity?.StageHistory) {
+      return []
+    }
+
+    return [...opportunity.StageHistory].sort(
+      (a, b) => new Date(b.ChangedAt).getTime() - new Date(a.ChangedAt).getTime(),
+    )
   }, [opportunity])
 
   const activityTypes = useMemo(() => {
@@ -360,6 +370,71 @@ export default function OpportunityDetail() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="card p-6 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Stage History</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Monitor how this opportunity has progressed through the pipeline.
+            </p>
+          </div>
+        </div>
+
+        {stageHistoryEntries.length === 0 ? (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            No stage changes recorded yet.
+          </p>
+        ) : (
+          <ol className="relative border-l border-gray-200 dark:border-gray-700">
+            {stageHistoryEntries.map(history => {
+              const stageLabel = opportunityStageToString(history.Stage)
+              const previousStageLabel =
+                history.PreviousStage != null
+                  ? opportunityStageToString(history.PreviousStage)
+                  : undefined
+
+              return (
+                <li key={history.ID} className="relative pl-6 pb-6 last:pb-0">
+                  <span className="absolute left-0 top-2 h-3 w-3 -translate-x-1/2 rounded-full bg-primary-500 dark:bg-primary-400" />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`badge ${getStageBadgeClass(history.Stage)}`}>
+                        {stageLabel}
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        {formatDateTime(history.ChangedAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {previousStageLabel
+                        ? `Moved from ${previousStageLabel} to ${stageLabel}.`
+                        : `Initial stage captured as ${stageLabel}.`}
+                    </p>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      {history.ChangedBy ? (
+                        <>
+                          Updated by{' '}
+                          <Link
+                            to={`/employees/${history.ChangedBy.ID}`}
+                            className="text-primary-600 hover:underline"
+                          >
+                            {history.ChangedBy.FirstName} {history.ChangedBy.LastName}
+                          </Link>
+                        </>
+                      ) : history.ChangedByEmployeeID ? (
+                        <>Updated by Employee #{history.ChangedByEmployeeID}</>
+                      ) : (
+                        'Updated automatically'
+                      )}
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

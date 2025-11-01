@@ -156,6 +156,7 @@ export interface Opportunity {
   LineItems?: OpportunityLineItem[]
   Activities?: Activity[]
   Tasks?: Task[]
+  StageHistory?: OpportunityStageHistory[]
 }
 
 export interface OpportunityLineItem {
@@ -171,6 +172,16 @@ export interface OpportunityLineItem {
   CreatedAt: string
   UpdatedAt: string
   Product?: Product
+}
+
+export interface OpportunityStageHistory {
+  ID: number
+  OpportunityID: number
+  Stage: number
+  PreviousStage?: number | null
+  ChangedAt: string
+  ChangedByEmployeeID?: number
+  ChangedBy?: Employee
 }
 
 // Re-export enum utilities from lib/enums
