@@ -498,8 +498,8 @@ The seeded database includes these employee accounts you can use to log in:
 
 When using Playwright MCP tools for automated testing:
 
-```typescript
-// Example workflow
+```
+Example workflow:
 1. Navigate to login page: browser_navigate to 'http://localhost:5173/login'
 2. Take snapshot: browser_snapshot to see the login form
 3. Fill email field: browser_type with element "Email address" and text "alice.johnson@company.com"
