@@ -176,7 +176,13 @@ func SeedData(db *gorm.DB) error {
 				assignment = append(assignment, tags[(i+1)%len(tags)])
 			}
 
-			if err := db.Model(&accounts[i]).Association("Tags").Append(assignment...).Error; err != nil {
+			// Convert slice to interface slice for GORM
+			tagInterfaces := make([]interface{}, len(assignment))
+			for idx, tag := range assignment {
+				tagInterfaces[idx] = tag
+			}
+
+			if err := db.Model(&accounts[i]).Association("Tags").Append(tagInterfaces...); err != nil {
 				return fmt.Errorf("failed to assign tags to account: %w", err)
 			}
 		}
