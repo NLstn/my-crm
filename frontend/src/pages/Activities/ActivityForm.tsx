@@ -27,17 +27,6 @@ export default function ActivityForm() {
     enabled: isEdit,
   })
 
-  const leadContextId = leadIdFromQuery || (activity?.LeadID ? activity.LeadID.toString() : undefined)
-
-  const { data: leadData } = useQuery({
-    queryKey: ['lead', leadContextId],
-    queryFn: async () => {
-      const response = await api.get(`/Leads(${leadContextId})`)
-      return response.data as Lead
-    },
-    enabled: Boolean(leadContextId),
-  })
-
   const { data: accountsData } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
@@ -50,6 +39,14 @@ export default function ActivityForm() {
     queryKey: ['employees'],
     queryFn: async () => {
       const response = await api.get('/Employees')
+      return response.data
+    },
+  })
+
+  const { data: leadsData } = useQuery({
+    queryKey: ['leads'],
+    queryFn: async () => {
+      const response = await api.get('/Leads?$orderby=Name asc')
       return response.data
     },
   })
@@ -86,8 +83,20 @@ export default function ActivityForm() {
   }
 
   const [formData, setFormData] = useState<Partial<Activity>>(getInitialFormData())
+  const [formError, setFormError] = useState<string | null>(null)
 
   const selectedAccountId = formData.AccountID
+  const selectedLeadId = formData.LeadID
+  const leadContextId = selectedLeadId ? selectedLeadId.toString() : undefined
+
+  const { data: leadData } = useQuery({
+    queryKey: ['lead', leadContextId],
+    queryFn: async () => {
+      const response = await api.get(`/Leads(${leadContextId})`)
+      return response.data as Lead
+    },
+    enabled: Boolean(leadContextId),
+  })
 
   const { data: contactsData } = useQuery({
     queryKey: ['contacts', selectedAccountId],
@@ -176,8 +185,8 @@ export default function ActivityForm() {
         queryClient.invalidateQueries({ queryKey: ['lead', leadIdForInvalidation.toString()] })
       }
 
-      const leadNavigateId = !isEdit
-        ? (leadIdFromQuery || (variables.LeadID ? variables.LeadID.toString() : undefined))
+      const leadNavigateId = !isEdit && variables.LeadID
+        ? variables.LeadID.toString()
         : undefined
       if (leadNavigateId) {
         navigate(`/leads/${leadNavigateId}`)
@@ -195,6 +204,13 @@ export default function ActivityForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!formData.AccountID && !formData.LeadID) {
+      setFormError('Select an account or a lead to log the activity.')
+      return
+    }
+
+    setFormError(null)
     mutation.mutate(formData)
   }
 
@@ -209,14 +225,18 @@ export default function ActivityForm() {
       ...prev,
       [e.target.name]: value,
     }))
+    if (formError) {
+      setFormError(null)
+    }
   }
 
   const accounts = (accountsData?.items as Account[]) || []
   const contacts = selectedAccountId ? ((contactsData?.items as Contact[]) || []) : []
   const employees = (employeesData?.items as Employee[]) || []
+  const leads = (leadsData?.items as Lead[]) || []
   const lead = leadData as Lead | undefined
-  const isLeadScoped = Boolean(leadIdFromQuery || formData.LeadID)
-  const leadLinkTarget = lead?.ID?.toString() || leadContextId || (formData.LeadID ? formData.LeadID.toString() : undefined)
+  const isLeadScoped = Boolean(selectedLeadId)
+  const leadLinkTarget = selectedLeadId ? selectedLeadId.toString() : undefined
   const leadDisplayName = lead?.Name || (leadLinkTarget ? `Lead #${leadLinkTarget}` : 'Lead')
 
   const activityTimeValue = formData.ActivityTime
@@ -279,6 +299,29 @@ export default function ActivityForm() {
                 Account selection is optional when logging lead activities.
               </p>
             )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label htmlFor="LeadID" className="label">
+              Lead
+            </label>
+            <select
+              id="LeadID"
+              name="LeadID"
+              value={selectedLeadId ?? ''}
+              onChange={handleChange}
+              className="input"
+            >
+              <option value="">None</option>
+              {leads.map((leadOption: Lead) => (
+                <option key={leadOption.ID} value={leadOption.ID}>
+                  {leadOption.Name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              Selecting a lead makes the account optional for this activity.
+            </p>
           </div>
 
           <div>
@@ -401,6 +444,12 @@ export default function ActivityForm() {
             {mutation.isPending ? 'Saving...' : isEdit ? 'Update Activity' : 'Save Activity'}
           </Button>
         </div>
+
+        {formError && (
+          <div className="text-error-600 dark:text-error-400 text-sm">
+            {formError}
+          </div>
+        )}
 
         {mutation.isError && (
           <div className="text-error-600 dark:text-error-400 text-sm">
