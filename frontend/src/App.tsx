@@ -33,6 +33,7 @@ import EmployeeForm from './pages/Employees/EmployeeForm'
 import ProductsList from './pages/Products/ProductsList'
 import ProductDetail from './pages/Products/ProductDetail'
 import ProductForm from './pages/Products/ProductForm'
+import WorkflowSettingsPage from './pages/Settings/Workflows'
 import { fetchEnums } from './lib/enums'
 
 function App() {
@@ -105,6 +106,9 @@ function App() {
             <Route path="products/new" element={<ProductForm />} />
             <Route path="products/:id" element={<ProductDetail />} />
             <Route path="products/:id/edit" element={<ProductForm />} />
+
+            {/* Settings routes */}
+            <Route path="settings/workflows" element={<WorkflowSettingsPage />} />
             </Route>
           </Routes>
         </Router>

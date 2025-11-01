@@ -19,6 +19,7 @@ export default function Layout() {
     { name: 'Opportunities', href: '/opportunities' },
     { name: 'Employees', href: '/employees' },
     { name: 'Products', href: '/products' },
+    { name: 'Workflows', href: '/settings/workflows' },
   ]
 
   const isActive = (path: string) => {
