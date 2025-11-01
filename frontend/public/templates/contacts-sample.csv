@@ -1,0 +1,3 @@
+AccountID,FirstName,LastName,Email,Phone,IsPrimary
+1,Amelia,Diaz,amelia.diaz@example.com,555-0160,true
+1,Jordan,Lee,jordan.lee@example.com,555-0188,false

@@ -217,6 +217,16 @@ export default function LeadsList() {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Capture and manage prospects before converting them into accounts.
           </p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Streamline bulk imports and exports in the{' '}
+            <Link
+              to="/migration"
+              className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              Migration Cockpit
+            </Link>
+            .
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
