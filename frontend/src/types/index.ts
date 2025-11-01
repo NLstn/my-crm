@@ -1,3 +1,10 @@
+export interface Tag {
+  ID: number
+  Name: string
+  CreatedAt: string
+  UpdatedAt: string
+}
+
 export interface Account {
   ID: number
   Name: string
@@ -12,6 +19,7 @@ export interface Account {
   PostalCode?: string
   Description?: string
   EmployeeID?: number
+  LifecycleStage?: string
   CreatedAt: string
   UpdatedAt: string
   Contacts?: Contact[]
@@ -20,6 +28,7 @@ export interface Account {
   Tasks?: Task[]
   Opportunities?: Opportunity[]
   Employee?: Employee
+  Tags?: Tag[]
 }
 
 export interface Contact {

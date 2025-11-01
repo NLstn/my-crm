@@ -42,6 +42,8 @@ func AutoMigrate(db *gorm.DB) error {
 
 	err := db.AutoMigrate(
 		&models.Account{},
+		&models.Tag{},
+		&models.AccountTag{},
 		&models.Contact{},
 		&models.Lead{},
 		&models.Issue{},
@@ -115,6 +117,17 @@ func SeedData(db *gorm.DB) error {
 		return fmt.Errorf("failed to create employees: %w", err)
 	}
 
+	// Create reusable tags for account segmentation
+	tagNames := []string{"Enterprise", "SMB", "Strategic", "High Touch", "At Risk"}
+	tags := make([]models.Tag, len(tagNames))
+	for i, name := range tagNames {
+		tags[i] = models.Tag{Name: name}
+	}
+
+	if err := db.Create(&tags).Error; err != nil {
+		return fmt.Errorf("failed to create tags: %w", err)
+	}
+
 	// Create 30 accounts
 	accountNames := []string{"Acme Corporation", "Global Industries Inc", "Retail Masters Ltd", "Tech Innovations LLC", "Green Energy Solutions",
 		"Medical Services Group", "Financial Advisors Inc", "Education Systems", "Transport Logistics", "Food Services Co",
@@ -131,28 +144,41 @@ func SeedData(db *gorm.DB) error {
 	industries := []string{"Technology", "Manufacturing", "Retail", "Healthcare", "Finance", "Education", "Logistics", "Food & Beverage", "Consulting", "Marketing"}
 	cities := []string{"San Francisco", "Detroit", "New York", "Austin", "Seattle", "Boston", "Chicago", "Denver", "Atlanta", "Los Angeles"}
 	states := []string{"CA", "MI", "NY", "TX", "WA", "MA", "IL", "CO", "GA", "FL"}
+	lifecycleStages := []string{"Prospect", "Qualified", "Customer", "Churn Risk"}
 
 	accounts := make([]models.Account, 30)
 	for i := 0; i < 30; i++ {
 		accounts[i] = models.Account{
-			Name:        accountNames[i],
-			Industry:    industries[i%len(industries)],
-			Website:     fmt.Sprintf("https://%s.example.com", accountDomains[i]),
-			Phone:       fmt.Sprintf("+1-555-%04d", 100+i*10),
-			Email:       fmt.Sprintf("contact@%s.example.com", accountDomains[i]),
-			Address:     fmt.Sprintf("%d Business Street", 100+i*10),
-			City:        cities[i%len(cities)],
-			State:       states[i%len(states)],
-			Country:     "USA",
-			PostalCode:  fmt.Sprintf("%05d", 10000+i*100),
-			Description: fmt.Sprintf("Account for %s", accountNames[i]),
-			EmployeeID:  &employees[i%len(employees)].ID,
+			Name:           accountNames[i],
+			Industry:       industries[i%len(industries)],
+			Website:        fmt.Sprintf("https://%s.example.com", accountDomains[i]),
+			Phone:          fmt.Sprintf("+1-555-%04d", 100+i*10),
+			Email:          fmt.Sprintf("contact@%s.example.com", accountDomains[i]),
+			Address:        fmt.Sprintf("%d Business Street", 100+i*10),
+			City:           cities[i%len(cities)],
+			State:          states[i%len(states)],
+			Country:        "USA",
+			PostalCode:     fmt.Sprintf("%05d", 10000+i*100),
+			Description:    fmt.Sprintf("Account for %s", accountNames[i]),
+			EmployeeID:     &employees[i%len(employees)].ID,
+			LifecycleStage: lifecycleStages[i%len(lifecycleStages)],
 		}
 	}
 
 	for i := range accounts {
 		if err := db.Create(&accounts[i]).Error; err != nil {
 			return fmt.Errorf("failed to create account: %w", err)
+		}
+
+		if len(tags) > 0 {
+			assignment := []models.Tag{tags[i%len(tags)]}
+			if i%3 == 0 {
+				assignment = append(assignment, tags[(i+1)%len(tags)])
+			}
+
+			if err := db.Model(&accounts[i]).Association("Tags").Append(assignment...).Error; err != nil {
+				return fmt.Errorf("failed to assign tags to account: %w", err)
+			}
 		}
 	}
 

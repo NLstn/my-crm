@@ -114,4 +114,8 @@
   .badge-error {
     @apply bg-error-100 text-error-800 dark:bg-error-900 dark:text-error-200;
   }
+
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200;
+  }
 }
