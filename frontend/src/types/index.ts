@@ -213,3 +213,38 @@ export interface Product {
   CreatedAt: string
   UpdatedAt: string
 }
+
+export type WorkflowTriggerType = 'LeadStatusChanged' | 'TaskOverdue'
+
+export type WorkflowActionType = 'CreateFollowUpTask' | 'SendNotification'
+
+export interface WorkflowRule {
+  ID: number
+  Name: string
+  Description?: string
+  EntityType: string
+  TriggerType: WorkflowTriggerType
+  TriggerConfig?: Record<string, unknown>
+  ActionType: WorkflowActionType
+  ActionConfig?: Record<string, unknown>
+  IsActive: boolean
+  CreatedAt: string
+  UpdatedAt: string
+}
+
+export interface WorkflowExecution {
+  ID: number
+  WorkflowRuleID: number
+  TriggerEvent: string
+  EventSource?: string
+  EntityType: string
+  EntityID: string
+  ActionType: WorkflowActionType
+  Status: 'Pending' | 'Succeeded' | 'Failed'
+  ResultSummary?: string
+  ErrorMessage?: string
+  EventPayload?: Record<string, unknown>
+  CreatedAt: string
+  CompletedAt?: string
+  WorkflowRule?: WorkflowRule
+}

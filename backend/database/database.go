@@ -52,6 +52,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Product{},
 		&models.Opportunity{},
 		&models.OpportunityLineItem{},
+		&models.WorkflowRule{},
+		&models.WorkflowExecution{},
 	)
 
 	if err != nil {
@@ -721,6 +723,34 @@ func SeedData(db *gorm.DB) error {
 	for i := range leads {
 		if err := db.Create(&leads[i]).Error; err != nil {
 			return fmt.Errorf("failed to create lead: %w", err)
+		}
+	}
+
+	var workflowRuleCount int64
+	db.Model(&models.WorkflowRule{}).Count(&workflowRuleCount)
+	if workflowRuleCount == 0 {
+		sampleRule := models.WorkflowRule{
+			Name:        "Qualified Lead Follow-Up",
+			Description: "Automatically create a follow-up task when a lead becomes qualified.",
+			EntityType:  "Lead",
+			TriggerType: models.WorkflowTriggerLeadStatusChanged,
+			TriggerConfig: map[string]interface{}{
+				"status": string(models.LeadStatusQualified),
+			},
+			ActionType: models.WorkflowActionCreateFollowUpTask,
+			ActionConfig: map[string]interface{}{
+				"title":          "Reach out to qualified lead",
+				"description":    "Schedule a discovery call with the newly qualified lead.",
+				"owner":          "Automation Bot",
+				"dueInDays":      2,
+				"accountIdField": "ConvertedAccountID",
+				"contactIdField": "ConvertedContactID",
+			},
+			IsActive: true,
+		}
+
+		if err := db.Create(&sampleRule).Error; err != nil {
+			return fmt.Errorf("failed to seed workflow rule: %w", err)
 		}
 	}
 

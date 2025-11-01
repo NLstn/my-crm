@@ -15,6 +15,7 @@ import (
 	"github.com/nlstn/go-odata"
 	"github.com/nlstn/my-crm/backend/database"
 	"github.com/nlstn/my-crm/backend/models"
+	"github.com/nlstn/my-crm/backend/workflows"
 	"gorm.io/gorm"
 )
 
@@ -41,6 +42,13 @@ func main() {
 
 	// Initialize OData service
 	service := odata.NewService(db)
+
+	// Initialize workflow automation engine
+	workflowEngine := workflows.NewEngine(db)
+	if err := workflowEngine.RegisterCallbacks(db); err != nil {
+		log.Fatal("Failed to register workflow callbacks:", err)
+	}
+	workflowEngine.Start()
 
 	// Set custom namespace
 	if err := service.SetNamespace("CRM"); err != nil {
@@ -133,6 +141,14 @@ func main() {
 
 	if err := service.RegisterEntity(&models.OpportunityLineItem{}); err != nil {
 		log.Fatal("Failed to register OpportunityLineItem entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.WorkflowRule{}); err != nil {
+		log.Fatal("Failed to register WorkflowRule entity:", err)
+	}
+
+	if err := service.RegisterEntity(&models.WorkflowExecution{}); err != nil {
+		log.Fatal("Failed to register WorkflowExecution entity:", err)
 	}
 
 	if err := registerLeadConversionAction(service, db); err != nil {
