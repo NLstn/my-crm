@@ -103,6 +103,10 @@ func main() {
 		log.Fatal("Failed to register Account entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.Tag{}); err != nil {
+		log.Fatal("Failed to register Tag entity:", err)
+	}
+
 	if err := service.RegisterEntity(&models.Contact{}); err != nil {
 		log.Fatal("Failed to register Contact entity:", err)
 	}

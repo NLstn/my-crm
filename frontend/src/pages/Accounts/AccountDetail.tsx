@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { Account, issueStatusToString, issuePriorityToString, opportunityStageToString } from '../../types'
 import { Button } from '../../components/ui'
+import { getLifecycleStageBadgeClass } from '../../constants/accounts'
 import Timeline from '../../components/Timeline'
 import TaskList from '../../components/TaskList'
 
@@ -37,7 +38,7 @@ export default function AccountDetail() {
   const { data: account, isLoading, error } = useQuery({
     queryKey: ['account', id],
     queryFn: async () => {
-      const response = await api.get(`/Accounts(${id})?$expand=Contacts,Issues,Employee,Activities($expand=Contact,Employee),Tasks($expand=Contact,Employee),Opportunities($expand=Contact,Owner)`)
+      const response = await api.get(`/Accounts(${id})?$expand=Contacts,Issues,Employee,Activities($expand=Contact,Employee),Tasks($expand=Contact,Employee),Opportunities($expand=Contact,Owner),Tags`)
       return response.data as Account
     },
   })
@@ -75,9 +76,14 @@ export default function AccountDetail() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             {account.Name}
           </h1>
-          {account.Industry && (
-            <span className="badge badge-primary mt-2">{account.Industry}</span>
-          )}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {account.Industry && (
+              <span className="badge badge-primary">{account.Industry}</span>
+            )}
+            <span className={getLifecycleStageBadgeClass(account.LifecycleStage)}>
+              {account.LifecycleStage || 'Prospect'}
+            </span>
+          </div>
         </div>
         <div className="flex gap-3">
           <Link to={`/accounts/${id}/edit`} className="btn btn-primary">
@@ -137,6 +143,20 @@ export default function AccountDetail() {
               <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Responsible Employee</dt>
               <dd className="text-sm text-gray-900 dark:text-gray-100">
                 {account.Employee.FirstName} {account.Employee.LastName}
+              </dd>
+            </>
+          )}
+          {account.Tags && account.Tags.length > 0 && (
+            <>
+              <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Tags</dt>
+              <dd className="text-sm text-gray-900 dark:text-gray-100">
+                <div className="flex flex-wrap gap-2">
+                  {account.Tags.map(tag => (
+                    <span key={tag.ID} className="badge badge-neutral">
+                      {tag.Name}
+                    </span>
+                  ))}
+                </div>
               </dd>
             </>
           )}

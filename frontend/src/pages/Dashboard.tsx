@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../lib/api'
-import { Opportunity, OPPORTUNITY_STAGES, opportunityStageToString } from '../types'
+import { Account, Opportunity, OPPORTUNITY_STAGES, opportunityStageToString } from '../types'
+import { ACCOUNT_LIFECYCLE_STAGES } from '../constants/accounts'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -48,6 +49,18 @@ export default function Dashboard() {
     },
   })
 
+  const {
+    data: accountLifecycleData,
+    isLoading: accountLifecycleLoading,
+    error: accountLifecycleError,
+  } = useQuery({
+    queryKey: ['accounts-lifecycle-breakdown'],
+    queryFn: async () => {
+      const response = await api.get('/Accounts?$select=ID,LifecycleStage&$orderby=LifecycleStage asc&$top=500')
+      return response.data
+    },
+  })
+
   const { data: leadsData, isLoading: leadsLoading, error: leadsError } = useQuery({
     queryKey: ['leads-active-count'],
     queryFn: async () => {
@@ -89,6 +102,29 @@ export default function Dashboard() {
     }))
     .filter(item => item.total > 0)
 
+  const lifecycleItems = (accountLifecycleData?.items as Account[]) || []
+  const lifecycleStageMap = new Map<string, number>()
+  lifecycleItems.forEach(account => {
+    const stage = account.LifecycleStage || ACCOUNT_LIFECYCLE_STAGES[0].value
+    lifecycleStageMap.set(stage, (lifecycleStageMap.get(stage) ?? 0) + 1)
+  })
+
+  const definedLifecycleSummary = ACCOUNT_LIFECYCLE_STAGES.map(stage => ({
+    value: stage.value,
+    label: stage.label,
+    count: lifecycleStageMap.get(stage.value) ?? 0,
+  }))
+
+  const additionalLifecycleStages = Array.from(lifecycleStageMap.entries())
+    .filter(([stage]) => !ACCOUNT_LIFECYCLE_STAGES.some(option => option.value === stage))
+    .map(([stage, count]) => ({ value: stage, label: stage, count }))
+
+  const lifecycleSummary = [...definedLifecycleSummary, ...additionalLifecycleStages]
+  const totalAccountsDisplay =
+    accountsLoading || accountLifecycleLoading
+      ? '...'
+      : accountsData?.count ?? lifecycleItems.length
+
   const now = new Date()
   const horizon = new Date()
   horizon.setDate(horizon.getDate() + 45)
@@ -103,8 +139,20 @@ export default function Dashboard() {
     .sort((a, b) => new Date(a.ExpectedCloseDate || '').getTime() - new Date(b.ExpectedCloseDate || '').getTime())
     .slice(0, 5)
 
-  const isLoading = accountsLoading || contactsLoading || leadsLoading || issuesLoading || opportunitiesLoading
-  const hasError = accountsError || contactsError || leadsError || issuesError || opportunitiesError
+  const isLoading =
+    accountsLoading ||
+    contactsLoading ||
+    accountLifecycleLoading ||
+    leadsLoading ||
+    issuesLoading ||
+    opportunitiesLoading
+  const hasError =
+    accountsError ||
+    contactsError ||
+    accountLifecycleError ||
+    leadsError ||
+    issuesError ||
+    opportunitiesError
 
   return (
     <div className="space-y-6">
@@ -135,11 +183,32 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="card p-6">
-          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Accounts</h3>
+        <div className="card p-6 md:col-span-2 xl:col-span-2">
+          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Accounts by Lifecycle Stage</h3>
           <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
-            {isLoading ? '...' : accountsData?.count ?? 0}
+            {totalAccountsDisplay}
           </p>
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+            Quick view of customer health across the funnel
+          </p>
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {lifecycleSummary.map(stage => (
+              <div
+                key={stage.value}
+                className="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+              >
+                <span>{stage.label}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {accountLifecycleLoading ? '...' : stage.count}
+                </span>
+              </div>
+            ))}
+            {!accountLifecycleLoading && (accountsData?.count ?? lifecycleItems.length) === 0 && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                No accounts available yet.
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="card p-6">
