@@ -22,7 +22,7 @@ export interface WorkflowRulePayload {
   IsActive?: boolean
 }
 
-export interface WorkflowRuleUpdatePayload extends Partial<WorkflowRulePayload> {}
+export type WorkflowRuleUpdatePayload = Partial<WorkflowRulePayload>
 
 export function useWorkflowRules(query: string, options?: { enabled?: boolean }) {
   return useQuery({
