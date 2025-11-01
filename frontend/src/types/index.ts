@@ -97,6 +97,7 @@ export interface Activity {
   AccountID: number
   ContactID?: number
   EmployeeID?: number
+  OpportunityID?: number
   ActivityType: string
   Subject: string
   Outcome?: string
@@ -107,6 +108,7 @@ export interface Activity {
   Account?: Account
   Contact?: Contact
   Employee?: Employee
+  Opportunity?: Opportunity
 }
 
 export interface Task {
@@ -114,6 +116,7 @@ export interface Task {
   AccountID: number
   ContactID?: number
   EmployeeID?: number
+  OpportunityID?: number
   Title: string
   Description?: string
   Owner: string
@@ -125,6 +128,7 @@ export interface Task {
   Account?: Account
   Contact?: Contact
   Employee?: Employee
+  Opportunity?: Opportunity
 }
 
 export interface Opportunity {
@@ -148,6 +152,8 @@ export interface Opportunity {
   Owner?: Employee
   ClosedBy?: Employee
   LineItems?: OpportunityLineItem[]
+  Activities?: Activity[]
+  Tasks?: Task[]
 }
 
 export interface OpportunityLineItem {

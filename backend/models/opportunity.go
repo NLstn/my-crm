@@ -65,11 +65,13 @@ type Opportunity struct {
 	UpdatedAt          time.Time        `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
 	// Navigation properties
-	Account   *Account              `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
-	Contact   *Contact              `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
-	Owner     *Employee             `json:"Owner" gorm:"foreignKey:OwnerEmployeeID" odata:"navigation"`
-	ClosedBy  *Employee             `json:"ClosedBy" gorm:"foreignKey:ClosedByEmployeeID" odata:"navigation"`
-	LineItems []OpportunityLineItem `json:"LineItems,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:OpportunityID" odata:"navigation"`
+	Account    *Account              `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Contact    *Contact              `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
+	Owner      *Employee             `json:"Owner" gorm:"foreignKey:OwnerEmployeeID" odata:"navigation"`
+	ClosedBy   *Employee             `json:"ClosedBy" gorm:"foreignKey:ClosedByEmployeeID" odata:"navigation"`
+	LineItems  []OpportunityLineItem `json:"LineItems,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:OpportunityID" odata:"navigation"`
+	Activities []Activity            `json:"Activities,omitempty" gorm:"foreignKey:OpportunityID" odata:"navigation"`
+	Tasks      []Task                `json:"Tasks,omitempty" gorm:"foreignKey:OpportunityID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM

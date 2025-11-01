@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../lib/api'
-import type { Activity, Account, Contact, Employee } from '../../types'
+import type { Activity, Account, Contact, Employee, Opportunity } from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
 
 const ACTIVITY_TYPES = ['Call', 'Email', 'Meeting', 'Note', 'Onsite Visit', 'Follow-up']
@@ -16,6 +16,7 @@ export default function ActivityForm() {
 
   const accountIdFromQuery = searchParams.get('accountId')
   const contactIdFromQuery = searchParams.get('contactId')
+  const opportunityIdFromQuery = searchParams.get('opportunityId')
 
   const { data: activity } = useQuery({
     queryKey: ['activity', id],
@@ -48,6 +49,7 @@ export default function ActivityForm() {
         AccountID: activity.AccountID,
         ContactID: activity.ContactID || undefined,
         EmployeeID: activity.EmployeeID || undefined,
+        OpportunityID: activity.OpportunityID || undefined,
         Subject: activity.Subject,
         ActivityType: activity.ActivityType,
         Outcome: activity.Outcome || '',
@@ -63,6 +65,7 @@ export default function ActivityForm() {
       AccountID: accountIdFromQuery ? parseInt(accountIdFromQuery) : 0,
       ContactID: contactIdFromQuery ? parseInt(contactIdFromQuery) : undefined,
       EmployeeID: undefined,
+      OpportunityID: opportunityIdFromQuery ? parseInt(opportunityIdFromQuery) : undefined,
       Subject: '',
       ActivityType: ACTIVITY_TYPES[0],
       Outcome: '',
@@ -88,19 +91,35 @@ export default function ActivityForm() {
     enabled: Boolean(selectedAccountId),
   })
 
+  const { data: opportunitiesData } = useQuery({
+    queryKey: ['account-opportunities', selectedAccountId],
+    queryFn: async () => {
+      const response = await api.get('/Opportunities', {
+        params: {
+          $filter: `AccountID eq ${selectedAccountId}`,
+          $select: 'ID,Name,Stage',
+          $orderby: 'ExpectedCloseDate desc',
+        },
+      })
+      return response.data
+    },
+    enabled: Boolean(selectedAccountId),
+  })
+
   useEffect(() => {
     setFormData(getInitialFormData())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, activity])
 
   useEffect(() => {
-    if (!selectedAccountId && formData.ContactID) {
+    if (!selectedAccountId && (formData.ContactID || formData.OpportunityID)) {
       setFormData(prev => ({
         ...prev,
         ContactID: undefined,
+        OpportunityID: undefined,
       }))
     }
-  }, [selectedAccountId, formData.ContactID])
+  }, [selectedAccountId, formData.ContactID, formData.OpportunityID])
 
   useEffect(() => {
     if (!formData.ContactID) {
@@ -121,6 +140,25 @@ export default function ActivityForm() {
     }
   }, [contactsData, formData.ContactID])
 
+  useEffect(() => {
+    if (!formData.OpportunityID) {
+      return
+    }
+
+    const opportunities = opportunitiesData?.items as Opportunity[] | undefined
+    if (!opportunities) {
+      return
+    }
+
+    const opportunityBelongsToAccount = opportunities.some(opportunity => opportunity.ID === formData.OpportunityID)
+    if (!opportunityBelongsToAccount) {
+      setFormData(prev => ({
+        ...prev,
+        OpportunityID: undefined,
+      }))
+    }
+  }, [opportunitiesData, formData.OpportunityID])
+
   const mutation = useMutation({
     mutationFn: async (data: Partial<Activity>) => {
       const cleanData = { ...data }
@@ -129,6 +167,9 @@ export default function ActivityForm() {
       }
       if (!cleanData.EmployeeID) {
         delete cleanData.EmployeeID
+      }
+      if (!cleanData.OpportunityID) {
+        delete cleanData.OpportunityID
       }
       if (cleanData.ActivityTime) {
         const isoValue = new Date(cleanData.ActivityTime).toISOString()
@@ -151,6 +192,15 @@ export default function ActivityForm() {
         queryClient.invalidateQueries({ queryKey: ['account', variables.AccountID.toString()] })
       }
 
+      if (variables.OpportunityID) {
+        queryClient.invalidateQueries({ queryKey: ['opportunity', variables.OpportunityID.toString()] })
+      }
+
+      if (!isEdit && opportunityIdFromQuery) {
+        navigate(`/opportunities/${opportunityIdFromQuery}`)
+        return
+      }
+
       if (!isEdit && accountIdFromQuery) {
         navigate(`/accounts/${accountIdFromQuery}`)
         return
@@ -168,7 +218,7 @@ export default function ActivityForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     let value: string | number | undefined = e.target.value
 
-    if (e.target.name === 'AccountID' || e.target.name === 'ContactID' || e.target.name === 'EmployeeID') {
+    if (e.target.name === 'AccountID' || e.target.name === 'ContactID' || e.target.name === 'EmployeeID' || e.target.name === 'OpportunityID') {
       value = value ? parseInt(value) : undefined
     }
 
@@ -180,6 +230,7 @@ export default function ActivityForm() {
 
   const accounts = accountsData?.items || []
   const contacts = selectedAccountId ? ((contactsData?.items as Contact[]) || []) : []
+  const opportunities = selectedAccountId ? ((opportunitiesData?.items as Opportunity[]) || []) : []
   const employees = (employeesData?.items as Employee[]) || []
 
   const activityTimeValue = formData.ActivityTime
@@ -233,6 +284,27 @@ export default function ActivityForm() {
               {contacts.map((contact: Contact) => (
                 <option key={contact.ID} value={contact.ID}>
                   {contact.FirstName} {contact.LastName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="OpportunityID" className="label">
+              Opportunity
+            </label>
+            <select
+              id="OpportunityID"
+              name="OpportunityID"
+              value={formData.OpportunityID || ''}
+              onChange={handleChange}
+              disabled={!formData.AccountID}
+              className="input"
+            >
+              <option value="">None</option>
+              {opportunities.map((opportunity: Opportunity) => (
+                <option key={opportunity.ID} value={opportunity.ID}>
+                  {opportunity.Name}
                 </option>
               ))}
             </select>

@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api'
-import { Opportunity, opportunityStageToString } from '../../types'
+import { Opportunity, opportunityStageToString, taskStatusToString } from '../../types'
 import { Button } from '../../components/ui'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -34,21 +34,137 @@ const formatDate = (value?: string) => {
   return new Date(value).toLocaleDateString()
 }
 
+const formatDateTime = (value?: string) => {
+  if (!value) return 'Not recorded'
+  return new Date(value).toLocaleString()
+}
+
+const getTaskBadgeClass = (status: number) => {
+  const statusLabel = taskStatusToString(status)
+  if (statusLabel === 'Completed') {
+    return 'badge-success'
+  }
+  if (statusLabel === 'Cancelled') {
+    return 'badge-error'
+  }
+  if (statusLabel === 'Deferred') {
+    return 'badge-warning'
+  }
+  return 'badge-secondary'
+}
+
+const isTaskOpen = (status: number) => {
+  const statusLabel = taskStatusToString(status)
+  return statusLabel !== 'Completed' && statusLabel !== 'Cancelled'
+}
+
 export default function OpportunityDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'open' | 'completed'>('open')
+  const [activityTypeFilter, setActivityTypeFilter] = useState<string>('all')
 
   const { data: opportunity, isLoading, error } = useQuery({
     queryKey: ['opportunity', id],
     queryFn: async () => {
       const response = await api.get(
-        `/Opportunities(${id})?$expand=Account,Contact,Owner,ClosedBy,LineItems($expand=Product)`,
+        `/Opportunities(${id})?$expand=Account,Contact,Owner,ClosedBy,LineItems($expand=Product),Activities($expand=Contact,Employee),Tasks($expand=Contact,Employee)`,
       )
       return response.data as Opportunity
     },
   })
+
+  const tasks = useMemo(() => {
+    if (!opportunity?.Tasks) {
+      return []
+    }
+
+    return [...opportunity.Tasks]
+      .filter(task => task.OpportunityID === opportunity.ID)
+      .sort((a, b) => new Date(a.DueDate).getTime() - new Date(b.DueDate).getTime())
+  }, [opportunity])
+
+  const activities = useMemo(() => {
+    if (!opportunity?.Activities) {
+      return []
+    }
+
+    return [...opportunity.Activities]
+      .filter(activity => activity.OpportunityID === opportunity.ID)
+      .sort((a, b) => new Date(b.ActivityTime).getTime() - new Date(a.ActivityTime).getTime())
+  }, [opportunity])
+
+  const activityTypes = useMemo(() => {
+    const types = new Set<string>()
+    activities.forEach(activity => {
+      if (activity.ActivityType) {
+        types.add(activity.ActivityType)
+      }
+    })
+    return Array.from(types).sort()
+  }, [activities])
+
+  const filteredTasks = useMemo(() => {
+    if (taskStatusFilter === 'all') {
+      return tasks
+    }
+
+    if (taskStatusFilter === 'open') {
+      return tasks.filter(task => isTaskOpen(task.Status))
+    }
+
+    return tasks.filter(task => taskStatusToString(task.Status) === 'Completed')
+  }, [tasks, taskStatusFilter])
+
+  const filteredActivities = useMemo(() => {
+    if (activityTypeFilter === 'all') {
+      return activities
+    }
+
+    return activities.filter(activity => activity.ActivityType === activityTypeFilter)
+  }, [activities, activityTypeFilter])
+
+  const taskCreateUrl = useMemo(() => {
+    if (!opportunity) {
+      return ''
+    }
+
+    const params = new URLSearchParams({
+      accountId: opportunity.AccountID.toString(),
+      opportunityId: opportunity.ID.toString(),
+    })
+
+    if (opportunity.ContactID) {
+      params.set('contactId', opportunity.ContactID.toString())
+    }
+
+    params.set('title', `Follow up on ${opportunity.Name}`)
+
+    if (opportunity.Owner) {
+      params.set('owner', `${opportunity.Owner.FirstName} ${opportunity.Owner.LastName}`)
+    }
+
+    return `/tasks/new?${params.toString()}`
+  }, [opportunity])
+
+  const activityCreateUrl = useMemo(() => {
+    if (!opportunity) {
+      return ''
+    }
+
+    const params = new URLSearchParams({
+      accountId: opportunity.AccountID.toString(),
+      opportunityId: opportunity.ID.toString(),
+    })
+
+    if (opportunity.ContactID) {
+      params.set('contactId', opportunity.ContactID.toString())
+    }
+
+    return `/activities/new?${params.toString()}`
+  }, [opportunity])
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -243,6 +359,177 @@ export default function OpportunityDetail() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="card p-6 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Opportunity Tasks</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Track follow-up work tied to this deal.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="taskStatusFilter"
+                  className="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  Status
+                </label>
+                <select
+                  id="taskStatusFilter"
+                  name="taskStatusFilter"
+                  value={taskStatusFilter}
+                  onChange={event => setTaskStatusFilter(event.target.value as 'all' | 'open' | 'completed')}
+                  className="input"
+                >
+                  <option value="open">Open</option>
+                  <option value="all">All</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+              {taskCreateUrl && (
+                <Link to={taskCreateUrl} className="btn btn-secondary text-sm">
+                  Add Task
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {filteredTasks.length === 0 ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {tasks.length === 0
+                ? 'No tasks have been created for this opportunity yet.'
+                : 'No tasks match the selected status.'}
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {filteredTasks.map(task => (
+                <li
+                  key={task.ID}
+                  className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 bg-white dark:bg-gray-900"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="space-y-1">
+                      <Link
+                        to={`/tasks/${task.ID}`}
+                        className="font-semibold text-primary-600 hover:underline"
+                      >
+                        {task.Title}
+                      </Link>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Due {formatDate(task.DueDate)}
+                        {task.Owner ? ` · Owner: ${task.Owner}` : ''}
+                        {task.Contact
+                          ? ` · Contact: ${task.Contact.FirstName} ${task.Contact.LastName}`
+                          : ''}
+                      </p>
+                      {task.Description && (
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                          {task.Description}
+                        </p>
+                      )}
+                    </div>
+                    <span className={`badge ${getTaskBadgeClass(task.Status)}`}>
+                      {taskStatusToString(task.Status)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="card p-6 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Opportunity Activities</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Review touchpoints recorded for this opportunity.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="activityTypeFilter"
+                  className="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  Type
+                </label>
+                <select
+                  id="activityTypeFilter"
+                  name="activityTypeFilter"
+                  value={activityTypeFilter}
+                  onChange={event => setActivityTypeFilter(event.target.value)}
+                  className="input"
+                >
+                  <option value="all">All</option>
+                  {activityTypes.map(type => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {activityCreateUrl && (
+                <Link to={activityCreateUrl} className="btn btn-secondary text-sm">
+                  Log Activity
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {filteredActivities.length === 0 ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {activities.length === 0
+                ? 'No activities have been logged for this opportunity yet.'
+                : 'No activities match the selected type.'}
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {filteredActivities.map(activity => (
+                <li
+                  key={activity.ID}
+                  className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 bg-white dark:bg-gray-900"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          {activity.Subject}
+                        </span>
+                        <span className="badge badge-secondary">{activity.ActivityType}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatDateTime(activity.ActivityTime)}
+                        {activity.Employee
+                          ? ` · ${activity.Employee.FirstName} ${activity.Employee.LastName}`
+                          : ''}
+                        {activity.Contact
+                          ? ` · Contact: ${activity.Contact.FirstName} ${activity.Contact.LastName}`
+                          : ''}
+                      </p>
+                      {activity.Outcome && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Outcome: {activity.Outcome}
+                        </p>
+                      )}
+                      {activity.Notes && (
+                        <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line line-clamp-3">
+                          {activity.Notes}
+                        </p>
+                      )}
+                    </div>
+                    <Link
+                      to={`/activities/${activity.ID}`}
+                      className="text-primary-600 hover:underline text-sm"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
