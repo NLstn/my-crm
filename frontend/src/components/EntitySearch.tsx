@@ -15,10 +15,16 @@ export interface FilterOption {
   valueType?: 'string' | 'number'
 }
 
+export interface FilterPreset {
+  label: string
+  filter: string
+}
+
 export interface EntitySearchProps {
   searchPlaceholder?: string
   sortOptions?: SortOption[]
   filterOptions?: FilterOption[]
+  filterPresets?: FilterPreset[]
   onQueryChange: (query: string) => void
   totalCount?: number
   currentPage?: number
@@ -142,6 +148,7 @@ export default function EntitySearch({
   searchPlaceholder = 'Search...',
   sortOptions = [],
   filterOptions = [],
+  filterPresets = [],
   onQueryChange,
   currentPage = 1,
   pageSize = 10,
@@ -154,6 +161,8 @@ export default function EntitySearch({
   const prevSearchRef = useRef(debouncedSearchTerm)
   const prevFiltersRef = useRef(filters)
   const prevSortRef = useRef(sortBy)
+  const [activePreset, setActivePreset] = useState('')
+  const prevPresetRef = useRef(activePreset)
 
   // Debounce search term
   useEffect(() => {
@@ -196,6 +205,9 @@ export default function EntitySearch({
         }
       }
     })
+    if (activePreset) {
+      filterConditions.push(activePreset)
+    }
     if (filterConditions.length > 0) {
       params.push(`$filter=${encodeURIComponent(filterConditions.join(' and '))}`)
     }
@@ -206,25 +218,31 @@ export default function EntitySearch({
     params.push('$count=true')
 
     onQueryChange(params.length > 0 ? '?' + params.join('&') : '')
-  }, [debouncedSearchTerm, sortBy, filters, currentPage, pageSize, filterOptions, onQueryChange])
+  }, [debouncedSearchTerm, sortBy, filters, activePreset, currentPage, pageSize, filterOptions, onQueryChange])
 
   // Reset to page 1 when search or filters change
   useEffect(() => {
     const searchChanged = prevSearchRef.current !== debouncedSearchTerm
     const sortChanged = prevSortRef.current !== sortBy
     const filtersChanged = JSON.stringify(prevFiltersRef.current) !== JSON.stringify(filters)
-    
-    if ((searchChanged || sortChanged || filtersChanged) && onPageChange && currentPage !== 1) {
+    const presetChanged = prevPresetRef.current !== activePreset
+
+    if ((searchChanged || sortChanged || filtersChanged || presetChanged) && onPageChange && currentPage !== 1) {
       onPageChange(1)
     }
-    
+
     prevSearchRef.current = debouncedSearchTerm
     prevSortRef.current = sortBy
     prevFiltersRef.current = filters
-  }, [debouncedSearchTerm, sortBy, filters, onPageChange, currentPage])
+    prevPresetRef.current = activePreset
+  }, [debouncedSearchTerm, sortBy, filters, activePreset, onPageChange, currentPage])
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handlePresetSelect = (filter: string) => {
+    setActivePreset(prev => (prev === filter ? '' : filter))
   }
 
   return (
@@ -265,6 +283,24 @@ export default function EntitySearch({
           </div>
         )}
       </div>
+
+      {/* Preset Filters */}
+      {filterPresets.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400 mr-2">Quick filters:</span>
+          {filterPresets.map((preset) => (
+            <Button
+              key={preset.filter}
+              variant={activePreset === preset.filter ? 'primary' : 'secondary'}
+              onClick={() => handlePresetSelect(preset.filter)}
+              className="px-3 py-1.5 text-sm"
+              aria-pressed={activePreset === preset.filter}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Filter Row */}
       {filterOptions.length > 0 && (
