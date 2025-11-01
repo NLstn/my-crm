@@ -527,7 +527,8 @@ func SeedData(db *gorm.DB) error {
 				if total, ok := amountByOpportunity[opportunities[i].ID]; ok {
 					total = math.Round(total*100) / 100
 					opportunities[i].Amount = total
-					if err := db.Model(&models.Opportunity{}).Where("id = ?", opportunities[i].ID).Update("amount", total).Error; err != nil {
+					// Use raw SQL to avoid triggering AfterSave hooks
+					if err := db.Exec("UPDATE opportunities SET amount = ?, updated_at = ? WHERE id = ?", total, time.Now(), opportunities[i].ID).Error; err != nil {
 						return fmt.Errorf("failed to update opportunity amount: %w", err)
 					}
 				}
