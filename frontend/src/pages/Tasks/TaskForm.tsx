@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../lib/api'
-import type { Task, Account, Contact, Employee } from '../../types'
+import type { Task, Account, Contact, Employee, Opportunity } from '../../types'
 import { TASK_STATUSES } from '../../types'
 import { Button, Input, Textarea } from '../../components/ui'
 
@@ -17,6 +17,7 @@ export default function TaskForm() {
   const contactIdFromQuery = searchParams.get('contactId')
   const titleFromQuery = searchParams.get('title')
   const ownerFromQuery = searchParams.get('owner')
+  const opportunityIdFromQuery = searchParams.get('opportunityId')
 
   const { data: task } = useQuery({
     queryKey: ['task', id],
@@ -49,6 +50,7 @@ export default function TaskForm() {
         AccountID: task.AccountID,
         ContactID: task.ContactID || undefined,
         EmployeeID: task.EmployeeID || undefined,
+        OpportunityID: task.OpportunityID || undefined,
         Title: task.Title,
         Description: task.Description || '',
         Owner: task.Owner,
@@ -66,6 +68,7 @@ export default function TaskForm() {
       AccountID: accountIdFromQuery ? parseInt(accountIdFromQuery) : 0,
       ContactID: contactIdFromQuery ? parseInt(contactIdFromQuery) : undefined,
       EmployeeID: undefined,
+      OpportunityID: opportunityIdFromQuery ? parseInt(opportunityIdFromQuery) : undefined,
       Title: titleFromQuery || '',
       Description: '',
       Owner: ownerFromQuery || '',
@@ -92,19 +95,35 @@ export default function TaskForm() {
     enabled: Boolean(selectedAccountId),
   })
 
+  const { data: opportunitiesData } = useQuery({
+    queryKey: ['account-opportunities', selectedAccountId],
+    queryFn: async () => {
+      const response = await api.get('/Opportunities', {
+        params: {
+          $filter: `AccountID eq ${selectedAccountId}`,
+          $select: 'ID,Name,Stage',
+          $orderby: 'ExpectedCloseDate desc',
+        },
+      })
+      return response.data
+    },
+    enabled: Boolean(selectedAccountId),
+  })
+
   useEffect(() => {
     setFormData(getInitialFormData())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, task])
 
   useEffect(() => {
-    if (!selectedAccountId && formData.ContactID) {
+    if (!selectedAccountId && (formData.ContactID || formData.OpportunityID)) {
       setFormData(prev => ({
         ...prev,
         ContactID: undefined,
+        OpportunityID: undefined,
       }))
     }
-  }, [selectedAccountId, formData.ContactID])
+  }, [selectedAccountId, formData.ContactID, formData.OpportunityID])
 
   useEffect(() => {
     if (!formData.ContactID) {
@@ -125,6 +144,25 @@ export default function TaskForm() {
     }
   }, [contactsData, formData.ContactID])
 
+  useEffect(() => {
+    if (!formData.OpportunityID) {
+      return
+    }
+
+    const opportunities = opportunitiesData?.items as Opportunity[] | undefined
+    if (!opportunities) {
+      return
+    }
+
+    const opportunityBelongsToAccount = opportunities.some(opportunity => opportunity.ID === formData.OpportunityID)
+    if (!opportunityBelongsToAccount) {
+      setFormData(prev => ({
+        ...prev,
+        OpportunityID: undefined,
+      }))
+    }
+  }, [opportunitiesData, formData.OpportunityID])
+
   const mutation = useMutation({
     mutationFn: async (data: Partial<Task>) => {
       const cleanData = { ...data }
@@ -133,6 +171,9 @@ export default function TaskForm() {
       }
       if (!cleanData.EmployeeID) {
         delete cleanData.EmployeeID
+      }
+      if (!cleanData.OpportunityID) {
+        delete cleanData.OpportunityID
       }
       if (!cleanData.CompletedAt) {
         delete cleanData.CompletedAt
@@ -160,6 +201,15 @@ export default function TaskForm() {
         queryClient.invalidateQueries({ queryKey: ['account', variables.AccountID.toString()] })
       }
 
+      if (variables.OpportunityID) {
+        queryClient.invalidateQueries({ queryKey: ['opportunity', variables.OpportunityID.toString()] })
+      }
+
+      if (!isEdit && opportunityIdFromQuery) {
+        navigate(`/opportunities/${opportunityIdFromQuery}`)
+        return
+      }
+
       if (!isEdit && accountIdFromQuery) {
         navigate(`/accounts/${accountIdFromQuery}`)
         return
@@ -177,7 +227,13 @@ export default function TaskForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     let value: string | number | undefined = e.target.value
 
-    if (e.target.name === 'AccountID' || e.target.name === 'ContactID' || e.target.name === 'EmployeeID' || e.target.name === 'Status') {
+    if (
+      e.target.name === 'AccountID' ||
+      e.target.name === 'ContactID' ||
+      e.target.name === 'EmployeeID' ||
+      e.target.name === 'Status' ||
+      e.target.name === 'OpportunityID'
+    ) {
       value = value ? parseInt(value) : undefined
     }
 
@@ -189,6 +245,7 @@ export default function TaskForm() {
 
   const accounts = accountsData?.items || []
   const contacts = selectedAccountId ? ((contactsData?.items as Contact[]) || []) : []
+  const opportunities = selectedAccountId ? ((opportunitiesData?.items as Opportunity[]) || []) : []
   const employees = (employeesData?.items as Employee[]) || []
 
   const dueDateValue = formData.DueDate
@@ -246,6 +303,27 @@ export default function TaskForm() {
               {contacts.map((contact: Contact) => (
                 <option key={contact.ID} value={contact.ID}>
                   {contact.FirstName} {contact.LastName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="OpportunityID" className="label">
+              Opportunity
+            </label>
+            <select
+              id="OpportunityID"
+              name="OpportunityID"
+              value={formData.OpportunityID || ''}
+              onChange={handleChange}
+              disabled={!formData.AccountID}
+              className="input"
+            >
+              <option value="">None</option>
+              {opportunities.map((opportunity: Opportunity) => (
+                <option key={opportunity.ID} value={opportunity.ID}>
+                  {opportunity.Name}
                 </option>
               ))}
             </select>

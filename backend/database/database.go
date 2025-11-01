@@ -294,6 +294,11 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
+	opportunityIDsByAccount := make(map[uint][]uint)
+	for _, opportunity := range opportunities {
+		opportunityIDsByAccount[opportunity.AccountID] = append(opportunityIDsByAccount[opportunity.AccountID], opportunity.ID)
+	}
+
 	accountContactIDs := make(map[uint][]uint)
 	for _, contact := range contacts {
 		accountContactIDs[contact.AccountID] = append(accountContactIDs[contact.AccountID], contact.ID)
@@ -514,15 +519,23 @@ func SeedData(db *gorm.DB) error {
 			employee := employees[(activityIndex)%len(employees)]
 			employeeID := employee.ID
 
+			var opportunityID *uint
+			opportunityIDs := opportunityIDsByAccount[account.ID]
+			if len(opportunityIDs) > 0 && (activityIndex%3 != 2) {
+				id := opportunityIDs[activityIndex%len(opportunityIDs)]
+				opportunityID = &id
+			}
+
 			activities = append(activities, models.Activity{
-				AccountID:    account.ID,
-				ContactID:    contactID,
-				EmployeeID:   &employeeID,
-				ActivityType: activityTypes[activityIndex%len(activityTypes)],
-				Subject:      activitySubjects[activityIndex%len(activitySubjects)],
-				Outcome:      activityOutcomes[activityIndex%len(activityOutcomes)],
-				Notes:        fmt.Sprintf("Interaction #%d with %s", activityIndex+1, account.Name),
-				ActivityTime: currentTime.Add(-time.Duration(activityIndex*12) * time.Hour),
+				AccountID:     account.ID,
+				ContactID:     contactID,
+				EmployeeID:    &employeeID,
+				OpportunityID: opportunityID,
+				ActivityType:  activityTypes[activityIndex%len(activityTypes)],
+				Subject:       activitySubjects[activityIndex%len(activitySubjects)],
+				Outcome:       activityOutcomes[activityIndex%len(activityOutcomes)],
+				Notes:         fmt.Sprintf("Interaction #%d with %s", activityIndex+1, account.Name),
+				ActivityTime:  currentTime.Add(-time.Duration(activityIndex*12) * time.Hour),
 			})
 		}
 	}
@@ -565,15 +578,23 @@ func SeedData(db *gorm.DB) error {
 			employeeID := employee.ID
 			dueDate := currentTime.Add(time.Duration((taskIndex%7)+3) * 24 * time.Hour)
 
+			var opportunityID *uint
+			opportunityIDs := opportunityIDsByAccount[account.ID]
+			if len(opportunityIDs) > 0 && (taskIndex%3 != 0) {
+				id := opportunityIDs[taskIndex%len(opportunityIDs)]
+				opportunityID = &id
+			}
+
 			task := models.Task{
-				AccountID:   account.ID,
-				ContactID:   contactID,
-				EmployeeID:  &employeeID,
-				Title:       taskTitles[taskIndex%len(taskTitles)],
-				Description: taskDescriptions[taskIndex%len(taskDescriptions)],
-				Owner:       fmt.Sprintf("%s %s", employee.FirstName, employee.LastName),
-				Status:      taskStatuses[taskIndex%len(taskStatuses)],
-				DueDate:     dueDate,
+				AccountID:     account.ID,
+				ContactID:     contactID,
+				EmployeeID:    &employeeID,
+				OpportunityID: opportunityID,
+				Title:         taskTitles[taskIndex%len(taskTitles)],
+				Description:   taskDescriptions[taskIndex%len(taskDescriptions)],
+				Owner:         fmt.Sprintf("%s %s", employee.FirstName, employee.LastName),
+				Status:        taskStatuses[taskIndex%len(taskStatuses)],
+				DueDate:       dueDate,
 			}
 
 			if task.Status == models.TaskStatusCompleted {
