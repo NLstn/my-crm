@@ -85,14 +85,28 @@ export function useDeleteLead(id: string) {
   })
 }
 
+interface ConvertLeadActionResult {
+  LeadID: number
+  AccountID: number
+  ContactID: number
+  AccountReused: boolean
+  ContactReused: boolean
+}
+
+type ConvertLeadActionPayload = {
+  AccountName?: string
+  ExistingAccountID?: number
+  ExistingContactID?: number
+}
+
 export function useConvertLead(id: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (payload?: { AccountName?: string }) => {
+    mutationFn: async (payload?: ConvertLeadActionPayload) => {
       const body = payload ?? {}
       const response = await api.post(`/Leads(${id})/CRM.ConvertLead`, body)
-      return response.data as { LeadID: number; AccountID: number; ContactID: number }
+      return response.data as ConvertLeadActionResult
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leadKeys.all })

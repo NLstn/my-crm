@@ -1,11 +1,25 @@
 import { useState } from 'react'
+import type { ChangeEvent } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, Input } from '../../components/ui'
+import api from '../../lib/api'
 import { useConvertLead, useDeleteLead, useLead } from '../../lib/hooks/leads'
+import type { Account, Contact } from '../../types'
+
+const escapeODataValue = (value: string) => value.replace(/'/g, "''")
 
 interface ConversionResult {
   accountId: number
   contactId: number
+  accountReused: boolean
+  contactReused: boolean
+}
+
+type ConvertLeadPayload = {
+  AccountName?: string
+  ExistingAccountID?: number
+  ExistingContactID?: number
 }
 
 export default function LeadDetail() {
@@ -17,6 +31,8 @@ export default function LeadDetail() {
   const [showConvertOptions, setShowConvertOptions] = useState(false)
   const [conversionMessage, setConversionMessage] = useState('')
   const [conversionResult, setConversionResult] = useState<ConversionResult | null>(null)
+  const [selectedAccountOption, setSelectedAccountOption] = useState<'new' | string>('new')
+  const [selectedContactOption, setSelectedContactOption] = useState<'new' | string>('new')
 
   // Always call hooks before any conditional returns
   const { data: lead, isLoading, error } = useLead(
@@ -25,6 +41,153 @@ export default function LeadDetail() {
   )
   const deleteMutation = useDeleteLead(id || '')
   const convertMutation = useConvertLead(id || '')
+
+  const leadIsConverted = lead?.Status === 'Converted' || Boolean(lead?.ConvertedAccountID)
+
+  const hasAccountSearchContext =
+    Boolean(lead?.Company?.trim()) || Boolean(lead?.Email?.trim()) || Boolean(lead?.Phone?.trim())
+  const shouldFetchAccountMatches =
+    Boolean(showConvertOptions && lead && !leadIsConverted && hasAccountSearchContext)
+
+  const accountMatchesQuery = useQuery<Account[]>({
+    queryKey: ['lead-convert-account-matches', id, lead?.Company, lead?.Email, lead?.Phone],
+    queryFn: async () => {
+      if (!lead) {
+        return []
+      }
+
+      const params = new URLSearchParams()
+      params.set('$top', '10')
+      params.set('$orderby', 'UpdatedAt desc')
+
+      const filters: string[] = []
+
+      if (lead.Company?.trim()) {
+        filters.push(`contains(Name, '${escapeODataValue(lead.Company.trim())}')`)
+      }
+      if (lead.Email?.trim()) {
+        filters.push(`Email eq '${escapeODataValue(lead.Email.trim())}'`)
+      }
+      if (lead.Phone?.trim()) {
+        filters.push(`Phone eq '${escapeODataValue(lead.Phone.trim())}'`)
+      }
+
+      if (filters.length > 0) {
+        params.set('$filter', filters.map((part) => `(${part})`).join(' or '))
+      }
+
+      const response = await api.get(`/Accounts?${params.toString()}`)
+      const data = response.data as { items?: Account[] }
+      return data.items ?? []
+    },
+    enabled: shouldFetchAccountMatches,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const hasContactSearchContext =
+    Boolean(lead?.Email?.trim()) ||
+    Boolean(lead?.Phone?.trim()) ||
+    Boolean(lead?.Name?.trim()) ||
+    Boolean(lead?.Company?.trim())
+  const shouldFetchContactMatches =
+    Boolean(showConvertOptions && lead && !leadIsConverted && hasContactSearchContext)
+
+  const contactMatchesQuery = useQuery<Contact[]>({
+    queryKey: [
+      'lead-convert-contact-matches',
+      id,
+      lead?.Name,
+      lead?.Email,
+      lead?.Phone,
+      lead?.Company,
+    ],
+    queryFn: async () => {
+      if (!lead) {
+        return []
+      }
+
+      const params = new URLSearchParams()
+      params.set('$top', '10')
+      params.set('$orderby', 'UpdatedAt desc')
+      params.set('$expand', 'Account')
+
+      const filters: string[] = []
+
+      if (lead.Email?.trim()) {
+        filters.push(`Email eq '${escapeODataValue(lead.Email.trim())}'`)
+      }
+      if (lead.Phone?.trim()) {
+        filters.push(`Phone eq '${escapeODataValue(lead.Phone.trim())}'`)
+      }
+      if (lead.Name?.trim()) {
+        const nameParts = lead.Name.trim().split(/\s+/)
+        if (nameParts[0]) {
+          filters.push(`contains(FirstName, '${escapeODataValue(nameParts[0])}')`)
+        }
+        if (nameParts.length > 1) {
+          const lastName = nameParts.slice(1).join(' ')
+          filters.push(`contains(LastName, '${escapeODataValue(lastName)}')`)
+        }
+      }
+      if (lead.Company?.trim()) {
+        filters.push(`contains(Account/Name, '${escapeODataValue(lead.Company.trim())}')`)
+      }
+
+      if (filters.length > 0) {
+        params.set('$filter', filters.map((part) => `(${part})`).join(' or '))
+      }
+
+      const response = await api.get(`/Contacts?${params.toString()}`)
+      const data = response.data as { items?: Contact[] }
+      return data.items ?? []
+    },
+    enabled: shouldFetchContactMatches,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const accountMatches = accountMatchesQuery.data ?? []
+  const contactMatches = contactMatchesQuery.data ?? []
+
+  const resetConversionChoices = () => {
+    setSelectedAccountOption('new')
+    setSelectedContactOption('new')
+    setOverrideAccountName('')
+  }
+
+  const handleToggleConvertOptions = () => {
+    setShowConvertOptions((prev) => {
+      const next = !prev
+      if (!next) {
+        resetConversionChoices()
+      }
+      return next
+    })
+  }
+
+  const handleAccountSelection = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value
+    setSelectedAccountOption(value)
+    if (value !== 'new') {
+      setOverrideAccountName('')
+    }
+  }
+
+  const handleContactSelection = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value
+    setSelectedContactOption(value)
+    if (value !== 'new') {
+      const parsedContactId = Number.parseInt(value, 10)
+      const matchingContact = contactMatches.find((match) => match.ID === parsedContactId)
+      if (matchingContact) {
+        setSelectedAccountOption(String(matchingContact.AccountID))
+      }
+    }
+  }
+
+  const handleCancelConvert = () => {
+    resetConversionChoices()
+    setShowConvertOptions(false)
+  }
 
   if (!id) {
     return (
@@ -46,7 +209,7 @@ export default function LeadDetail() {
     )
   }
 
-  const isConverted = lead.Status === 'Converted' || Boolean(lead.ConvertedAccountID)
+  const isConverted = leadIsConverted
 
   const handleDelete = () => {
     deleteMutation.mutate(undefined, {
@@ -55,17 +218,52 @@ export default function LeadDetail() {
   }
 
   const handleConvert = () => {
-    convertMutation.mutate(
-      overrideAccountName ? { AccountName: overrideAccountName } : undefined,
-      {
-        onSuccess: (data) => {
-          setConversionMessage('Lead converted successfully.')
-          setConversionResult({ accountId: data.AccountID, contactId: data.ContactID })
-          setOverrideAccountName('')
-          setShowConvertOptions(false)
-        },
+    const payload: ConvertLeadPayload = {}
+    if (selectedAccountOption === 'new') {
+      const trimmedOverride = overrideAccountName.trim()
+      if (trimmedOverride) {
+        payload.AccountName = trimmedOverride
+      }
+    } else {
+      const parsedAccountId = Number.parseInt(selectedAccountOption, 10)
+      if (!Number.isNaN(parsedAccountId)) {
+        payload.ExistingAccountID = parsedAccountId
+      }
+    }
+
+    if (selectedContactOption !== 'new') {
+      const parsedContactId = Number.parseInt(selectedContactOption, 10)
+      if (!Number.isNaN(parsedContactId)) {
+        payload.ExistingContactID = parsedContactId
+        if (!payload.ExistingAccountID) {
+          const matchingContact = contactMatches.find((match) => match.ID === parsedContactId)
+          if (matchingContact) {
+            payload.ExistingAccountID = matchingContact.AccountID
+          }
+        }
+      }
+    }
+
+    const requestBody = Object.keys(payload).length > 0 ? payload : undefined
+
+    convertMutation.mutate(requestBody, {
+      onSuccess: (data) => {
+        const accountActionWord = data.AccountReused ? 'Reused' : 'Created'
+        const contactActionWord = data.ContactReused ? 'reused' : 'created'
+
+        setConversionMessage(
+          `Lead converted successfully. ${accountActionWord} account #${data.AccountID} and ${contactActionWord} contact #${data.ContactID}.`,
+        )
+        setConversionResult({
+          accountId: data.AccountID,
+          contactId: data.ContactID,
+          accountReused: data.AccountReused,
+          contactReused: data.ContactReused,
+        })
+        resetConversionChoices()
+        setShowConvertOptions(false)
       },
-    )
+    })
   }
 
   return (
@@ -74,7 +272,9 @@ export default function LeadDetail() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{lead.Name}</h1>
-            <span className={`badge ${isConverted ? 'badge-success' : 'badge-secondary'}`}>{lead.Status}</span>
+            <span className={`badge ${isConverted ? 'badge-success' : 'badge-secondary'}`}>
+              {lead.Status}
+            </span>
           </div>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Captured {new Date(lead.CreatedAt).toLocaleString()}
@@ -98,7 +298,7 @@ export default function LeadDetail() {
             Edit Lead
           </Link>
           {!isConverted && (
-            <Button variant="secondary" onClick={() => setShowConvertOptions((prev) => !prev)}>
+            <Button variant="secondary" onClick={handleToggleConvertOptions}>
               {showConvertOptions ? 'Cancel Convert' : 'Convert Lead'}
             </Button>
           )}
@@ -115,15 +315,21 @@ export default function LeadDetail() {
           )}
           {conversionResult && (
             <p className="text-sm text-success-700 dark:text-success-300">
-              Account{' '}
-              <Link to={`/accounts/${conversionResult.accountId}`} className="text-primary-600 hover:underline">
+              This conversion {conversionResult.accountReused ? 'reused' : 'created'} account{' '}
+              <Link
+                to={`/accounts/${conversionResult.accountId}`}
+                className="text-primary-600 hover:underline"
+              >
                 #{conversionResult.accountId}
               </Link>{' '}
-              and contact{' '}
-              <Link to={`/contacts/${conversionResult.contactId}`} className="text-primary-600 hover:underline">
+              and {conversionResult.contactReused ? 'reused' : 'created'} contact{' '}
+              <Link
+                to={`/contacts/${conversionResult.contactId}`}
+                className="text-primary-600 hover:underline"
+              >
                 #{conversionResult.contactId}
-              </Link>{' '}
-              were created from this lead.
+              </Link>
+              .
             </p>
           )}
         </div>
@@ -132,22 +338,125 @@ export default function LeadDetail() {
       {showConvertOptions && !isConverted && (
         <div className="card p-6 space-y-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Convert to Account &amp; Contact</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Convert to Account &amp; Contact
+            </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Optionally override the account name before conversion. Leave blank to reuse the lead company or name.
+              Choose whether to reuse existing records or create new ones. Account overrides apply
+              only when creating a new account.
             </p>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="convert-account-option" className="label">
+                Account Handling
+              </label>
+              <select
+                id="convert-account-option"
+                className="input"
+                value={selectedAccountOption}
+                onChange={handleAccountSelection}
+                disabled={convertMutation.isPending}
+              >
+                <option value="new">
+                  {`Create new account (${lead.Company || lead.Name})`}
+                </option>
+                {accountMatchesQuery.isPending && (
+                  <option value="" disabled>
+                    Loading matching accounts...
+                  </option>
+                )}
+                {!accountMatchesQuery.isPending &&
+                  shouldFetchAccountMatches &&
+                  accountMatches.length === 0 && (
+                    <option value="" disabled>
+                      No matching accounts found
+                    </option>
+                  )}
+                {accountMatches.map((account) => (
+                  <option key={account.ID} value={String(account.ID)}>
+                    {`Reuse account #${account.ID} — ${account.Name}`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {hasAccountSearchContext
+                  ? 'Suggestions are based on the lead company, email, and phone.'
+                  : 'Add company, email, or phone details to see account suggestions.'}
+              </p>
+              {accountMatchesQuery.isError && (
+                <p className="text-xs text-error-600 dark:text-error-400">
+                  Unable to load account suggestions.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="convert-contact-option" className="label">
+                Contact Handling
+              </label>
+              <select
+                id="convert-contact-option"
+                className="input"
+                value={selectedContactOption}
+                onChange={handleContactSelection}
+                disabled={convertMutation.isPending}
+              >
+                <option value="new">{`Create new contact (${lead.Name})`}</option>
+                {contactMatchesQuery.isPending && (
+                  <option value="" disabled>
+                    Loading matching contacts...
+                  </option>
+                )}
+                {!contactMatchesQuery.isPending &&
+                  shouldFetchContactMatches &&
+                  contactMatches.length === 0 && (
+                    <option value="" disabled>
+                      No matching contacts found
+                    </option>
+                  )}
+                {contactMatches.map((contact) => (
+                  <option key={contact.ID} value={String(contact.ID)}>
+                    {`Reuse contact #${contact.ID} — ${contact.FirstName} ${contact.LastName}${
+                      contact.Account ? ` (${contact.Account.Name})` : ''
+                    }`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Selecting an existing contact automatically links the conversion to that account.
+              </p>
+              {contactMatchesQuery.isError && (
+                <p className="text-xs text-error-600 dark:text-error-400">
+                  Unable to load contact suggestions.
+                </p>
+              )}
+            </div>
+          </div>
+
           <Input
             label="Account Name Override"
             placeholder={lead.Company || lead.Name}
             value={overrideAccountName}
             onChange={(event) => setOverrideAccountName(event.target.value)}
+            disabled={selectedAccountOption !== 'new' || convertMutation.isPending}
           />
+          {selectedAccountOption !== 'new' && (
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Account name overrides are disabled when reusing an existing account.
+            </p>
+          )}
+
           <div className="flex flex-wrap gap-3">
             <Button variant="primary" onClick={handleConvert} disabled={convertMutation.isPending}>
               {convertMutation.isPending ? 'Converting...' : 'Convert Lead'}
             </Button>
-            <Button variant="secondary" onClick={() => setShowConvertOptions(false)} disabled={convertMutation.isPending}>
+            <Button
+              variant="secondary"
+              onClick={handleCancelConvert}
+              disabled={convertMutation.isPending}
+            >
               Cancel
             </Button>
           </div>
@@ -210,7 +519,12 @@ export default function LeadDetail() {
               <div>
                 <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Website</dt>
                 <dd className="text-sm text-gray-900 dark:text-gray-100">
-                  <a href={lead.Website} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">
+                  <a
+                    href={lead.Website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary-600 hover:underline"
+                  >
                     {lead.Website}
                   </a>
                 </dd>
