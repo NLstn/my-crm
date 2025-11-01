@@ -12,6 +12,7 @@ export interface FilterOption {
   key: string
   type: 'select' | 'text'
   options?: { label: string; value: string }[]
+  valueType?: 'string' | 'number'
 }
 
 export interface EntitySearchProps {
@@ -180,13 +181,17 @@ export default function EntitySearch({
     const filterConditions: string[] = []
     Object.entries(filters).forEach(([key, value]) => {
       if (value) {
-        // Escape single quotes in values to prevent injection
-        const escapedValue = value.replace(/'/g, "''")
         // Handle different filter types
         const filterOption = filterOptions.find(f => f.key === key)
         if (filterOption?.type === 'select') {
-          filterConditions.push(`${key} eq '${escapedValue}'`)
+          if (filterOption.valueType === 'number') {
+            filterConditions.push(`${key} eq ${value}`)
+          } else {
+            const escapedValue = value.replace(/'/g, "''")
+            filterConditions.push(`${key} eq '${escapedValue}'`)
+          }
         } else {
+          const escapedValue = value.replace(/'/g, "''")
           filterConditions.push(`contains(${key}, '${escapedValue}')`)
         }
       }

@@ -19,7 +19,10 @@ export default function LeadDetail() {
   const [conversionResult, setConversionResult] = useState<ConversionResult | null>(null)
 
   // Always call hooks before any conditional returns
-  const { data: lead, isLoading, error } = useLead(id, 'ConvertedAccount,ConvertedContact')
+  const { data: lead, isLoading, error } = useLead(
+    id,
+    'ConvertedAccount,ConvertedContact',
+  )
   const deleteMutation = useDeleteLead(id || '')
   const convertMutation = useConvertLead(id || '')
 
@@ -75,6 +78,19 @@ export default function LeadDetail() {
           </div>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Captured {new Date(lead.CreatedAt).toLocaleString()}
+          </p>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Owner:{' '}
+            {lead.OwnerEmployee ? (
+              <Link
+                to={`/employees/${lead.OwnerEmployee.ID}`}
+                className="text-primary-600 hover:underline"
+              >
+                {lead.OwnerEmployee.FirstName} {lead.OwnerEmployee.LastName}
+              </Link>
+            ) : (
+              <span className="text-gray-700 dark:text-gray-300">Unassigned</span>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -147,6 +163,21 @@ export default function LeadDetail() {
         <div className="card p-6 lg:col-span-2 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Lead Details</h2>
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Owner</dt>
+              <dd className="text-sm text-gray-900 dark:text-gray-100">
+                {lead.OwnerEmployee ? (
+                  <Link
+                    to={`/employees/${lead.OwnerEmployee.ID}`}
+                    className="text-primary-600 hover:underline"
+                  >
+                    {lead.OwnerEmployee.FirstName} {lead.OwnerEmployee.LastName}
+                  </Link>
+                ) : (
+                  'Unassigned'
+                )}
+              </dd>
+            </div>
             {lead.Company && (
               <div>
                 <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">Company</dt>

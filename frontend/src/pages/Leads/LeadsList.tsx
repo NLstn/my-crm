@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
-import type { Lead } from '../../types'
+import api from '../../lib/api'
+import type { Employee, Lead } from '../../types'
 import { buildLeadQuery, useLeads } from '../../lib/hooks/leads'
 
 const statusBadgeVariant: Record<string, string> = {
@@ -21,8 +23,82 @@ export default function LeadsList() {
 
   const { data, isLoading, error } = useLeads(odataQuery)
 
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees', 'lead-list'],
+    queryFn: async () => {
+      const response = await api.get('/Employees', {
+        params: {
+          $select: 'ID,FirstName,LastName',
+          $orderby: 'FirstName asc',
+        },
+      })
+      return response.data
+    },
+  })
+
   const leads = (data?.items as Lead[]) || []
   const totalCount = data?.count || 0
+  const employees = useMemo(
+    () => ((employeesData?.items as Employee[]) || []),
+    [employeesData],
+  )
+
+  const ownerOptions = useMemo(
+    () =>
+      employees.map(employee => ({
+        label: `${employee.FirstName} ${employee.LastName}`,
+        value: employee.ID.toString(),
+      })),
+    [employees],
+  )
+
+  const sortOptions = useMemo(
+    () => [
+      { label: 'Newest First', value: 'CreatedAt desc' },
+      { label: 'Oldest First', value: 'CreatedAt asc' },
+      { label: 'Name (A-Z)', value: 'Name asc' },
+      { label: 'Name (Z-A)', value: 'Name desc' },
+      {
+        label: 'Owner (A-Z)',
+        value: 'OwnerEmployee/LastName asc,OwnerEmployee/FirstName asc',
+      },
+      {
+        label: 'Owner (Z-A)',
+        value: 'OwnerEmployee/LastName desc,OwnerEmployee/FirstName desc',
+      },
+    ],
+    [],
+  )
+
+  const filterOptions = useMemo(
+    () => [
+      {
+        label: 'Status',
+        key: 'Status',
+        type: 'select' as const,
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Contacted', value: 'Contacted' },
+          { label: 'Qualified', value: 'Qualified' },
+          { label: 'Converted', value: 'Converted' },
+          { label: 'Disqualified', value: 'Disqualified' },
+        ],
+      },
+      {
+        label: 'Source',
+        key: 'Source',
+        type: 'text' as const,
+      },
+      {
+        label: 'Owner',
+        key: 'OwnerEmployeeID',
+        type: 'select' as const,
+        options: ownerOptions,
+        valueType: 'number' as const,
+      },
+    ],
+    [ownerOptions],
+  )
 
   return (
     <div className="space-y-6">
@@ -45,31 +121,8 @@ export default function LeadsList() {
 
       <EntitySearch
         searchPlaceholder="Search leads by name, company, or email..."
-        sortOptions={[
-          { label: 'Newest First', value: 'CreatedAt desc' },
-          { label: 'Oldest First', value: 'CreatedAt asc' },
-          { label: 'Name (A-Z)', value: 'Name asc' },
-          { label: 'Name (Z-A)', value: 'Name desc' },
-        ]}
-        filterOptions={[
-          {
-            label: 'Status',
-            key: 'Status',
-            type: 'select',
-            options: [
-              { label: 'New', value: 'New' },
-              { label: 'Contacted', value: 'Contacted' },
-              { label: 'Qualified', value: 'Qualified' },
-              { label: 'Converted', value: 'Converted' },
-              { label: 'Disqualified', value: 'Disqualified' },
-            ],
-          },
-          {
-            label: 'Source',
-            key: 'Source',
-            type: 'text',
-          },
-        ]}
+        sortOptions={sortOptions}
+        filterOptions={filterOptions}
         onQueryChange={(query) => setSearchQuery(query)}
         currentPage={currentPage}
         pageSize={pageSize}
@@ -113,6 +166,16 @@ export default function LeadsList() {
                         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{lead.Company}</p>
                       )}
                       <div className="mt-3 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div>
+                          👤 Owner:{' '}
+                          {lead.OwnerEmployee ? (
+                            <span className="text-gray-900 dark:text-gray-100">
+                              {lead.OwnerEmployee.FirstName} {lead.OwnerEmployee.LastName}
+                            </span>
+                          ) : (
+                            <span className="italic">Unassigned</span>
+                          )}
+                        </div>
                         {lead.Email && <div>📧 {lead.Email}</div>}
                         {lead.Phone && <div>📞 {lead.Phone}</div>}
                         {lead.Source && <div>🗂️ Source: {lead.Source}</div>}

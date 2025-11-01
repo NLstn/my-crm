@@ -25,14 +25,16 @@ type Lead struct {
 	Source             string     `json:"Source" gorm:"type:varchar(100)" odata:"maxlength(100)"`
 	Status             LeadStatus `json:"Status" gorm:"type:varchar(50);default:'New'" odata:"maxlength(50)"`
 	Notes              string     `json:"Notes" gorm:"type:text"`
+	OwnerEmployeeID    *uint      `json:"OwnerEmployeeID" gorm:"index"`
 	ConvertedAccountID *uint      `json:"ConvertedAccountID" gorm:"index"`
 	ConvertedContactID *uint      `json:"ConvertedContactID" gorm:"index"`
 	ConvertedAt        *time.Time `json:"ConvertedAt"`
 	CreatedAt          time.Time  `json:"CreatedAt" gorm:"autoCreateTime"`
 	UpdatedAt          time.Time  `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
-	ConvertedAccount *Account `json:"ConvertedAccount" gorm:"foreignKey:ConvertedAccountID" odata:"navigation"`
-	ConvertedContact *Contact `json:"ConvertedContact" gorm:"foreignKey:ConvertedContactID" odata:"navigation"`
+	ConvertedAccount *Account  `json:"ConvertedAccount" gorm:"foreignKey:ConvertedAccountID" odata:"navigation"`
+	ConvertedContact *Contact  `json:"ConvertedContact" gorm:"foreignKey:ConvertedContactID" odata:"navigation"`
+	OwnerEmployee    *Employee `json:"OwnerEmployee" gorm:"foreignKey:OwnerEmployeeID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM
