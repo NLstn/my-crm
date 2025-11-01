@@ -1,20 +1,75 @@
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/api'
-import { Account, Employee } from '../../types'
-import { Button, Input, Textarea } from '../../components/ui'
+import { Account, Employee, Tag } from '../../types'
+import { ACCOUNT_LIFECYCLE_STAGES } from '../../constants/accounts'
+import { Button, Input, Textarea, Select, TagSelector } from '../../components/ui'
+
+interface AccountFormValues {
+  Name: string
+  Industry?: string
+  Website?: string
+  Phone?: string
+  Email?: string
+  Address?: string
+  City?: string
+  State?: string
+  Country?: string
+  PostalCode?: string
+  Description?: string
+  EmployeeID?: number
+  LifecycleStage: string
+}
+
+interface AccountMutationInput {
+  values: AccountFormValues
+  tagIds: number[]
+  originalTagIds: number[]
+}
+
+const DEFAULT_STAGE = ACCOUNT_LIFECYCLE_STAGES[0]?.value ?? 'Prospect'
+
+const DEFAULT_FORM_VALUES: AccountFormValues = {
+  Name: '',
+  Industry: '',
+  Website: '',
+  Phone: '',
+  Email: '',
+  Address: '',
+  City: '',
+  State: '',
+  Country: '',
+  PostalCode: '',
+  Description: '',
+  EmployeeID: undefined,
+  LifecycleStage: DEFAULT_STAGE,
+}
+
+const mapAccountToFormValues = (account: Account): AccountFormValues => ({
+  Name: account.Name || '',
+  Industry: account.Industry || '',
+  Website: account.Website || '',
+  Phone: account.Phone || '',
+  Email: account.Email || '',
+  Address: account.Address || '',
+  City: account.City || '',
+  State: account.State || '',
+  Country: account.Country || '',
+  PostalCode: account.PostalCode || '',
+  Description: account.Description || '',
+  EmployeeID: account.EmployeeID || undefined,
+  LifecycleStage: account.LifecycleStage || DEFAULT_STAGE,
+})
 
 export default function AccountForm() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const isEdit = Boolean(id)
 
   const { data: account } = useQuery({
     queryKey: ['account', id],
     queryFn: async () => {
-      const response = await api.get(`/Accounts(${id})`)
+      const response = await api.get(`/Accounts(${id})?$expand=Tags`)
       return response.data as Account
     },
     enabled: isEdit,
@@ -28,85 +83,159 @@ export default function AccountForm() {
     },
   })
 
-  const getInitialFormData = (): Partial<Account> => {
-    if (account) {
-      return {
-        Name: account.Name || '',
-        Industry: account.Industry || '',
-        Website: account.Website || '',
-        Phone: account.Phone || '',
-        Email: account.Email || '',
-        Address: account.Address || '',
-        City: account.City || '',
-        State: account.State || '',
-        Country: account.Country || '',
-        PostalCode: account.PostalCode || '',
-        Description: account.Description || '',
-        EmployeeID: account.EmployeeID || undefined,
-      }
-    }
-    return {
-      Name: '',
-      Industry: '',
-      Website: '',
-      Phone: '',
-      Email: '',
-      Address: '',
-      City: '',
-      State: '',
-      Country: '',
-      PostalCode: '',
-      Description: '',
-      EmployeeID: undefined,
-    }
-  }
+  const {
+    data: tagsData,
+    isLoading: tagsLoading,
+  } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      const response = await api.get('/Tags?$orderby=Name asc')
+      return response.data
+    },
+  })
 
-  const [formData, setFormData] = useState<Partial<Account>>(getInitialFormData())
+  const employees = (employeesData?.items as Employee[]) || []
+  const tags = (tagsData?.items as Tag[]) || []
 
-  // Reset form data when account ID changes
-  useEffect(() => {
-    setFormData(getInitialFormData())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  const initialValues = account ? mapAccountToFormValues(account) : { ...DEFAULT_FORM_VALUES }
+  const initialTagIds = account?.Tags?.map(tag => tag.ID) ?? []
+  const formKey = account ? `account-${account.ID}-${account.UpdatedAt}` : 'new'
+
+  return (
+    <AccountFormContent
+      key={formKey}
+      isEdit={isEdit}
+      accountId={id}
+      account={account}
+      employees={employees}
+      tags={tags}
+      tagsLoading={tagsLoading}
+      initialValues={initialValues}
+      initialTagIds={initialTagIds}
+    />
+  )
+}
+
+interface AccountFormContentProps {
+  isEdit: boolean
+  accountId?: string
+  account?: Account
+  employees: Employee[]
+  tags: Tag[]
+  tagsLoading: boolean
+  initialValues: AccountFormValues
+  initialTagIds: number[]
+}
+
+function AccountFormContent({
+  isEdit,
+  accountId,
+  account,
+  employees,
+  tags,
+  tagsLoading,
+  initialValues,
+  initialTagIds,
+}: AccountFormContentProps) {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [formData, setFormData] = useState<AccountFormValues>(initialValues)
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initialTagIds)
+
+  const employeeOptions = useMemo(
+    () =>
+      employees.map(employee => ({
+        value: employee.ID,
+        label: `${employee.FirstName} ${employee.LastName}`,
+      })),
+    [employees],
+  )
+
+  const tagOptions = useMemo(
+    () =>
+      tags.map(tag => ({
+        id: tag.ID,
+        label: tag.Name,
+      })),
+    [tags],
+  )
 
   const mutation = useMutation({
-    mutationFn: async (data: Partial<Account>) => {
-      // Clean up the data before sending
-      const cleanData = { ...data }
+    mutationFn: async ({ values, tagIds, originalTagIds }: AccountMutationInput) => {
+      const cleanData: Partial<Account> = { ...values }
+
       if (!cleanData.EmployeeID) {
         delete cleanData.EmployeeID
       }
 
-      if (isEdit) {
-        return api.patch(`/Accounts(${id})`, cleanData)
-      } else {
-        return api.post('/Accounts', cleanData)
+      if (!cleanData.LifecycleStage) {
+        cleanData.LifecycleStage = DEFAULT_STAGE
       }
+
+      let resolvedAccountId: number
+
+      if (isEdit && accountId) {
+        await api.patch(`/Accounts(${accountId})`, cleanData)
+        resolvedAccountId = Number(accountId)
+      } else {
+        const response = await api.post('/Accounts', cleanData)
+        resolvedAccountId = response.data.ID
+      }
+
+      const toAdd = tagIds.filter(tagId => !originalTagIds.includes(tagId))
+      const toRemove = originalTagIds.filter(tagId => !tagIds.includes(tagId))
+
+      if (toAdd.length > 0) {
+        await Promise.all(
+          toAdd.map(tagId =>
+            api.post(`/Accounts(${resolvedAccountId})/Tags/$ref`, {
+              '@odata.id': `/Tags(${tagId})`,
+            }),
+          ),
+        )
+      }
+
+      if (toRemove.length > 0) {
+        await Promise.all(
+          toRemove.map(tagId => api.delete(`/Accounts(${resolvedAccountId})/Tags(${tagId})/$ref`)),
+        )
+      }
+
+      return resolvedAccountId
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      if (isEdit) {
-        queryClient.invalidateQueries({ queryKey: ['account', id] })
+      if (isEdit && accountId) {
+        queryClient.invalidateQueries({ queryKey: ['account', accountId] })
       }
-      navigate(isEdit ? `/accounts/${id}` : '/accounts')
+      navigate(isEdit && accountId ? `/accounts/${accountId}` : '/accounts')
     },
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    mutation.mutate(formData)
+    const originalTagIds = account?.Tags?.map(tag => tag.ID) ?? []
+
+    mutation.mutate({
+      values: formData,
+      tagIds: selectedTagIds,
+      originalTagIds,
+    })
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
+    const { name } = e.target
     let value: string | number | undefined = e.target.value
-    
-    if (e.target.name === 'EmployeeID') {
-      value = value ? parseInt(value) : undefined
+
+    if (name === 'EmployeeID') {
+      value = value ? parseInt(String(value), 10) : undefined
     }
 
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: value,
+      [name]: value,
     }))
   }
 
@@ -128,6 +257,16 @@ export default function AccountForm() {
               value={formData.Name}
               onChange={handleChange}
               required
+            />
+          </div>
+
+          <div>
+            <Select
+              label="Lifecycle Stage"
+              name="LifecycleStage"
+              value={formData.LifecycleStage}
+              onChange={handleChange}
+              options={ACCOUNT_LIFECYCLE_STAGES}
             />
           </div>
 
@@ -222,23 +361,14 @@ export default function AccountForm() {
           </div>
 
           <div>
-            <label htmlFor="EmployeeID" className="label">
-              Responsible Employee
-            </label>
-            <select
-              id="EmployeeID"
+            <Select
+              label="Responsible Employee"
               name="EmployeeID"
-              value={formData.EmployeeID || ''}
+              value={formData.EmployeeID ?? ''}
               onChange={handleChange}
-              className="input"
-            >
-              <option value="">None</option>
-              {(employeesData?.items || []).map((employee: Employee) => (
-                <option key={employee.ID} value={employee.ID}>
-                  {employee.FirstName} {employee.LastName}
-                </option>
-              ))}
-            </select>
+              options={employeeOptions}
+              placeholder="Unassigned"
+            />
           </div>
 
           <div className="md:col-span-2">
@@ -248,6 +378,17 @@ export default function AccountForm() {
               value={formData.Description}
               onChange={handleChange}
               rows={4}
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <TagSelector
+              label="Tags"
+              options={tagOptions}
+              value={selectedTagIds}
+              onChange={setSelectedTagIds}
+              disabled={tagsLoading}
+              helperText="Use tags to group and filter accounts in reports."
             />
           </div>
         </div>

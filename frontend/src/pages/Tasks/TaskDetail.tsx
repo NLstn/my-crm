@@ -15,7 +15,7 @@ export default function TaskDetail() {
   const { data: task, isLoading, error } = useQuery({
     queryKey: ['task', id],
     queryFn: async () => {
-      const response = await api.get(`/Tasks(${id})?$expand=Account,Contact,Employee`)
+      const response = await api.get(`/Tasks(${id})?$expand=Account,Contact,Employee,Lead`)
       return response.data as Task
     },
   })
@@ -90,11 +90,19 @@ export default function TaskDetail() {
 
       <div className="card p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
-          {task.Account && (
+          {task.Account && task.AccountID && (
             <div>
               <div className="font-medium text-gray-600 dark:text-gray-400">Account</div>
               <Link to={`/accounts/${task.AccountID}`} className="text-primary-600 hover:underline">
                 {task.Account.Name}
+              </Link>
+            </div>
+          )}
+          {task.Lead && task.LeadID && (
+            <div>
+              <div className="font-medium text-gray-600 dark:text-gray-400">Lead</div>
+              <Link to={`/leads/${task.LeadID}`} className="text-primary-600 hover:underline">
+                {task.Lead.Name}
               </Link>
             </div>
           )}

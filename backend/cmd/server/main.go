@@ -103,6 +103,10 @@ func main() {
 		log.Fatal("Failed to register Account entity:", err)
 	}
 
+	if err := service.RegisterEntity(&models.Tag{}); err != nil {
+		log.Fatal("Failed to register Tag entity:", err)
+	}
+
 	if err := service.RegisterEntity(&models.Contact{}); err != nil {
 		log.Fatal("Failed to register Contact entity:", err)
 	}
@@ -157,6 +161,10 @@ func main() {
 
 	if err := service.RegisterEntity(&models.WorkflowExecution{}); err != nil {
 		log.Fatal("Failed to register WorkflowExecution entity:", err)
+	}
+
+	if err := registerBulkDataActions(service, db); err != nil {
+		log.Fatal("Failed to register bulk data actions:", err)
 	}
 
 	if err := registerLeadConversionAction(service, db); err != nil {
@@ -257,6 +265,215 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func registerBulkDataActions(service *odata.Service, db *gorm.DB) error {
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportAccountsCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			accounts, validationErrors, err := database.ParseAccountsCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+			if len(validationErrors) > 0 {
+				return writeValidationErrors(w, "One or more account rows could not be imported", validationErrors)
+			}
+			if len(accounts) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No account rows were found in the CSV file")
+			}
+
+			if err := db.Create(&accounts).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(accounts),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportAccountsCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var accounts []models.Account
+			if err := db.Order("id ASC").Find(&accounts).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.AccountsToCSV(accounts)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "accounts", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportContactsCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			contacts, validationErrors, err := database.ParseContactsCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+			if len(validationErrors) > 0 {
+				return writeValidationErrors(w, "One or more contact rows could not be imported", validationErrors)
+			}
+			if len(contacts) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No contact rows were found in the CSV file")
+			}
+
+			if err := db.Create(&contacts).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(contacts),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportContactsCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var contacts []models.Contact
+			if err := db.Order("id ASC").Find(&contacts).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.ContactsToCSV(contacts)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "contacts", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:      "ImportLeadsCSV",
+		IsBound:   false,
+		EntitySet: "",
+		Parameters: []odata.ParameterDefinition{
+			{Name: "Csv", Type: reflect.TypeOf(""), Required: true},
+		},
+		ReturnType: reflect.TypeOf(map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			csvPayload, ok := params["Csv"].(string)
+			if !ok || strings.TrimSpace(csvPayload) == "" {
+				return writeJSONError(w, http.StatusBadRequest, "Csv parameter is required")
+			}
+
+			leads, validationErrors, err := database.ParseLeadsCSV(strings.NewReader(csvPayload))
+			if err != nil {
+				return writeJSONError(w, http.StatusBadRequest, err.Error())
+			}
+			if len(validationErrors) > 0 {
+				return writeValidationErrors(w, "One or more lead rows could not be imported", validationErrors)
+			}
+			if len(leads) == 0 {
+				return writeJSONError(w, http.StatusBadRequest, "No lead rows were found in the CSV file")
+			}
+
+			if err := db.Create(&leads).Error; err != nil {
+				return err
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			return json.NewEncoder(w).Encode(map[string]interface{}{
+				"imported": len(leads),
+			})
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := service.RegisterAction(odata.ActionDefinition{
+		Name:       "ExportLeadsCSV",
+		IsBound:    false,
+		EntitySet:  "",
+		Parameters: nil,
+		ReturnType: nil,
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) error {
+			var leads []models.Lead
+			if err := db.Order("id ASC").Find(&leads).Error; err != nil {
+				return err
+			}
+
+			csvData, err := database.LeadsToCSV(leads)
+			if err != nil {
+				return err
+			}
+
+			return writeCSVResponse(w, "leads", csvData)
+		},
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeValidationErrors(w http.ResponseWriter, message string, details []database.RowError) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	return json.NewEncoder(w).Encode(map[string]interface{}{
+		"error":   "validation_failed",
+		"message": message,
+		"details": details,
+	})
+}
+
+func writeCSVResponse(w http.ResponseWriter, prefix string, data []byte) error {
+	filename := fmt.Sprintf("%s-%s.csv", prefix, time.Now().UTC().Format("20060102-150405"))
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write(data)
+	return err
 }
 
 // registerLeadConversionAction exposes a bound OData action that converts a lead into an account and contact

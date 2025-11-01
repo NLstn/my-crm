@@ -3,9 +3,11 @@ import type { ChangeEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, Input } from '../../components/ui'
+import TaskList from '../../components/TaskList'
+import Timeline from '../../components/Timeline'
 import api from '../../lib/api'
 import { useConvertLead, useDeleteLead, useLead } from '../../lib/hooks/leads'
-import type { Account, Contact } from '../../types'
+import type { Account, Contact, Task, Activity } from '../../types'
 
 const escapeODataValue = (value: string) => value.replace(/'/g, "''")
 
@@ -41,6 +43,38 @@ export default function LeadDetail() {
   )
   const deleteMutation = useDeleteLead(id || '')
   const convertMutation = useConvertLead(id || '')
+
+  const {
+    data: leadTasksData,
+    isLoading: isLoadingLeadTasks,
+    error: leadTasksError,
+  } = useQuery({
+    queryKey: ['lead', id, 'tasks'],
+    queryFn: async () => {
+      const filter = encodeURIComponent(`LeadID eq ${id} and Status ne 3 and Status ne 5`)
+      const response = await api.get(
+        `/Tasks?$filter=${filter}&$orderby=DueDate asc&$top=5&$expand=Lead,Employee,Account,Contact`,
+      )
+      return response.data
+    },
+    enabled: Boolean(id),
+  })
+
+  const {
+    data: leadActivitiesData,
+    isLoading: isLoadingLeadActivities,
+    error: leadActivitiesError,
+  } = useQuery({
+    queryKey: ['lead', id, 'activities'],
+    queryFn: async () => {
+      const filter = encodeURIComponent(`LeadID eq ${id}`)
+      const response = await api.get(
+        `/Activities?$filter=${filter}&$orderby=ActivityTime desc&$top=5&$expand=Lead,Employee,Account,Contact`,
+      )
+      return response.data
+    },
+    enabled: Boolean(id),
+  })
 
   const leadIsConverted = lead?.Status === 'Converted' || Boolean(lead?.ConvertedAccountID)
 
@@ -189,6 +223,7 @@ export default function LeadDetail() {
     setShowConvertOptions(false)
   }
 
+
   if (!id) {
     return (
       <div className="text-center py-12 text-error-600 dark:text-error-400">
@@ -210,6 +245,13 @@ export default function LeadDetail() {
   }
 
   const isConverted = leadIsConverted
+  const openTasks = (leadTasksData?.items as Task[]) || []
+  const recentActivities = (leadActivitiesData?.items as Activity[]) || []
+  const tasksErrorMessage = leadTasksError as Error | null
+  const activitiesErrorMessage = leadActivitiesError as Error | null
+  const quickTaskTitle = `Follow up with ${lead.Name}`
+  const quickTaskUrl = `/tasks/new?leadId=${id}&title=${encodeURIComponent(quickTaskTitle)}`
+  const quickActivityUrl = `/activities/new?leadId=${id}`
 
   const handleDelete = () => {
     deleteMutation.mutate(undefined, {
@@ -572,6 +614,60 @@ export default function LeadDetail() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card p-6 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Open Tasks</h2>
+            <Link to={quickTaskUrl} className="btn btn-primary text-sm">
+              New Task
+            </Link>
+          </div>
+          {isLoadingLeadTasks ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">Loading tasks...</p>
+          ) : tasksErrorMessage ? (
+            <p className="text-sm text-error-600 dark:text-error-400">
+              Unable to load tasks: {tasksErrorMessage.message}
+            </p>
+          ) : (
+            <TaskList
+              tasks={openTasks}
+              emptyMessage="No open tasks for this lead"
+              renderTitle={(task: Task) => (
+                <Link to={`/tasks/${task.ID}`} className="text-primary-600 hover:underline">
+                  {task.Title}
+                </Link>
+              )}
+            />
+          )}
+        </div>
+
+        <div className="card p-6 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Activities</h2>
+            <Link to={quickActivityUrl} className="btn btn-secondary text-sm">
+              Log Activity
+            </Link>
+          </div>
+          {isLoadingLeadActivities ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">Loading activities...</p>
+          ) : activitiesErrorMessage ? (
+            <p className="text-sm text-error-600 dark:text-error-400">
+              Unable to load activities: {activitiesErrorMessage.message}
+            </p>
+          ) : (
+            <Timeline
+              activities={recentActivities}
+              emptyMessage="No recent activity for this lead"
+              renderSubject={(activity: Activity) => (
+                <Link to={`/activities/${activity.ID}`} className="text-primary-600 hover:underline">
+                  {activity.Subject}
+                </Link>
+              )}
+            />
+          )}
         </div>
       </div>
 

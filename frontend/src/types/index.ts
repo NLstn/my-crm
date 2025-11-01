@@ -1,3 +1,10 @@
+export interface Tag {
+  ID: number
+  Name: string
+  CreatedAt: string
+  UpdatedAt: string
+}
+
 export interface Account {
   ID: number
   Name: string
@@ -12,6 +19,7 @@ export interface Account {
   PostalCode?: string
   Description?: string
   EmployeeID?: number
+  LifecycleStage?: string
   CreatedAt: string
   UpdatedAt: string
   Contacts?: Contact[]
@@ -20,6 +28,7 @@ export interface Account {
   Tasks?: Task[]
   Opportunities?: Opportunity[]
   Employee?: Employee
+  Tags?: Tag[]
 }
 
 export interface Contact {
@@ -71,6 +80,8 @@ export interface Lead {
   ConvertedAccount?: Account
   ConvertedContact?: Contact
   OwnerEmployee?: Employee
+  Activities?: Activity[]
+  Tasks?: Task[]
 }
 
 export interface Issue {
@@ -96,7 +107,8 @@ export interface Issue {
 
 export interface Activity {
   ID: number
-  AccountID: number
+  AccountID?: number
+  LeadID?: number
   ContactID?: number
   EmployeeID?: number
   OpportunityID?: number
@@ -108,6 +120,7 @@ export interface Activity {
   CreatedAt: string
   UpdatedAt: string
   Account?: Account
+  Lead?: Lead
   Contact?: Contact
   Employee?: Employee
   Opportunity?: Opportunity
@@ -115,10 +128,11 @@ export interface Activity {
 
 export interface Task {
   ID: number
-  AccountID: number
+  AccountID?: number
   ContactID?: number
   EmployeeID?: number
   OpportunityID?: number
+  LeadID?: number
   Title: string
   Description?: string
   Owner: string
@@ -131,6 +145,7 @@ export interface Task {
   Contact?: Contact
   Employee?: Employee
   Opportunity?: Opportunity
+  Lead?: Lead
 }
 
 export interface Opportunity {
