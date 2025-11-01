@@ -8,7 +8,7 @@ export default function TasksList() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
-      const response = await api.get('/Tasks?$expand=Account,Contact,Employee&$orderby=DueDate asc')
+      const response = await api.get('/Tasks?$expand=Account,Contact,Employee,Lead&$orderby=DueDate asc')
       return response.data
     },
   })

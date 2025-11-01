@@ -521,6 +521,7 @@ func SeedData(db *gorm.DB) error {
 			employee := employees[(activityIndex)%len(employees)]
 			employeeID := employee.ID
 
+			accountID := account.ID
 			var opportunityID *uint
 			opportunityIDs := opportunityIDsByAccount[account.ID]
 			if len(opportunityIDs) > 0 && (activityIndex%3 != 2) {
@@ -529,7 +530,7 @@ func SeedData(db *gorm.DB) error {
 			}
 
 			activities = append(activities, models.Activity{
-				AccountID:     account.ID,
+				AccountID:     &accountID,
 				ContactID:     contactID,
 				EmployeeID:    &employeeID,
 				OpportunityID: opportunityID,
@@ -580,6 +581,7 @@ func SeedData(db *gorm.DB) error {
 			employeeID := employee.ID
 			dueDate := currentTime.Add(time.Duration((taskIndex%7)+3) * 24 * time.Hour)
 
+			accountID := account.ID
 			var opportunityID *uint
 			opportunityIDs := opportunityIDsByAccount[account.ID]
 			if len(opportunityIDs) > 0 && (taskIndex%3 != 0) {
@@ -588,7 +590,7 @@ func SeedData(db *gorm.DB) error {
 			}
 
 			task := models.Task{
-				AccountID:     account.ID,
+				AccountID:     &accountID,
 				ContactID:     contactID,
 				EmployeeID:    &employeeID,
 				OpportunityID: opportunityID,
@@ -726,6 +728,92 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
+	// Create engagement history for leads
+	leadActivityTemplates := []struct {
+		activityType string
+		subject      string
+		outcome      string
+		notes        string
+	}{
+		{activityType: "Call", subject: "Intro Call", outcome: "Connected", notes: "Discussed priorities with %s about %s"},
+		{activityType: "Email", subject: "Send Follow-up", outcome: "Awaiting Response", notes: "Shared tailored materials with %s for %s"},
+	}
+
+	leadActivities := make([]models.Activity, 0, len(leads)*len(leadActivityTemplates))
+	for i, lead := range leads {
+		company := lead.Company
+		if company == "" {
+			company = lead.Name
+		}
+
+		for j, template := range leadActivityTemplates {
+			leadID := lead.ID
+			employee := employees[(i+j)%len(employees)]
+			employeeID := employee.ID
+			activitySubject := fmt.Sprintf("%s - %s", template.subject, lead.Name)
+			notes := fmt.Sprintf(template.notes, lead.Name, company)
+
+			leadActivities = append(leadActivities, models.Activity{
+				LeadID:       &leadID,
+				EmployeeID:   &employeeID,
+				ActivityType: template.activityType,
+				Subject:      activitySubject,
+				Outcome:      template.outcome,
+				Notes:        notes,
+				ActivityTime: currentTime.Add(-time.Duration((i*len(leadActivityTemplates))+j+1) * 6 * time.Hour),
+			})
+		}
+	}
+
+	if len(leadActivities) > 0 {
+		if err := db.Create(&leadActivities).Error; err != nil {
+			return fmt.Errorf("failed to create lead activities: %w", err)
+		}
+	}
+
+	leadTaskTemplates := []struct {
+		title       string
+		description string
+		status      models.TaskStatus
+	}{
+		{title: "Schedule discovery meeting", description: "Coordinate a discovery session with %s from %s.", status: models.TaskStatusNotStarted},
+		{title: "Send tailored proposal", description: "Draft proposal for %s highlighting fit for %s.", status: models.TaskStatusInProgress},
+	}
+
+	leadTasks := make([]models.Task, 0, len(leads)*len(leadTaskTemplates))
+	for i, lead := range leads {
+		company := lead.Company
+		if company == "" {
+			company = lead.Name
+		}
+
+		for j, template := range leadTaskTemplates {
+			leadID := lead.ID
+			employee := employees[(i*2+j)%len(employees)]
+			employeeID := employee.ID
+			dueDate := currentTime.Add(time.Duration((i+j)%5+2) * 24 * time.Hour)
+			owner := fmt.Sprintf("%s %s", employee.FirstName, employee.LastName)
+			description := fmt.Sprintf(template.description, lead.Name, company)
+
+			leadTasks = append(leadTasks, models.Task{
+				LeadID:      &leadID,
+				EmployeeID:  &employeeID,
+				Title:       template.title,
+				Description: description,
+				Owner:       owner,
+				Status:      template.status,
+				DueDate:     dueDate,
+			})
+		}
+	}
+
+	if len(leadTasks) > 0 {
+		if err := db.Create(&leadTasks).Error; err != nil {
+			return fmt.Errorf("failed to create lead tasks: %w", err)
+		}
+	}
+
+	// Create sample workflow rule
 	var workflowRuleCount int64
 	db.Model(&models.WorkflowRule{}).Count(&workflowRuleCount)
 	if workflowRuleCount == 0 {

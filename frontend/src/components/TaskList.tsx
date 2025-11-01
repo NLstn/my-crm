@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import type { Task } from '../types'
 import { taskStatusToString } from '../types'
 
@@ -59,6 +60,22 @@ export default function TaskList({ tasks, emptyMessage = 'No tasks assigned', re
               </span>
             </div>
           </div>
+          {task.Account && task.AccountID && (
+            <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+              Account:{' '}
+              <Link to={`/accounts/${task.AccountID}`} className="text-primary-600 hover:underline">
+                {task.Account.Name}
+              </Link>
+            </div>
+          )}
+          {task.Lead && task.LeadID && (
+            <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+              Lead:{' '}
+              <Link to={`/leads/${task.LeadID}`} className="text-primary-600 hover:underline">
+                {task.Lead.Name}
+              </Link>
+            </div>
+          )}
           {task.Contact && (
             <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
               Contact: {task.Contact.FirstName} {task.Contact.LastName}

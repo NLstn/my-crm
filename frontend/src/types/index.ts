@@ -71,6 +71,8 @@ export interface Lead {
   ConvertedAccount?: Account
   ConvertedContact?: Contact
   OwnerEmployee?: Employee
+  Activities?: Activity[]
+  Tasks?: Task[]
 }
 
 export interface Issue {
@@ -96,7 +98,8 @@ export interface Issue {
 
 export interface Activity {
   ID: number
-  AccountID: number
+  AccountID?: number
+  LeadID?: number
   ContactID?: number
   EmployeeID?: number
   OpportunityID?: number
@@ -108,6 +111,7 @@ export interface Activity {
   CreatedAt: string
   UpdatedAt: string
   Account?: Account
+  Lead?: Lead
   Contact?: Contact
   Employee?: Employee
   Opportunity?: Opportunity
@@ -115,7 +119,8 @@ export interface Activity {
 
 export interface Task {
   ID: number
-  AccountID: number
+  AccountID?: number
+  LeadID?: number
   ContactID?: number
   EmployeeID?: number
   OpportunityID?: number
@@ -128,6 +133,7 @@ export interface Task {
   CreatedAt: string
   UpdatedAt: string
   Account?: Account
+  Lead?: Lead
   Contact?: Contact
   Employee?: Employee
   Opportunity?: Opportunity

@@ -328,7 +328,7 @@ func (e *Engine) createFollowUpTask(config FollowUpTaskActionConfig, event Event
 	}
 
 	task := models.Task{
-		AccountID:   accountID,
+		AccountID:   &accountID,
 		Title:       config.Title,
 		Description: config.Description,
 		Owner:       config.Owner,
