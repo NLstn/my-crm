@@ -155,6 +155,10 @@ func main() {
 		log.Fatal("Failed to register lead conversion action:", err)
 	}
 
+	if err := registerGlobalSearchFunction(service, db); err != nil {
+		log.Fatal("Failed to register global search function:", err)
+	}
+
 	// Register fake authentication action (DEVELOPMENT ONLY)
 	// TODO: Replace with proper authentication provider integration in production
 	if err := registerDevAuthAction(service, db); err != nil {
@@ -430,6 +434,105 @@ func registerLeadConversionAction(service *odata.Service, db *gorm.DB) error {
 				"AccountReused": reusedAccount,
 				"ContactReused": reusedContact,
 			})
+		},
+	})
+}
+
+func registerGlobalSearchFunction(service *odata.Service, db *gorm.DB) error {
+	return service.RegisterFunction(odata.FunctionDefinition{
+		Name:       "GlobalSearch",
+		IsBound:    false,
+		Parameters: []odata.ParameterDefinition{{Name: "query", Type: reflect.TypeOf(""), Required: true}, {Name: "limit", Type: reflect.TypeOf(int64(0)), Required: false}},
+		ReturnType: reflect.TypeOf([]map[string]interface{}{}),
+		Handler: func(w http.ResponseWriter, r *http.Request, ctx interface{}, params map[string]interface{}) (interface{}, error) {
+			rawQuery, ok := params["query"].(string)
+			if !ok {
+				return []map[string]interface{}{}, nil
+			}
+
+			trimmedQuery := strings.TrimSpace(rawQuery)
+			if trimmedQuery == "" {
+				return []map[string]interface{}{}, nil
+			}
+
+			resultLimit := 5
+			if rawLimit, exists := params["limit"]; exists {
+				switch v := rawLimit.(type) {
+				case int64:
+					if v > 0 {
+						resultLimit = int(v)
+					}
+				case int:
+					if v > 0 {
+						resultLimit = v
+					}
+				}
+			}
+
+			escapedQuery := strings.ReplaceAll(trimmedQuery, "\\", "\\\\")
+			escapedQuery = strings.ReplaceAll(escapedQuery, "%", "\\%")
+			escapedQuery = strings.ReplaceAll(escapedQuery, "_", "\\_")
+			likePattern := fmt.Sprintf("%%%s%%", escapedQuery)
+
+			results := make([]map[string]interface{}, 0, resultLimit*4)
+
+			var accounts []models.Account
+			if err := db.Limit(resultLimit).Where("name ILIKE ?", likePattern).Order("name ASC").Find(&accounts).Error; err != nil {
+				return nil, err
+			}
+			for _, account := range accounts {
+				results = append(results, map[string]interface{}{
+					"entityType": "Account",
+					"entityId":   account.ID,
+					"name":       account.Name,
+					"path":       fmt.Sprintf("/accounts/%d", account.ID),
+				})
+			}
+
+			var contacts []models.Contact
+			if err := db.Limit(resultLimit).
+				Where("(first_name || ' ' || last_name) ILIKE ? OR (last_name || ' ' || first_name) ILIKE ?", likePattern, likePattern).
+				Order("first_name ASC, last_name ASC").
+				Find(&contacts).Error; err != nil {
+				return nil, err
+			}
+			for _, contact := range contacts {
+				fullName := strings.TrimSpace(strings.Join([]string{contact.FirstName, contact.LastName}, " "))
+				results = append(results, map[string]interface{}{
+					"entityType": "Contact",
+					"entityId":   contact.ID,
+					"name":       fullName,
+					"path":       fmt.Sprintf("/contacts/%d", contact.ID),
+				})
+			}
+
+			var leads []models.Lead
+			if err := db.Limit(resultLimit).Where("name ILIKE ?", likePattern).Order("name ASC").Find(&leads).Error; err != nil {
+				return nil, err
+			}
+			for _, lead := range leads {
+				results = append(results, map[string]interface{}{
+					"entityType": "Lead",
+					"entityId":   lead.ID,
+					"name":       lead.Name,
+					"path":       fmt.Sprintf("/leads/%d", lead.ID),
+				})
+			}
+
+			var opportunities []models.Opportunity
+			if err := db.Limit(resultLimit).Where("name ILIKE ?", likePattern).Order("name ASC").Find(&opportunities).Error; err != nil {
+				return nil, err
+			}
+			for _, opportunity := range opportunities {
+				results = append(results, map[string]interface{}{
+					"entityType": "Opportunity",
+					"entityId":   opportunity.ID,
+					"name":       opportunity.Name,
+					"path":       fmt.Sprintf("/opportunities/%d", opportunity.ID),
+				})
+			}
+
+			return results, nil
 		},
 	})
 }

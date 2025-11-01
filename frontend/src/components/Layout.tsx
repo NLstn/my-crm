@@ -1,13 +1,68 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { Button } from './ui'
+import { Button, Input } from './ui'
+import { useGlobalSearch } from '../hooks/useGlobalSearch'
+import { GlobalSearchResults } from './GlobalSearchResults'
+import type { GlobalSearchResult } from './searchTypes'
 
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [isSearchActive, setIsSearchActive] = useState(false)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(searchTerm)
+    }, 250)
+
+    return () => window.clearTimeout(timeout)
+  }, [searchTerm])
+
+  useEffect(() => {
+    if (!isSearchActive) {
+      return
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchActive(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isSearchActive])
+
+  const {
+    data: globalSearchResults = [],
+    isLoading: isGlobalSearchLoading,
+  } = useGlobalSearch(debouncedSearch, 5)
+
+  const handleSearchSelect = (result: GlobalSearchResult) => {
+    setSearchTerm('')
+    setDebouncedSearch('')
+    setIsSearchActive(false)
+    navigate(result.path)
+  }
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && globalSearchResults.length > 0) {
+      event.preventDefault()
+      handleSearchSelect(globalSearchResults[0])
+    }
+
+    if (event.key === 'Escape') {
+      setIsSearchActive(false)
+    }
+  }
+
+  const shouldShowSearchResults = isSearchActive && debouncedSearch.trim().length > 0
 
   const navigation = [
     { name: 'Accounts', href: '/accounts' },
@@ -64,6 +119,28 @@ export default function Layout() {
                 CRM System
               </h1>
             </Link>
+
+            {/* Global search */}
+            <div ref={searchContainerRef} className="relative hidden min-w-0 flex-1 sm:block">
+              <Input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                onFocus={() => setIsSearchActive(true)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Search accounts, contacts, leads, opportunities..."
+                aria-label="Global search"
+                autoComplete="off"
+              />
+              {shouldShowSearchResults && (
+                <GlobalSearchResults
+                  query={debouncedSearch}
+                  isLoading={isGlobalSearchLoading}
+                  results={globalSearchResults}
+                  onSelect={handleSearchSelect}
+                />
+              )}
+            </div>
 
             {/* User info and logout - right side */}
             <div className="ml-auto flex items-center gap-4">
