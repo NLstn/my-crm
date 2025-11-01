@@ -9,21 +9,37 @@ export default function Layout() {
   const { user, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  const navigation = [
+  type NavigationItem = {
+    name: string
+    href: string
+    exact?: boolean
+    excludePrefixes?: string[]
+  }
+
+  const navigation: NavigationItem[] = [
     { name: 'Accounts', href: '/accounts' },
     { name: 'Leads', href: '/leads' },
     { name: 'Contacts', href: '/contacts' },
     { name: 'Activities', href: '/activities' },
     { name: 'Issues', href: '/issues' },
     { name: 'Tasks', href: '/tasks' },
-    { name: 'Opportunities', href: '/opportunities' },
+    { name: 'Opportunities', href: '/opportunities', excludePrefixes: ['/opportunities/board'] },
+    { name: 'Pipeline Board', href: '/opportunities/board', exact: true },
     { name: 'Employees', href: '/employees' },
     { name: 'Products', href: '/products' },
     { name: 'Workflows', href: '/settings/workflows' },
   ]
 
-  const isActive = (path: string) => {
-    return location.pathname.startsWith(path)
+  const isActive = (path: string, options?: { exact?: boolean; excludePrefixes?: string[] }) => {
+    if (options?.exact) {
+      return location.pathname === path
+    }
+
+    if (options?.excludePrefixes?.some((prefix) => location.pathname.startsWith(prefix))) {
+      return false
+    }
+
+    return location.pathname === path || location.pathname.startsWith(`${path}/`)
   }
 
   const toggleMobileMenu = () => {
@@ -127,7 +143,7 @@ export default function Layout() {
                       to={item.href}
                       onClick={closeMobileMenu}
                       className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isActive(item.href)
+                        isActive(item.href, { exact: item.exact, excludePrefixes: item.excludePrefixes })
                           ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-200'
                           : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
                       }`}
