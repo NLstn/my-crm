@@ -11,7 +11,8 @@ import (
 // ActivityTime captures when the interaction took place rather than when it was logged.
 type Activity struct {
 	ID            uint      `json:"ID" gorm:"primaryKey" odata:"key"`
-	AccountID     uint      `json:"AccountID" gorm:"not null;index" odata:"required"`
+	AccountID     *uint     `json:"AccountID" gorm:"index"`
+	LeadID        *uint     `json:"LeadID" gorm:"index"`
 	ContactID     *uint     `json:"ContactID" gorm:"index"`
 	EmployeeID    *uint     `json:"EmployeeID" gorm:"index"`
 	OpportunityID *uint     `json:"OpportunityID" gorm:"index"`
@@ -25,6 +26,7 @@ type Activity struct {
 
 	// Navigation properties
 	Account     *Account     `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Lead        *Lead        `json:"Lead" gorm:"foreignKey:LeadID" odata:"navigation"`
 	Contact     *Contact     `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
 	Employee    *Employee    `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 	Opportunity *Opportunity `json:"Opportunity" gorm:"foreignKey:OpportunityID" odata:"navigation"`
@@ -37,25 +39,40 @@ func (Activity) TableName() string {
 
 // BeforeSave validates relationships before persisting changes
 func (activity *Activity) BeforeSave(tx *gorm.DB) error {
+	// Require either an account or a lead
+	if activity.AccountID == nil && activity.LeadID == nil {
+		return fmt.Errorf("either an account or a lead must be associated with the activity")
+	}
+
+	// Validate contact belongs to account (only applicable if both are set)
 	if activity.ContactID != nil {
+		if activity.AccountID == nil {
+			return fmt.Errorf("contact can only be set when the activity is linked to an account")
+		}
+
 		var contact Contact
 		if err := tx.Select("account_id").First(&contact, *activity.ContactID).Error; err != nil {
 			return err
 		}
 
-		if contact.AccountID != activity.AccountID {
-			return fmt.Errorf("contact %d does not belong to account %d", *activity.ContactID, activity.AccountID)
+		if contact.AccountID != *activity.AccountID {
+			return fmt.Errorf("contact %d does not belong to account %d", *activity.ContactID, *activity.AccountID)
 		}
 	}
 
+	// Validate opportunity belongs to account (only applicable if both are set)
 	if activity.OpportunityID != nil {
+		if activity.AccountID == nil {
+			return fmt.Errorf("opportunity can only be set when the activity is linked to an account")
+		}
+
 		var opportunity Opportunity
 		if err := tx.Select("account_id").First(&opportunity, *activity.OpportunityID).Error; err != nil {
 			return err
 		}
 
-		if opportunity.AccountID != activity.AccountID {
-			return fmt.Errorf("opportunity %d does not belong to account %d", *activity.OpportunityID, activity.AccountID)
+		if opportunity.AccountID != *activity.AccountID {
+			return fmt.Errorf("opportunity %d does not belong to account %d", *activity.OpportunityID, *activity.AccountID)
 		}
 	}
 

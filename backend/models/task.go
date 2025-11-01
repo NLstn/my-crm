@@ -23,7 +23,8 @@ const (
 // Tasks capture accountability with an owner, status and due date.
 type Task struct {
 	ID            uint       `json:"ID" gorm:"primaryKey" odata:"key"`
-	AccountID     uint       `json:"AccountID" gorm:"not null;index" odata:"required"`
+	AccountID     *uint      `json:"AccountID" gorm:"index"`
+	LeadID        *uint      `json:"LeadID" gorm:"index"`
 	ContactID     *uint      `json:"ContactID" gorm:"index"`
 	EmployeeID    *uint      `json:"EmployeeID" gorm:"index"`
 	OpportunityID *uint      `json:"OpportunityID" gorm:"index"`
@@ -38,6 +39,7 @@ type Task struct {
 
 	// Navigation properties
 	Account     *Account     `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Lead        *Lead        `json:"Lead" gorm:"foreignKey:LeadID" odata:"navigation"`
 	Contact     *Contact     `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
 	Employee    *Employee    `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 	Opportunity *Opportunity `json:"Opportunity" gorm:"foreignKey:OpportunityID" odata:"navigation"`
@@ -50,25 +52,40 @@ func (Task) TableName() string {
 
 // BeforeSave validates relationships before persisting changes
 func (task *Task) BeforeSave(tx *gorm.DB) error {
+	// Require either an account or a lead
+	if task.AccountID == nil && task.LeadID == nil {
+		return fmt.Errorf("either an account or a lead must be associated with the task")
+	}
+
+	// Validate contact belongs to account (only applicable if both are set)
 	if task.ContactID != nil {
+		if task.AccountID == nil {
+			return fmt.Errorf("contact can only be set when the task is linked to an account")
+		}
+
 		var contact Contact
 		if err := tx.Select("account_id").First(&contact, *task.ContactID).Error; err != nil {
 			return err
 		}
 
-		if contact.AccountID != task.AccountID {
-			return fmt.Errorf("contact %d does not belong to account %d", *task.ContactID, task.AccountID)
+		if contact.AccountID != *task.AccountID {
+			return fmt.Errorf("contact %d does not belong to account %d", *task.ContactID, *task.AccountID)
 		}
 	}
 
+	// Validate opportunity belongs to account (only applicable if both are set)
 	if task.OpportunityID != nil {
+		if task.AccountID == nil {
+			return fmt.Errorf("opportunity can only be set when the task is linked to an account")
+		}
+
 		var opportunity Opportunity
 		if err := tx.Select("account_id").First(&opportunity, *task.OpportunityID).Error; err != nil {
 			return err
 		}
 
-		if opportunity.AccountID != task.AccountID {
-			return fmt.Errorf("opportunity %d does not belong to account %d", *task.OpportunityID, task.AccountID)
+		if opportunity.AccountID != *task.AccountID {
+			return fmt.Errorf("opportunity %d does not belong to account %d", *task.OpportunityID, *task.AccountID)
 		}
 	}
 
