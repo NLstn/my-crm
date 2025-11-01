@@ -44,7 +44,7 @@ All pages support CRUD operations and are fully integrated with the OData v4 bac
 - **Accounts**: List, view, create, and edit accounts
 - **Contacts**: Manage contacts associated with accounts
 - **Issues**: Track and manage support tickets
-- **Data Cockpit**: Catalog of CSV import/export actions for every entity
+- **Migration Cockpit**: Queue CSV import/export jobs and monitor their progress
 
 ## Development
 

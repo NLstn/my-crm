@@ -36,7 +36,7 @@ import ProductDetail from "./pages/Products/ProductDetail";
 import ProductForm from "./pages/Products/ProductForm";
 import WorkflowSettingsPage from "./pages/Settings/Workflows";
 import UserPreferences from "./pages/Settings/UserPreferences";
-import DataCockpit from "./pages/Settings/DataCockpit";
+import MigrationCockpit from "./pages/Settings/MigrationCockpit";
 import { fetchEnums } from "./lib/enums";
 
 function App() {
@@ -133,7 +133,7 @@ function App() {
                 path="settings/preferences"
                 element={<UserPreferences />}
               />
-              <Route path="settings/data" element={<DataCockpit />} />
+              <Route path="settings/data" element={<MigrationCockpit />} />
             </Route>
           </Routes>
         </Router>
