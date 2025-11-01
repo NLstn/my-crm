@@ -141,7 +141,7 @@ export default function ContactsList() {
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             For a dedicated import and export workspace visit the{' '}
             <Link
-              to="/migration"
+              to="/settings/data"
               className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
             >
               Migration Cockpit

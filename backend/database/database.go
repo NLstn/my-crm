@@ -57,6 +57,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.OpportunityStageHistory{},
 		&models.WorkflowRule{},
 		&models.WorkflowExecution{},
+		&models.MigrationJob{},
 	)
 
 	if err != nil {
