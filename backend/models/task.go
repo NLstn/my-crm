@@ -23,7 +23,8 @@ const (
 // Tasks capture accountability with an owner, status and due date.
 type Task struct {
 	ID          uint       `json:"ID" gorm:"primaryKey" odata:"key"`
-	AccountID   uint       `json:"AccountID" gorm:"not null;index" odata:"required"`
+	AccountID   *uint      `json:"AccountID" gorm:"index"`
+	LeadID      *uint      `json:"LeadID" gorm:"index"`
 	ContactID   *uint      `json:"ContactID" gorm:"index"`
 	EmployeeID  *uint      `json:"EmployeeID" gorm:"index"`
 	Title       string     `json:"Title" gorm:"not null;type:varchar(255)" odata:"required,maxlength(255)"`
@@ -37,6 +38,7 @@ type Task struct {
 
 	// Navigation properties
 	Account  *Account  `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Lead     *Lead     `json:"Lead" gorm:"foreignKey:LeadID" odata:"navigation"`
 	Contact  *Contact  `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
 	Employee *Employee `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 }
@@ -48,8 +50,16 @@ func (Task) TableName() string {
 
 // BeforeSave validates relationships before persisting changes
 func (task *Task) BeforeSave(tx *gorm.DB) error {
+	if task.AccountID == nil && task.LeadID == nil {
+		return fmt.Errorf("either an account or a lead must be associated with the task")
+	}
+
 	if task.ContactID == nil {
 		return nil
+	}
+
+	if task.AccountID == nil {
+		return fmt.Errorf("contact can only be set when the task is linked to an account")
 	}
 
 	var contact Contact
@@ -57,8 +67,8 @@ func (task *Task) BeforeSave(tx *gorm.DB) error {
 		return err
 	}
 
-	if contact.AccountID != task.AccountID {
-		return fmt.Errorf("contact %d does not belong to account %d", *task.ContactID, task.AccountID)
+	if contact.AccountID != *task.AccountID {
+		return fmt.Errorf("contact %d does not belong to account %d", *task.ContactID, *task.AccountID)
 	}
 
 	return nil

@@ -8,7 +8,7 @@ export default function ActivitiesList() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['activities'],
     queryFn: async () => {
-      const response = await api.get('/Activities?$expand=Account,Contact,Employee&$orderby=ActivityTime desc')
+      const response = await api.get('/Activities?$expand=Account,Contact,Employee,Lead&$orderby=ActivityTime desc')
       return response.data
     },
   })

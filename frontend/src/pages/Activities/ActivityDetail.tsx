@@ -14,7 +14,7 @@ export default function ActivityDetail() {
   const { data: activity, isLoading, error } = useQuery({
     queryKey: ['activity', id],
     queryFn: async () => {
-      const response = await api.get(`/Activities(${id})?$expand=Account,Contact,Employee`)
+      const response = await api.get(`/Activities(${id})?$expand=Account,Contact,Employee,Lead`)
       return response.data as Activity
     },
   })
@@ -71,11 +71,19 @@ export default function ActivityDetail() {
 
       <div className="card p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
-          {activity.Account && (
+          {activity.Account && activity.AccountID && (
             <div>
               <div className="font-medium text-gray-600 dark:text-gray-400">Account</div>
               <Link to={`/accounts/${activity.AccountID}`} className="text-primary-600 hover:underline">
                 {activity.Account.Name}
+              </Link>
+            </div>
+          )}
+          {activity.Lead && activity.LeadID && (
+            <div>
+              <div className="font-medium text-gray-600 dark:text-gray-400">Lead</div>
+              <Link to={`/leads/${activity.LeadID}`} className="text-primary-600 hover:underline">
+                {activity.Lead.Name}
               </Link>
             </div>
           )}

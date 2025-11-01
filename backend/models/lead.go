@@ -31,8 +31,10 @@ type Lead struct {
 	CreatedAt          time.Time  `json:"CreatedAt" gorm:"autoCreateTime"`
 	UpdatedAt          time.Time  `json:"UpdatedAt" gorm:"autoUpdateTime"`
 
-	ConvertedAccount *Account `json:"ConvertedAccount" gorm:"foreignKey:ConvertedAccountID" odata:"navigation"`
-	ConvertedContact *Contact `json:"ConvertedContact" gorm:"foreignKey:ConvertedContactID" odata:"navigation"`
+	ConvertedAccount *Account    `json:"ConvertedAccount" gorm:"foreignKey:ConvertedAccountID" odata:"navigation"`
+	ConvertedContact *Contact    `json:"ConvertedContact" gorm:"foreignKey:ConvertedContactID" odata:"navigation"`
+	Activities       []*Activity `json:"Activities" gorm:"foreignKey:LeadID" odata:"navigation"`
+	Tasks            []*Task     `json:"Tasks" gorm:"foreignKey:LeadID" odata:"navigation"`
 }
 
 // TableName specifies the table name for GORM

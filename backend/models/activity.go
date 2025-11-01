@@ -11,7 +11,8 @@ import (
 // ActivityTime captures when the interaction took place rather than when it was logged.
 type Activity struct {
 	ID           uint      `json:"ID" gorm:"primaryKey" odata:"key"`
-	AccountID    uint      `json:"AccountID" gorm:"not null;index" odata:"required"`
+	AccountID    *uint     `json:"AccountID" gorm:"index"`
+	LeadID       *uint     `json:"LeadID" gorm:"index"`
 	ContactID    *uint     `json:"ContactID" gorm:"index"`
 	EmployeeID   *uint     `json:"EmployeeID" gorm:"index"`
 	ActivityType string    `json:"ActivityType" gorm:"not null;type:varchar(100)" odata:"required,maxlength(100)"`
@@ -24,6 +25,7 @@ type Activity struct {
 
 	// Navigation properties
 	Account  *Account  `json:"Account" gorm:"foreignKey:AccountID" odata:"navigation"`
+	Lead     *Lead     `json:"Lead" gorm:"foreignKey:LeadID" odata:"navigation"`
 	Contact  *Contact  `json:"Contact" gorm:"foreignKey:ContactID" odata:"navigation"`
 	Employee *Employee `json:"Employee" gorm:"foreignKey:EmployeeID" odata:"navigation"`
 }
@@ -35,8 +37,16 @@ func (Activity) TableName() string {
 
 // BeforeSave validates relationships before persisting changes
 func (activity *Activity) BeforeSave(tx *gorm.DB) error {
+	if activity.AccountID == nil && activity.LeadID == nil {
+		return fmt.Errorf("either an account or a lead must be associated with the activity")
+	}
+
 	if activity.ContactID == nil {
 		return nil
+	}
+
+	if activity.AccountID == nil {
+		return fmt.Errorf("contact can only be set when the activity is linked to an account")
 	}
 
 	var contact Contact
@@ -44,8 +54,8 @@ func (activity *Activity) BeforeSave(tx *gorm.DB) error {
 		return err
 	}
 
-	if contact.AccountID != activity.AccountID {
-		return fmt.Errorf("contact %d does not belong to account %d", *activity.ContactID, activity.AccountID)
+	if contact.AccountID != *activity.AccountID {
+		return fmt.Errorf("contact %d does not belong to account %d", *activity.ContactID, *activity.AccountID)
 	}
 
 	return nil

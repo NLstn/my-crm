@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import type { Activity } from '../types'
 
 interface TimelineProps {
@@ -41,6 +42,22 @@ export default function Timeline({ activities, emptyMessage = 'No activity yet',
                   <div className="font-medium text-gray-700 dark:text-gray-300">
                     {activity.ActivityType}
                   </div>
+                  {activity.Account && activity.AccountID && (
+                    <div>
+                      Account:{' '}
+                      <Link to={`/accounts/${activity.AccountID}`} className="text-primary-600 hover:underline">
+                        {activity.Account.Name}
+                      </Link>
+                    </div>
+                  )}
+                  {activity.Lead && activity.LeadID && (
+                    <div>
+                      Lead:{' '}
+                      <Link to={`/leads/${activity.LeadID}`} className="text-primary-600 hover:underline">
+                        {activity.Lead.Name}
+                      </Link>
+                    </div>
+                  )}
                   {activity.Contact && (
                     <div>Contact: {activity.Contact.FirstName} {activity.Contact.LastName}</div>
                   )}
