@@ -19,6 +19,24 @@ const (
 	TaskStatusCancelled  TaskStatus = 5
 )
 
+// String returns the string representation of TaskStatus
+func (s TaskStatus) String() string {
+	switch s {
+	case TaskStatusNotStarted:
+		return "NotStarted"
+	case TaskStatusInProgress:
+		return "InProgress"
+	case TaskStatusCompleted:
+		return "Completed"
+	case TaskStatusDeferred:
+		return "Deferred"
+	case TaskStatusCancelled:
+		return "Cancelled"
+	default:
+		return "Unknown"
+	}
+}
+
 // Task represents a follow-up item associated with an account
 // Tasks capture accountability with an owner, status and due date.
 type Task struct {

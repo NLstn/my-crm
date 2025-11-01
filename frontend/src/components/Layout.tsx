@@ -1,168 +1,190 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { useAuth } from '../hooks/useAuth'
-import { Input } from './ui'
-import { useGlobalSearch } from '../hooks/useGlobalSearch'
-import { GlobalSearchResults } from './GlobalSearchResults'
-import type { GlobalSearchResult } from './searchTypes'
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { Input } from "./ui";
+import { useGlobalSearch } from "../hooks/useGlobalSearch";
+import { GlobalSearchResults } from "./GlobalSearchResults";
+import type { GlobalSearchResult } from "./searchTypes";
 
 export default function Layout() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [isSearchActive, setIsSearchActive] = useState(false)
-  const searchContainerRef = useRef<HTMLDivElement>(null)
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
-  const profileMenuRef = useRef<HTMLDivElement>(null)
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setDebouncedSearch(searchTerm)
-    }, 250)
+      setDebouncedSearch(searchTerm);
+    }, 250);
 
-    return () => window.clearTimeout(timeout)
-  }, [searchTerm])
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (!isSearchActive) {
-      return
+      return;
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setIsSearchActive(false)
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchActive(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isSearchActive])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSearchActive]);
 
-  const {
-    data: globalSearchResults = [],
-    isLoading: isGlobalSearchLoading,
-  } = useGlobalSearch(debouncedSearch, 5)
+  const { data: globalSearchResults = [], isLoading: isGlobalSearchLoading } =
+    useGlobalSearch(debouncedSearch, 5);
 
   const handleSearchSelect = (result: GlobalSearchResult) => {
-    setSearchTerm('')
-    setDebouncedSearch('')
-    setIsSearchActive(false)
-    navigate(result.path)
-  }
+    setSearchTerm("");
+    setDebouncedSearch("");
+    setIsSearchActive(false);
+    navigate(result.path);
+  };
 
   const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && globalSearchResults.length > 0) {
-      event.preventDefault()
-      handleSearchSelect(globalSearchResults[0])
+    if (event.key === "Enter" && globalSearchResults.length > 0) {
+      event.preventDefault();
+      handleSearchSelect(globalSearchResults[0]);
     }
 
-    if (event.key === 'Escape') {
-      setIsSearchActive(false)
+    if (event.key === "Escape") {
+      setIsSearchActive(false);
     }
-  }
+  };
 
-  const shouldShowSearchResults = isSearchActive && debouncedSearch.trim().length > 0
+  const shouldShowSearchResults =
+    isSearchActive && debouncedSearch.trim().length > 0;
 
-  const userInitials = [user?.firstName?.[0], user?.lastName?.[0]]
-    .filter(Boolean)
-    .join('')
-    .toUpperCase() || user?.email?.[0]?.toUpperCase() || '?'
+  const userInitials =
+    [user?.firstName?.[0], user?.lastName?.[0]]
+      .filter(Boolean)
+      .join("")
+      .toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    "?";
 
-  const profileAriaLabel = user?.firstName || user?.lastName
-    ? `Open profile menu for ${[user?.firstName, user?.lastName].filter(Boolean).join(' ')}`
-    : 'Open profile menu'
+  const profileAriaLabel =
+    user?.firstName || user?.lastName
+      ? `Open profile menu for ${[user?.firstName, user?.lastName].filter(Boolean).join(" ")}`
+      : "Open profile menu";
 
   type NavigationItem = {
-    name: string
-    href: string
-    exact?: boolean
-    excludePrefixes?: string[]
-  }
+    name: string;
+    href: string;
+    exact?: boolean;
+    excludePrefixes?: string[];
+  };
 
   const navigation: NavigationItem[] = [
-    { name: 'Accounts', href: '/accounts' },
-    { name: 'Leads', href: '/leads' },
-    { name: 'Contacts', href: '/contacts' },
-    { name: 'Activities', href: '/activities' },
-    { name: 'Issues', href: '/issues' },
-    { name: 'Tasks', href: '/tasks' },
-    { name: 'Opportunities', href: '/opportunities', excludePrefixes: ['/opportunities/board'] },
-    { name: 'Pipeline Board', href: '/opportunities/board', exact: true },
-    { name: 'Employees', href: '/employees' },
-    { name: 'Products', href: '/products' },
-    { name: 'Migration Cockpit', href: '/migration', exact: true },
-    { name: 'Workflows', href: '/settings/workflows' },
-  ]
+    { name: "Accounts", href: "/accounts" },
+    { name: "Leads", href: "/leads" },
+    { name: "Contacts", href: "/contacts" },
+    { name: "Activities", href: "/activities" },
+    { name: "Issues", href: "/issues" },
+    { name: "Tasks", href: "/tasks" },
+    {
+      name: "Opportunities",
+      href: "/opportunities",
+      excludePrefixes: ["/opportunities/board"],
+    },
+    { name: "Pipeline Board", href: "/opportunities/board", exact: true },
+    { name: "Employees", href: "/employees" },
+    { name: "Products", href: "/products" },
+    { name: "Data Cockpit", href: "/settings/data" },
+    { name: "Workflows", href: "/settings/workflows" },
+  ];
 
-  const isActive = (path: string, options?: { exact?: boolean; excludePrefixes?: string[] }) => {
+  const isActive = (
+    path: string,
+    options?: { exact?: boolean; excludePrefixes?: string[] },
+  ) => {
     if (options?.exact) {
-      return location.pathname === path
+      return location.pathname === path;
     }
 
-    if (options?.excludePrefixes?.some((prefix) => location.pathname.startsWith(prefix))) {
-      return false
+    if (
+      options?.excludePrefixes?.some((prefix) =>
+        location.pathname.startsWith(prefix),
+      )
+    ) {
+      return false;
     }
 
-    return location.pathname === path || location.pathname.startsWith(`${path}/`)
-  }
+    return (
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
+    );
+  };
 
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
   const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false)
-  }
+    setIsMobileMenuOpen(false);
+  };
 
   const toggleProfileMenu = () => {
-    setIsProfileMenuOpen((previous) => !previous)
-  }
+    setIsProfileMenuOpen((previous) => !previous);
+  };
 
   const handleLogout = () => {
-    setIsProfileMenuOpen(false)
-    logout()
-    navigate('/login')
-  }
+    setIsProfileMenuOpen(false);
+    logout();
+    navigate("/login");
+  };
 
   useEffect(() => {
     if (!isProfileMenuOpen) {
-      return
+      return;
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setIsProfileMenuOpen(false)
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
       }
-    }
+    };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsProfileMenuOpen(false)
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isProfileMenuOpen])
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isProfileMenuOpen]);
 
   useEffect(() => {
     if (!isProfileMenuOpen) {
-      return
+      return;
     }
 
     return () => {
-      setIsProfileMenuOpen(false)
-    }
-  }, [isProfileMenuOpen, location.pathname])
+      setIsProfileMenuOpen(false);
+    };
+  }, [isProfileMenuOpen, location.pathname]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -179,12 +201,32 @@ export default function Layout() {
                 aria-expanded={isMobileMenuOpen}
               >
                 {isMobileMenuOpen ? (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
                   </svg>
                 )}
               </button>
@@ -243,7 +285,9 @@ export default function Layout() {
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {user?.firstName} {user?.lastName}
                       </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user?.email}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                        {user?.email}
+                      </p>
                     </div>
                     <div className="py-1">
                       <Link
@@ -273,18 +317,18 @@ export default function Layout() {
       {isMobileMenuOpen && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-gray-900/50 dark:bg-gray-950/70 z-40 transition-opacity"
             onClick={closeMobileMenu}
             aria-hidden="true"
           />
-          
+
           {/* Sidebar */}
           <nav className="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 shadow-xl">
             <div className="flex flex-col h-full">
               {/* Sidebar header */}
               <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-800">
-                <Link 
+                <Link
                   to="/"
                   onClick={closeMobileMenu}
                   className="text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
@@ -296,8 +340,18 @@ export default function Layout() {
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   aria-label="Close menu"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -311,9 +365,12 @@ export default function Layout() {
                       to={item.href}
                       onClick={closeMobileMenu}
                       className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isActive(item.href, { exact: item.exact, excludePrefixes: item.excludePrefixes })
-                          ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-200'
-                          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                        isActive(item.href, {
+                          exact: item.exact,
+                          excludePrefixes: item.excludePrefixes,
+                        })
+                          ? "bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-200"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                       }`}
                     >
                       {item.name}
@@ -331,5 +388,5 @@ export default function Layout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

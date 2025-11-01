@@ -1,49 +1,49 @@
-import { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { ThemeProvider } from './contexts/ThemeContext'
-import { AuthProvider } from './contexts/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
-import Layout from './components/Layout'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import AccountsList from './pages/Accounts/AccountsList'
-import AccountDetail from './pages/Accounts/AccountDetail'
-import AccountForm from './pages/Accounts/AccountForm'
-import LeadsList from './pages/Leads/LeadsList'
-import LeadDetail from './pages/Leads/LeadDetail'
-import LeadForm from './pages/Leads/LeadForm'
-import ContactsList from './pages/Contacts/ContactsList'
-import ContactDetail from './pages/Contacts/ContactDetail'
-import ContactForm from './pages/Contacts/ContactForm'
-import ActivitiesList from './pages/Activities/ActivitiesList'
-import ActivityDetail from './pages/Activities/ActivityDetail'
-import ActivityForm from './pages/Activities/ActivityForm'
-import IssuesList from './pages/Issues/IssuesList'
-import IssueDetail from './pages/Issues/IssueDetail'
-import IssueForm from './pages/Issues/IssueForm'
-import TasksList from './pages/Tasks/TasksList'
-import TaskDetail from './pages/Tasks/TaskDetail'
-import TaskForm from './pages/Tasks/TaskForm'
-import OpportunitiesList from './pages/Opportunities/OpportunitiesList'
-import OpportunitiesBoard from './pages/Opportunities/OpportunitiesBoard'
-import OpportunityDetail from './pages/Opportunities/OpportunityDetail'
-import OpportunityForm from './pages/Opportunities/OpportunityForm'
-import EmployeesList from './pages/Employees/EmployeesList'
-import EmployeeDetail from './pages/Employees/EmployeeDetail'
-import EmployeeForm from './pages/Employees/EmployeeForm'
-import ProductsList from './pages/Products/ProductsList'
-import ProductDetail from './pages/Products/ProductDetail'
-import ProductForm from './pages/Products/ProductForm'
-import WorkflowSettingsPage from './pages/Settings/Workflows'
-import UserPreferences from './pages/Settings/UserPreferences'
-import MigrationCockpit from './pages/Migration/MigrationCockpit'
-import { fetchEnums } from './lib/enums'
+import { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import AccountsList from "./pages/Accounts/AccountsList";
+import AccountDetail from "./pages/Accounts/AccountDetail";
+import AccountForm from "./pages/Accounts/AccountForm";
+import LeadsList from "./pages/Leads/LeadsList";
+import LeadDetail from "./pages/Leads/LeadDetail";
+import LeadForm from "./pages/Leads/LeadForm";
+import ContactsList from "./pages/Contacts/ContactsList";
+import ContactDetail from "./pages/Contacts/ContactDetail";
+import ContactForm from "./pages/Contacts/ContactForm";
+import ActivitiesList from "./pages/Activities/ActivitiesList";
+import ActivityDetail from "./pages/Activities/ActivityDetail";
+import ActivityForm from "./pages/Activities/ActivityForm";
+import IssuesList from "./pages/Issues/IssuesList";
+import IssueDetail from "./pages/Issues/IssueDetail";
+import IssueForm from "./pages/Issues/IssueForm";
+import TasksList from "./pages/Tasks/TasksList";
+import TaskDetail from "./pages/Tasks/TaskDetail";
+import TaskForm from "./pages/Tasks/TaskForm";
+import OpportunitiesList from "./pages/Opportunities/OpportunitiesList";
+import OpportunitiesBoard from "./pages/Opportunities/OpportunitiesBoard";
+import OpportunityDetail from "./pages/Opportunities/OpportunityDetail";
+import OpportunityForm from "./pages/Opportunities/OpportunityForm";
+import EmployeesList from "./pages/Employees/EmployeesList";
+import EmployeeDetail from "./pages/Employees/EmployeeDetail";
+import EmployeeForm from "./pages/Employees/EmployeeForm";
+import ProductsList from "./pages/Products/ProductsList";
+import ProductDetail from "./pages/Products/ProductDetail";
+import ProductForm from "./pages/Products/ProductForm";
+import WorkflowSettingsPage from "./pages/Settings/Workflows";
+import UserPreferences from "./pages/Settings/UserPreferences";
+import DataCockpit from "./pages/Settings/DataCockpit";
+import { fetchEnums } from "./lib/enums";
 
 function App() {
   // Fetch enum definitions from backend on app initialization
   useEffect(() => {
-    fetchEnums()
-  }, [])
+    fetchEnums();
+  }, []);
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -51,13 +51,17 @@ function App() {
           <Routes>
             {/* Public route */}
             <Route path="/login" element={<Login />} />
-            
-            {/* Protected routes */}
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<Dashboard />} />
 
-              {/* Migration routes */}
-              <Route path="migration" element={<MigrationCockpit />} />
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
 
               {/* Accounts routes */}
               <Route path="accounts" element={<AccountsList />} />
@@ -97,10 +101,16 @@ function App() {
 
               {/* Opportunities routes */}
               <Route path="opportunities" element={<OpportunitiesList />} />
-              <Route path="opportunities/board" element={<OpportunitiesBoard />} />
+              <Route
+                path="opportunities/board"
+                element={<OpportunitiesBoard />}
+              />
               <Route path="opportunities/new" element={<OpportunityForm />} />
               <Route path="opportunities/:id" element={<OpportunityDetail />} />
-              <Route path="opportunities/:id/edit" element={<OpportunityForm />} />
+              <Route
+                path="opportunities/:id/edit"
+                element={<OpportunityForm />}
+              />
 
               {/* Employees routes */}
               <Route path="employees" element={<EmployeesList />} />
@@ -115,14 +125,21 @@ function App() {
               <Route path="products/:id/edit" element={<ProductForm />} />
 
               {/* Settings routes */}
-              <Route path="settings/workflows" element={<WorkflowSettingsPage />} />
-              <Route path="settings/preferences" element={<UserPreferences />} />
+              <Route
+                path="settings/workflows"
+                element={<WorkflowSettingsPage />}
+              />
+              <Route
+                path="settings/preferences"
+                element={<UserPreferences />}
+              />
+              <Route path="settings/data" element={<DataCockpit />} />
             </Route>
           </Routes>
         </Router>
       </AuthProvider>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;
