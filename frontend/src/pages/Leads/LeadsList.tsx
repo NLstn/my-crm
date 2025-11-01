@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import type { ChangeEvent, FormEvent } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import EntitySearch, { PaginationControls } from '../../components/EntitySearch'
 import api from '../../lib/api'
 import type { Employee, Lead } from '../../types'
 import { buildLeadQuery, useLeads } from '../../lib/hooks/leads'
+import { Button, Input } from '@/components/ui'
+import type { AxiosError } from 'axios'
 
 const statusBadgeVariant: Record<string, string> = {
   New: 'badge-primary',
@@ -14,14 +17,28 @@ const statusBadgeVariant: Record<string, string> = {
   Disqualified: 'badge-error',
 }
 
+interface BulkRowError {
+  row: number
+  field: string
+  message: string
+}
+
 export default function LeadsList() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [pageMessage, setPageMessage] = useState<string | null>(null)
+  const [pageError, setPageError] = useState<string | null>(null)
+  const [importErrors, setImportErrors] = useState<BulkRowError[]>([])
+  const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null)
 
   const odataQuery = useMemo(() => buildLeadQuery(searchQuery), [searchQuery])
 
   const { data, isLoading, error } = useLeads(odataQuery)
+
+  const queryClient = useQueryClient()
 
   const { data: employeesData } = useQuery({
     queryKey: ['employees', 'lead-list'],
@@ -100,6 +117,98 @@ export default function LeadsList() {
     [ownerOptions],
   )
 
+  const importMutation = useMutation({
+    mutationFn: async (csvText: string) => {
+      const response = await api.post('/ImportLeadsCSV', { Csv: csvText })
+      return response.data as { imported: number }
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+      setPageMessage(`Imported ${result.imported} lead${result.imported === 1 ? '' : 's'} successfully.`)
+      setPageError(null)
+      setImportErrors([])
+      setImportErrorMessage(null)
+      setSelectedFile(null)
+      setIsImportDialogOpen(false)
+    },
+    onError: (err: unknown) => {
+      let message = 'Failed to import leads. Please verify the CSV file and try again.'
+      const details: BulkRowError[] = []
+      if ((err as AxiosError)?.isAxiosError) {
+        const axiosError = err as AxiosError<{ message?: string; details?: BulkRowError[] }>
+        const data = axiosError.response?.data
+        if (data?.message) {
+          message = data.message
+        }
+        if (Array.isArray(data?.details)) {
+          for (const detail of data.details) {
+            if (detail && typeof detail.row === 'number' && typeof detail.field === 'string' && typeof detail.message === 'string') {
+              details.push(detail)
+            }
+          }
+        }
+      }
+      setImportErrorMessage(message)
+      setImportErrors(details)
+    },
+  })
+
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/ExportLeadsCSV', undefined, { responseType: 'blob' })
+      return response.data as Blob
+    },
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+      setPageMessage('Lead export started. Your download should begin shortly.')
+      setPageError(null)
+    },
+    onError: () => {
+      setPageError('Failed to export leads. Please try again.')
+    },
+  })
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    setSelectedFile(file)
+  }
+
+  const handleImportSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedFile || importMutation.isPending) {
+      return
+    }
+    const csvText = await selectedFile.text()
+    setImportErrorMessage(null)
+    setImportErrors([])
+    importMutation.mutate(csvText)
+  }
+
+  const openImportDialog = () => {
+    setImportErrorMessage(null)
+    setImportErrors([])
+    setSelectedFile(null)
+    setIsImportDialogOpen(true)
+  }
+
+  const closeImportDialog = () => {
+    if (importMutation.isPending) {
+      return
+    }
+    setIsImportDialogOpen(false)
+    setSelectedFile(null)
+    setImportErrorMessage(null)
+    setImportErrors([])
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -110,6 +219,17 @@ export default function LeadsList() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => exportMutation.mutate()}
+            disabled={exportMutation.isPending}
+          >
+            {exportMutation.isPending ? 'Exporting…' : 'Export CSV'}
+          </Button>
+          <Button type="button" onClick={openImportDialog}>
+            Import CSV
+          </Button>
           <Link to="/leads/new" className="btn btn-primary text-center">
             Add Lead
           </Link>
@@ -118,6 +238,18 @@ export default function LeadsList() {
           </Link>
         </div>
       </div>
+
+      {pageMessage && (
+        <div className="rounded-lg border border-success-200 bg-success-50 p-4 text-success-700 dark:border-success-800 dark:bg-success-950 dark:text-success-200">
+          {pageMessage}
+        </div>
+      )}
+
+      {pageError && (
+        <div className="rounded-lg border border-error-200 bg-error-50 p-4 text-error-700 dark:border-error-800 dark:bg-error-950 dark:text-error-200">
+          {pageError}
+        </div>
+      )}
 
       <EntitySearch
         searchPlaceholder="Search leads by name, company, or email..."
@@ -217,6 +349,56 @@ export default function LeadsList() {
             }}
           />
         </>
+      )}
+
+      {isImportDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-60 backdrop-blur-sm p-4">
+          <div className="card w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Import Leads from CSV</h2>
+              <Button type="button" variant="secondary" onClick={closeImportDialog} disabled={importMutation.isPending}>
+                Close
+              </Button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Provide a CSV file with lead information. Include a header row with Name and optional details like Email, Phone, and Status.
+            </p>
+            {importErrorMessage && (
+              <div className="rounded-md border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-800 dark:bg-error-950 dark:text-error-200">
+                {importErrorMessage}
+              </div>
+            )}
+            {importErrors.length > 0 && (
+              <div className="rounded-md border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700 dark:border-warning-800 dark:bg-warning-950 dark:text-warning-200">
+                <p className="font-semibold">Validation errors</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  {importErrors.map((validationError) => (
+                    <li key={`${validationError.row}-${validationError.field}`}>
+                      Row {validationError.row}: {validationError.field} {validationError.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <form className="space-y-4" onSubmit={handleImportSubmit}>
+              <Input
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                required
+                disabled={importMutation.isPending}
+              />
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="secondary" onClick={closeImportDialog} disabled={importMutation.isPending}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={!selectedFile || importMutation.isPending}>
+                  {importMutation.isPending ? 'Uploading…' : 'Start Import'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
