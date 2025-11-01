@@ -138,6 +138,16 @@ export default function ContactsList() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Contacts</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            For a dedicated import and export workspace visit the{' '}
+            <Link
+              to="/migration"
+              className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              Migration Cockpit
+            </Link>
+            .
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <Button

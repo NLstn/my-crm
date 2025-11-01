@@ -36,6 +36,7 @@ import ProductDetail from './pages/Products/ProductDetail'
 import ProductForm from './pages/Products/ProductForm'
 import WorkflowSettingsPage from './pages/Settings/Workflows'
 import UserPreferences from './pages/Settings/UserPreferences'
+import MigrationCockpit from './pages/Migration/MigrationCockpit'
 import { fetchEnums } from './lib/enums'
 
 function App() {
@@ -54,65 +55,68 @@ function App() {
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
-            
-            {/* Accounts routes */}
-            <Route path="accounts" element={<AccountsList />} />
-            <Route path="accounts/new" element={<AccountForm />} />
-            <Route path="accounts/:id" element={<AccountDetail />} />
-            <Route path="accounts/:id/edit" element={<AccountForm />} />
 
-            {/* Leads routes */}
-            <Route path="leads" element={<LeadsList />} />
-            <Route path="leads/new" element={<LeadForm />} />
-            <Route path="leads/:id" element={<LeadDetail />} />
-            <Route path="leads/:id/edit" element={<LeadForm />} />
+              {/* Migration routes */}
+              <Route path="migration" element={<MigrationCockpit />} />
 
-            {/* Contacts routes */}
-            <Route path="contacts" element={<ContactsList />} />
-            <Route path="contacts/new" element={<ContactForm />} />
-            <Route path="contacts/:id" element={<ContactDetail />} />
-            <Route path="contacts/:id/edit" element={<ContactForm />} />
+              {/* Accounts routes */}
+              <Route path="accounts" element={<AccountsList />} />
+              <Route path="accounts/new" element={<AccountForm />} />
+              <Route path="accounts/:id" element={<AccountDetail />} />
+              <Route path="accounts/:id/edit" element={<AccountForm />} />
 
-            {/* Activities routes */}
-            <Route path="activities" element={<ActivitiesList />} />
-            <Route path="activities/new" element={<ActivityForm />} />
-            <Route path="activities/:id" element={<ActivityDetail />} />
-            <Route path="activities/:id/edit" element={<ActivityForm />} />
+              {/* Leads routes */}
+              <Route path="leads" element={<LeadsList />} />
+              <Route path="leads/new" element={<LeadForm />} />
+              <Route path="leads/:id" element={<LeadDetail />} />
+              <Route path="leads/:id/edit" element={<LeadForm />} />
 
-            {/* Issues routes */}
-            <Route path="issues" element={<IssuesList />} />
-            <Route path="issues/new" element={<IssueForm />} />
-            <Route path="issues/:id" element={<IssueDetail />} />
-            <Route path="issues/:id/edit" element={<IssueForm />} />
+              {/* Contacts routes */}
+              <Route path="contacts" element={<ContactsList />} />
+              <Route path="contacts/new" element={<ContactForm />} />
+              <Route path="contacts/:id" element={<ContactDetail />} />
+              <Route path="contacts/:id/edit" element={<ContactForm />} />
 
-            {/* Tasks routes */}
-            <Route path="tasks" element={<TasksList />} />
-            <Route path="tasks/new" element={<TaskForm />} />
-            <Route path="tasks/:id" element={<TaskDetail />} />
-            <Route path="tasks/:id/edit" element={<TaskForm />} />
+              {/* Activities routes */}
+              <Route path="activities" element={<ActivitiesList />} />
+              <Route path="activities/new" element={<ActivityForm />} />
+              <Route path="activities/:id" element={<ActivityDetail />} />
+              <Route path="activities/:id/edit" element={<ActivityForm />} />
 
-            {/* Opportunities routes */}
-            <Route path="opportunities" element={<OpportunitiesList />} />
-            <Route path="opportunities/board" element={<OpportunitiesBoard />} />
-            <Route path="opportunities/new" element={<OpportunityForm />} />
-            <Route path="opportunities/:id" element={<OpportunityDetail />} />
-            <Route path="opportunities/:id/edit" element={<OpportunityForm />} />
-            
-            {/* Employees routes */}
-            <Route path="employees" element={<EmployeesList />} />
-            <Route path="employees/new" element={<EmployeeForm />} />
-            <Route path="employees/:id" element={<EmployeeDetail />} />
-            <Route path="employees/:id/edit" element={<EmployeeForm />} />
-            
-            {/* Products routes */}
-            <Route path="products" element={<ProductsList />} />
-            <Route path="products/new" element={<ProductForm />} />
-            <Route path="products/:id" element={<ProductDetail />} />
-            <Route path="products/:id/edit" element={<ProductForm />} />
+              {/* Issues routes */}
+              <Route path="issues" element={<IssuesList />} />
+              <Route path="issues/new" element={<IssueForm />} />
+              <Route path="issues/:id" element={<IssueDetail />} />
+              <Route path="issues/:id/edit" element={<IssueForm />} />
 
-            {/* Settings routes */}
-            <Route path="settings/workflows" element={<WorkflowSettingsPage />} />
-            <Route path="settings/preferences" element={<UserPreferences />} />
+              {/* Tasks routes */}
+              <Route path="tasks" element={<TasksList />} />
+              <Route path="tasks/new" element={<TaskForm />} />
+              <Route path="tasks/:id" element={<TaskDetail />} />
+              <Route path="tasks/:id/edit" element={<TaskForm />} />
+
+              {/* Opportunities routes */}
+              <Route path="opportunities" element={<OpportunitiesList />} />
+              <Route path="opportunities/board" element={<OpportunitiesBoard />} />
+              <Route path="opportunities/new" element={<OpportunityForm />} />
+              <Route path="opportunities/:id" element={<OpportunityDetail />} />
+              <Route path="opportunities/:id/edit" element={<OpportunityForm />} />
+
+              {/* Employees routes */}
+              <Route path="employees" element={<EmployeesList />} />
+              <Route path="employees/new" element={<EmployeeForm />} />
+              <Route path="employees/:id" element={<EmployeeDetail />} />
+              <Route path="employees/:id/edit" element={<EmployeeForm />} />
+
+              {/* Products routes */}
+              <Route path="products" element={<ProductsList />} />
+              <Route path="products/new" element={<ProductForm />} />
+              <Route path="products/:id" element={<ProductDetail />} />
+              <Route path="products/:id/edit" element={<ProductForm />} />
+
+              {/* Settings routes */}
+              <Route path="settings/workflows" element={<WorkflowSettingsPage />} />
+              <Route path="settings/preferences" element={<UserPreferences />} />
             </Route>
           </Routes>
         </Router>
