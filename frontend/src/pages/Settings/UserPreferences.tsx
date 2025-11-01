@@ -9,14 +9,14 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; description: strin
 ]
 
 export default function UserPreferences() {
-  const { preference, setPreference, theme } = useTheme()
+  const { preference, setThemePreference, resolvedTheme } = useTheme()
 
   const handleThemeChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setPreference(event.target.value as ThemePreference)
+    setThemePreference(event.target.value as ThemePreference)
   }
 
   const activeOption = THEME_OPTIONS.find((option) => option.value === preference) ?? THEME_OPTIONS[0]
-  const effectiveThemeLabel = theme === 'dark' ? 'Dark' : 'Light'
+  const effectiveThemeLabel = resolvedTheme === 'dark' ? 'Dark' : 'Light'
 
   return (
     <div className="space-y-8">
