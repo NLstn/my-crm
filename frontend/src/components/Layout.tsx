@@ -190,9 +190,10 @@ export default function Layout() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            <div className="flex flex-1 items-center gap-4 min-w-0">
+            {/* Left section: Hamburger + Title */}
+            <div className="flex items-center gap-4 min-w-0">
               {/* Hamburger menu button */}
               <button
                 onClick={toggleMobileMenu}
@@ -233,17 +234,17 @@ export default function Layout() {
 
               {/* Logo - now clickable */}
               <Link to="/">
-                <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+                <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors whitespace-nowrap">
                   CRM System
                 </h1>
               </Link>
             </div>
 
-            {/* Global search */}
-            <div className="hidden flex-1 sm:flex">
+            {/* Center section: Global search */}
+            <div className="hidden sm:flex flex-1 justify-center">
               <div
                 ref={searchContainerRef}
-                className="relative mx-auto w-full max-w-xl"
+                className="relative w-full max-w-xl"
               >
                 <Input
                   type="search"
@@ -266,8 +267,8 @@ export default function Layout() {
               </div>
             </div>
 
-            {/* User menu - right side */}
-            <div className="flex flex-1 items-center justify-end gap-4">
+            {/* Right section: User menu */}
+            <div className="flex items-center justify-end">
               <div className="relative" ref={profileMenuRef}>
                 <button
                   type="button"
