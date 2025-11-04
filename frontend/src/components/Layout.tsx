@@ -104,7 +104,7 @@ export default function Layout() {
     { name: "Pipeline Board", href: "/opportunities/board", exact: true },
     { name: "Employees", href: "/employees" },
     { name: "Products", href: "/products" },
-    { name: "Data Cockpit", href: "/settings/data" },
+    { name: "Migration Cockpit", href: "/settings/data" },
     { name: "Workflows", href: "/settings/workflows" },
   ];
 
